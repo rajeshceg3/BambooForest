@@ -1,8 +1,14 @@
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { Zone } from '../types'
 
-export function BambooForest({ count = 300 }) {
+interface BambooForestProps {
+  currentZone?: Zone
+  count?: number
+}
+
+export function BambooForest({ currentZone = 'GROVE', count = 600 }: BambooForestProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
 
   // Custom material setup
@@ -55,19 +61,29 @@ export function BambooForest({ count = 300 }) {
     const tempObject = new THREE.Object3D()
 
     for (let i = 0; i < count; i++) {
-      // Create a path/clearing in the middle
       let x = 0, z = 0
       let valid = false
+
       while (!valid) {
-          x = (Math.random() - 0.5) * 120
-          z = (Math.random() - 0.5) * 120
-          const dist = Math.sqrt(x*x + z*z)
-          // Clearing in middle (radius 8)
-          if (dist > 8) valid = true
+        x = (Math.random() - 0.5) * 150
+        z = (Math.random() - 0.5) * 150
+
+        const distToCenter = Math.sqrt(x * x + z * z)
+        const distToClearing = Math.sqrt((x - 10) ** 2 + (z - 10) ** 2)
+        const distToStream = Math.abs(x + z) / Math.sqrt(2) // Distance to line x+z=0 (approx stream)
+
+        // GROVE: denser everywhere
+        // CLEARING: radius 15 around (10,10) is open
+        // STREAM: 5 units around the stream line is open
+
+        valid = true
+        if (distToClearing < 12) valid = false
+        if (distToStream < 6) valid = false
+        if (distToCenter < 5) valid = false
       }
 
       const rotationY = Math.random() * Math.PI * 2
-      const scale = 0.8 + Math.random() * 0.6
+      const scale = 0.7 + Math.random() * 0.8
 
       tempObject.position.set(x, 2.5, z)
       tempObject.rotation.set(0, rotationY, 0)
@@ -89,7 +105,9 @@ export function BambooForest({ count = 300 }) {
 
   useFrame((state) => {
       if (material.userData.shader) {
-          material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()
+          // Faster wind in deep forest
+          const windSpeed = currentZone === 'DEEP_FOREST' ? 1.5 : 1.0
+          material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime() * windSpeed
       }
   })
 
