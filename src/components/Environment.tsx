@@ -26,7 +26,7 @@ export function Environment() {
         shadow-bias={-0.0001}
         color="#fff0d0"
       >
-        <orthographicCamera attach="shadow-camera" args={[-30, 30, 30, -30]} />
+        <orthographicCamera attach="shadow-camera" args={[-65, 65, 65, -65]} />
       </directionalLight>
 
       {/* Ground - Mossy Green */}
