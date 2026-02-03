@@ -17,34 +17,29 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
 
   return (
     <div className="fixed inset-0 pointer-events-none flex flex-col justify-between p-12 z-10">
-      <header className="opacity-20 hover:opacity-100 transition-opacity duration-1000">
-        <h1 className="text-white text-lg font-extralight tracking-[0.5em] uppercase">Serenity</h1>
-      </header>
+      {/* Header removed to avoid conflict with UI Title */}
+      <div className="flex-none h-16"></div>
 
       <div className="flex flex-col items-center justify-center flex-1">
-        <p key={currentZone} className="text-white/40 text-sm italic font-light tracking-widest animate-fade-in">
+        <p key={currentZone} className="text-white/40 text-sm italic font-light tracking-widest animate-fade-in text-center">
           {zoneText[currentZone]}
         </p>
       </div>
 
-      <div className="flex justify-between items-end">
-        <nav className="flex flex-col gap-4 pointer-events-auto">
+      <div className="flex justify-center items-end w-full pb-8">
+        <nav className="flex gap-8 pointer-events-auto bg-black/20 backdrop-blur-sm px-6 py-3 rounded-full border border-white/5">
           {zones.map((zone) => (
             <button
               key={zone}
               onClick={() => onZoneChange(zone)}
-              className={`text-left text-[10px] tracking-[0.3em] uppercase transition-all duration-1000 ${
-                currentZone === zone ? 'text-white border-l-2 border-white pl-4' : 'text-white/20 hover:text-white/40 pl-0'
+              className={`text-[10px] tracking-[0.2em] uppercase transition-all duration-500 ${
+                currentZone === zone ? 'text-white font-medium' : 'text-white/40 hover:text-white/70'
               }`}
             >
               {zone}
             </button>
           ))}
         </nav>
-
-        <footer className="text-white/10 text-[9px] tracking-[0.4em] uppercase">
-          Presence through stillness
-        </footer>
       </div>
     </div>
   )
