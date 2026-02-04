@@ -178,7 +178,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 600 }: BambooFores
       receiveShadow
     >
       {/* Bamboo geometry: top slightly narrower than bottom */}
-      <cylinderGeometry args={[0.08, 0.15, 5, 8]} />
+      <cylinderGeometry args={[0.08, 0.15, 5, 32]} />
       <primitive object={material} attach="material" />
     </instancedMesh>
   )
