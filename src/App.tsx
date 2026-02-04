@@ -4,6 +4,7 @@ import { Experience } from './components/Experience'
 import { Overlay } from './components/Overlay'
 import { UI } from './components/UI'
 import { AudioPlayer } from './components/AudioPlayer'
+import { Cursor } from './components/Cursor'
 import { Zone } from './types'
 import './App.css'
 
@@ -24,6 +25,7 @@ function App() {
       <UI audioEnabled={audioEnabled} onToggleAudio={() => setAudioEnabled(!audioEnabled)} />
       <Overlay currentZone={currentZone} onZoneChange={setCurrentZone} />
       <AudioPlayer enabled={audioEnabled} />
+      <Cursor />
     </div>
   )
 }

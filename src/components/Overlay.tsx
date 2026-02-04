@@ -27,16 +27,21 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
       </div>
 
       <div className="flex justify-center items-end w-full pb-8">
-        <nav className="flex gap-8 pointer-events-auto bg-black/20 backdrop-blur-sm px-6 py-3 rounded-full border border-white/5">
+        <nav className="flex gap-8 pointer-events-auto bg-white/5 backdrop-blur-md px-8 py-4 rounded-full border border-white/5 shadow-2xl">
           {zones.map((zone) => (
             <button
               key={zone}
               onClick={() => onZoneChange(zone)}
-              className={`text-[10px] tracking-[0.2em] uppercase transition-all duration-500 ${
-                currentZone === zone ? 'text-white font-medium' : 'text-white/40 hover:text-white/70'
-              }`}
+              className="group relative flex flex-col items-center gap-2"
             >
-              {zone}
+              <span className={`text-[10px] tracking-[0.2em] uppercase transition-colors duration-500 ${
+                currentZone === zone ? 'text-white' : 'text-white/40 group-hover:text-white/70'
+              }`}>
+                {zone.replace('_', ' ')}
+              </span>
+              <span className={`w-1 h-1 rounded-full bg-white transition-all duration-500 ${
+                currentZone === zone ? 'opacity-100 scale-100' : 'opacity-0 scale-0'
+              }`} />
             </button>
           ))}
         </nav>

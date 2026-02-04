@@ -9,3 +9,12 @@ body {
   margin: 0;
   background: black; /* Prevent white flashes */
 }
+
+@media (pointer: fine) {
+  body {
+    cursor: none;
+  }
+  a, button, [role="button"] {
+    cursor: none;
+  }
+}
