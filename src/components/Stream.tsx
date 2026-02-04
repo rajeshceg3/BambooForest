@@ -102,7 +102,7 @@ export function Stream() {
           fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
           fresnel = pow(fresnel, 3.0);
 
-          float alpha = 0.6 + 0.4 * fresnel;
+          float alpha = 0.3 + 0.6 * fresnel;
 
           // Edge fade (fake shore)
           float edge = 1.0 - 2.0 * abs(vUv.x - 0.5);
@@ -161,11 +161,10 @@ export function Stream() {
             receiveShadow
             castShadow
           >
-              <icosahedronGeometry args={[1, 0]} />
+              <icosahedronGeometry args={[1, 1]} />
               <meshStandardMaterial
                 color="#5a5a5a"
-                roughness={0.9}
-                flatShading={true}
+                roughness={0.7}
               />
           </mesh>
       ))}

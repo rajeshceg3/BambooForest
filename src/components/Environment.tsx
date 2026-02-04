@@ -1,3 +1,4 @@
+import { Environment as EnvironmentDrei } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
@@ -86,6 +87,21 @@ export function Environment({ currentZone }: EnvironmentProps) {
           // Add subtle texture noise
           diffuseColor.rgb *= 0.9 + 0.2 * noise2;
           `
+        )
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <normal_fragment_maps>',
+            `
+            #include <normal_fragment_maps>
+
+            // Perturb normal based on noise
+            float nHeight = snoise(vWorldPosition.xz * 2.0);
+            float nHeightX = snoise(vWorldPosition.xz * 2.0 + vec2(0.05, 0.0));
+            float nHeightZ = snoise(vWorldPosition.xz * 2.0 + vec2(0.0, 0.05));
+
+            vec3 bumpNormal = normalize(vec3(nHeight - nHeightX, 1.0, nHeight - nHeightZ));
+            normal = normalize(normal + (bumpNormal - vec3(0.0, 1.0, 0.0)) * 0.3);
+            `
         )
     }
     return mat
@@ -190,6 +206,8 @@ export function Environment({ currentZone }: EnvironmentProps) {
       >
         <orthographicCamera attach="shadow-camera" args={[-65, 65, 65, -65]} />
       </directionalLight>
+
+      <EnvironmentDrei preset="forest" background={false} />
 
       {/* Ground - Custom Shader Material */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>

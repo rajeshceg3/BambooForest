@@ -11,6 +11,7 @@ import { StoneLantern } from './StoneLantern'
 import { Deer } from './Deer'
 import { Crane } from './Crane'
 import { Butterflies } from './Butterflies'
+import { Effects } from './Effects'
 import { Zone } from '../types'
 
 interface ExperienceProps {
@@ -73,6 +74,7 @@ export function Experience({ currentZone }: ExperienceProps) {
       <Deer position={[-5, 0, -5]} rotation={[0, Math.PI / 3, 0]} />
       <Crane position={[-12, 0, 5]} rotation={[0, -Math.PI / 4, 0]} />
       <Butterflies count={8} />
+      <Effects />
     </>
   )
 }
