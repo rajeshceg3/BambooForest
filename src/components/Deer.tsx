@@ -1,57 +1,108 @@
-import { useRef } from 'react'
+import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
 export function Deer(props: any) {
   const groupRef = useRef<THREE.Group>(null)
 
+  const material = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: "#8b5a2b", // Russet Brown
+      roughness: 0.7,
+      metalness: 0.1,
+    })
+  }, [])
+
+  // Darker nose/hooves
+  const darkMaterial = useMemo(() => {
+    return new THREE.MeshStandardMaterial({
+      color: "#3e2723",
+      roughness: 0.9,
+    })
+  }, [])
+
   useFrame((state) => {
     if (groupRef.current) {
-        // Very slow movement
-        groupRef.current.position.x += Math.sin(state.clock.getElapsedTime() * 0.1) * 0.005
+        const t = state.clock.getElapsedTime()
+
+        // Very slow drift
+        groupRef.current.position.x += Math.sin(t * 0.1) * 0.005
+
+        // Breathing animation (scale body slightly)
+        const body = groupRef.current.getObjectByName('body')
+        if (body) {
+            const breath = 1 + Math.sin(t * 1.5) * 0.005
+            body.scale.set(1, breath, 1)
+        }
 
         // Head look around
-        const head = groupRef.current.getObjectByName('head')
-        if (head) {
-            head.rotation.y = Math.sin(state.clock.getElapsedTime() * 0.5) * 0.2
-            head.rotation.x = Math.sin(state.clock.getElapsedTime() * 0.3) * 0.1
+        const headGroup = groupRef.current.getObjectByName('headGroup')
+        if (headGroup) {
+            headGroup.rotation.y = Math.sin(t * 0.5) * 0.2
+            headGroup.rotation.x = Math.sin(t * 0.3) * 0.1
         }
     }
   })
 
   return (
     <group ref={groupRef} {...props}>
-      {/* Body */}
-      <mesh position={[0, 0.8, 0]} castShadow>
-        <boxGeometry args={[0.6, 0.8, 1.2]} />
-        <meshStandardMaterial color="#8b5a2b" roughness={0.8} />
+      {/* Body - Horizontal Capsule */}
+      <mesh name="body" position={[0, 0.9, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <capsuleGeometry args={[0.3, 0.7, 4, 16]} />
+        <primitive object={material} attach="material" />
       </mesh>
-      {/* Neck */}
-      <mesh position={[0, 1.4, 0.5]} rotation={[Math.PI / 4, 0, 0]} castShadow>
-        <boxGeometry args={[0.3, 0.8, 0.3]} />
-        <meshStandardMaterial color="#8b5a2b" roughness={0.8} />
-      </mesh>
-      {/* Head */}
-      <mesh name="head" position={[0, 1.8, 0.8]} castShadow>
-        <boxGeometry args={[0.35, 0.35, 0.5]} />
-        <meshStandardMaterial color="#8b5a2b" roughness={0.8} />
-      </mesh>
+
+      {/* Head Group for animation */}
+      <group name="headGroup" position={[0, 1.3, 0.5]}>
+          {/* Neck */}
+          <mesh position={[0, 0, 0]} rotation={[Math.PI / 3, 0, 0]} castShadow>
+            <capsuleGeometry args={[0.12, 0.6, 4, 8]} />
+            <primitive object={material} attach="material" />
+          </mesh>
+
+          {/* Head */}
+          <mesh position={[0, 0.45, 0.25]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+             <capsuleGeometry args={[0.14, 0.25, 4, 8]} />
+             <primitive object={material} attach="material" />
+          </mesh>
+
+          {/* Ears */}
+          <mesh position={[0.15, 0.6, 0.15]} rotation={[0, 0, 0.5]} castShadow>
+              <coneGeometry args={[0.05, 0.2, 8]} />
+              <primitive object={material} attach="material" />
+          </mesh>
+          <mesh position={[-0.15, 0.6, 0.15]} rotation={[0, 0, -0.5]} castShadow>
+              <coneGeometry args={[0.05, 0.2, 8]} />
+              <primitive object={material} attach="material" />
+          </mesh>
+
+          {/* Nose */}
+          <mesh position={[0, 0.45, 0.45]} castShadow>
+              <sphereGeometry args={[0.05, 8, 8]} />
+              <primitive object={darkMaterial} attach="material" />
+          </mesh>
+      </group>
+
       {/* Legs */}
-      <mesh position={[0.2, 0.4, 0.4]} castShadow>
-        <boxGeometry args={[0.1, 0.8, 0.1]} />
-        <meshStandardMaterial color="#8b5a2b" roughness={0.8} />
+      {/* Front Left */}
+      <mesh position={[0.15, 0.45, 0.4]} castShadow>
+        <capsuleGeometry args={[0.06, 0.8, 4, 8]} />
+        <primitive object={material} attach="material" />
       </mesh>
-      <mesh position={[-0.2, 0.4, 0.4]} castShadow>
-        <boxGeometry args={[0.1, 0.8, 0.1]} />
-        <meshStandardMaterial color="#8b5a2b" roughness={0.8} />
+      {/* Front Right */}
+      <mesh position={[-0.15, 0.45, 0.4]} castShadow>
+        <capsuleGeometry args={[0.06, 0.8, 4, 8]} />
+        <primitive object={material} attach="material" />
       </mesh>
-      <mesh position={[0.2, 0.4, -0.4]} castShadow>
-        <boxGeometry args={[0.1, 0.8, 0.1]} />
-        <meshStandardMaterial color="#8b5a2b" roughness={0.8} />
+      {/* Back Left */}
+      <mesh position={[0.15, 0.45, -0.4]} castShadow>
+        <capsuleGeometry args={[0.06, 0.8, 4, 8]} />
+        <primitive object={material} attach="material" />
       </mesh>
-      <mesh position={[-0.2, 0.4, -0.4]} castShadow>
-        <boxGeometry args={[0.1, 0.8, 0.1]} />
-        <meshStandardMaterial color="#8b5a2b" roughness={0.8} />
+      {/* Back Right */}
+      <mesh position={[-0.15, 0.45, -0.4]} castShadow>
+        <capsuleGeometry args={[0.06, 0.8, 4, 8]} />
+        <primitive object={material} attach="material" />
       </mesh>
     </group>
   )
