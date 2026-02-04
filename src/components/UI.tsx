@@ -19,14 +19,8 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         className={`absolute inset-0 bg-stone-900 z-[60] flex items-center justify-center transition-opacity duration-1000 ease-in-out ${progress === 100 || !active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
       >
         <div className="text-center">
-          <div className="w-48 h-[1px] bg-white/20 mb-4 mx-auto relative overflow-hidden">
-            <div
-              className="absolute left-0 top-0 bottom-0 bg-white/60 transition-all duration-300 ease-out"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <p className="font-serif text-white/40 text-sm tracking-widest uppercase">
-            Loading Experience
+          <p className="font-serif italic text-white/50 text-xl tracking-widest">
+            {progress.toFixed(0)}%
           </p>
         </div>
       </div>
@@ -36,19 +30,20 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         className={`absolute inset-0 z-[40] flex items-center justify-center bg-black/40 backdrop-blur-[2px] transition-opacity duration-2000 ease-in-out ${started ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
       >
         <div className="text-center p-8 max-w-lg">
-          <h1 className="font-serif text-5xl md:text-7xl text-white/90 mb-4 tracking-tight drop-shadow-lg">
+          <h1 className="font-serif text-5xl md:text-7xl text-white/90 mb-4 tracking-tight drop-shadow-lg animate-fade-in-up">
             Bamboo Forest
           </h1>
-          <p className="font-serif italic text-white/70 text-lg md:text-xl mb-12 tracking-wide font-light">
+          <p className="font-serif italic text-white/70 text-lg md:text-xl mb-12 tracking-wide font-light animate-fade-in-up delay-100">
             A digital sanctuary.
           </p>
           <button
             onClick={() => setStarted(true)}
-            className="group relative px-8 py-3 overflow-hidden rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md transition-all duration-500 border border-white/20 hover:border-white/40"
+            className="group relative px-4 py-2 overflow-hidden transition-all duration-500 animate-fade-in-up delay-200"
           >
-            <span className="relative z-10 font-sans text-sm tracking-[0.2em] uppercase text-white/90 group-hover:text-white transition-colors">
-              Enter
+            <span className="relative z-10 font-sans text-xs md:text-sm tracking-[0.3em] uppercase text-white/70 group-hover:text-white transition-colors">
+              Enter Experience
             </span>
+            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-white/50 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"></span>
           </button>
         </div>
       </div>
@@ -58,7 +53,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         className={`absolute inset-0 pointer-events-none transition-opacity duration-1000 delay-500 ${started ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Top Left: Title (Subtle) */}
-        <div className="absolute top-6 left-6 md:top-8 md:left-8 opacity-50 hover:opacity-80 transition-opacity duration-500 pointer-events-auto">
+        <div className="absolute top-6 left-6 md:top-8 md:left-8 opacity-30 hover:opacity-80 transition-opacity duration-500 pointer-events-auto mix-blend-difference">
            <span className="font-serif text-sm md:text-base tracking-widest uppercase text-white/80">
              Bamboo Forest
            </span>
@@ -68,16 +63,16 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         <div className="absolute bottom-6 left-6 md:bottom-8 md:left-8 pointer-events-auto">
           <button
             onClick={onToggleAudio}
-            className="w-12 h-12 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/30 backdrop-blur-sm border border-white/10 hover:border-white/30 transition-all duration-300 group"
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-sm transition-all duration-300 group hover:scale-110"
             aria-label={audioEnabled ? "Mute" : "Unmute"}
           >
             {audioEnabled ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
               </svg>
             ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                 <line x1="23" y1="9" x2="17" y2="15"></line>
                 <line x1="17" y1="9" x2="23" y2="15"></line>
@@ -90,10 +85,10 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         <div className="absolute bottom-6 right-6 md:bottom-8 md:right-8 pointer-events-auto">
           <button
             onClick={() => setAboutOpen(true)}
-            className="w-12 h-12 md:w-10 md:h-10 flex items-center justify-center rounded-full bg-black/10 hover:bg-black/30 backdrop-blur-sm border border-white/10 hover:border-white/30 transition-all duration-300 group"
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 backdrop-blur-sm transition-all duration-300 group hover:scale-110"
             aria-label="About"
           >
-            <span className="font-serif italic text-xl md:text-lg text-white/70 group-hover:text-white transition-colors">i</span>
+            <span className="font-serif italic text-xl md:text-2xl text-white/70 group-hover:text-white transition-colors">i</span>
           </button>
         </div>
       </div>
