@@ -3,7 +3,7 @@ import { ToneMappingMode } from 'postprocessing'
 
 export function Effects() {
   return (
-    <EffectComposer disableNormalPass>
+    <EffectComposer enableNormalPass={false}>
       <Bloom
         luminanceThreshold={1}
         mipmapBlur
