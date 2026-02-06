@@ -8,7 +8,7 @@ interface BambooForestProps {
   count?: number
 }
 
-export function BambooForest({ currentZone = 'GROVE', count = 600 }: BambooForestProps) {
+export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooForestProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
 
   // Custom material setup
@@ -128,8 +128,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 600 }: BambooFores
       let valid = false
 
       while (!valid) {
-        x = (Math.random() - 0.5) * 150
-        z = (Math.random() - 0.5) * 150
+        x = (Math.random() - 0.5) * 2000
+        z = (Math.random() - 0.5) * 2000
 
         const distToCenter = Math.sqrt(x * x + z * z)
         const distToClearing = Math.sqrt((x - 10) ** 2 + (z - 10) ** 2)
