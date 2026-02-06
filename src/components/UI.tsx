@@ -116,7 +116,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
                style={{ width: `${progress}%` }}
              />
            </div>
-           <p className="font-mono text-[10px] tracking-widest text-white/30 animate-pulse">
+           <p className="font-mono text-[10px] tracking-widest text-white/50 animate-pulse">
             INITIALIZING
           </p>
         </div>
@@ -128,7 +128,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
       >
         <div className="text-center p-8 max-w-4xl flex flex-col items-center">
           <div ref={titleRef} className="opacity-0 mb-8 overflow-hidden perspective-[1000px]">
-             <h1 className="font-serif text-6xl md:text-9xl tracking-tighter text-white/90 leading-none mix-blend-overlay">
+             <h1 className="font-serif text-6xl md:text-9xl tracking-tighter text-white/90 leading-none drop-shadow-2xl">
                {splitText("BAMBOO FOREST")}
              </h1>
           </div>
@@ -139,12 +139,12 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
 
           <button
             onClick={() => setStarted(true)}
-            className={`group relative px-8 py-4 overflow-hidden transition-all duration-1000 delay-[1200ms] ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
+            className={`group relative px-10 py-5 overflow-hidden transition-all duration-1000 delay-[1200ms] rounded-sm hover:bg-white/5 ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
           >
-            <span className="relative z-10 font-sans text-xs md:text-sm tracking-[0.4em] uppercase text-white/80 group-hover:text-white transition-colors duration-500">
+            <span className="relative z-10 font-sans text-xs md:text-sm tracking-[0.4em] uppercase text-white/70 group-hover:text-white transition-colors duration-500">
               Enter
             </span>
-            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-white/30 transform scale-x-50 group-hover:scale-x-100 transition-transform duration-700 ease-out"></span>
+            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-white/20 transform scale-x-50 group-hover:scale-x-100 transition-transform duration-700 ease-out"></span>
           </button>
         </div>
       </div>
@@ -165,7 +165,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         </div>
 
         {/* Bottom Center: Controls Hint */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none opacity-50 text-white/70 font-sans text-xs tracking-widest uppercase md:bottom-10">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none opacity-40 text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10">
           Use Arrow Keys or Drag to Explore
         </div>
 
@@ -205,13 +205,13 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
 
       {/* About Modal */}
       <div
-        className={`absolute inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-700 ${aboutOpen ? 'opacity-100 pointer-events-auto backdrop-blur-xl bg-black/40' : 'opacity-0 pointer-events-none backdrop-blur-none bg-black/0'}`}
+        className={`absolute inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-700 ${aboutOpen ? 'opacity-100 pointer-events-auto backdrop-blur-2xl bg-black/60' : 'opacity-0 pointer-events-none backdrop-blur-none bg-black/0'}`}
         onClick={(e) => {
           if (e.target === e.currentTarget) setAboutOpen(false)
         }}
       >
         <div
-            className={`max-w-xl w-full bg-neutral-900/80 border border-white/10 p-8 md:p-12 shadow-2xl relative overflow-hidden transition-all duration-700 transform ${aboutOpen ? 'translate-y-0 scale-100' : 'translate-y-10 scale-95'}`}
+            className={`max-w-xl w-full bg-neutral-950/80 border border-white/10 p-8 md:p-12 shadow-2xl relative overflow-hidden transition-all duration-700 transform ${aboutOpen ? 'translate-y-0 scale-100' : 'translate-y-10 scale-95'}`}
         >
           {/* Close Button */}
           <button

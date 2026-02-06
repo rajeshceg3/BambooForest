@@ -36,7 +36,7 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
            {/* Subtle backing for legibility against bright fog */}
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-black/20 blur-3xl rounded-full -z-10 pointer-events-none"></div>
 
-           <h2 className="text-white/30 font-serif italic text-xl md:text-2xl tracking-widest mb-3 drop-shadow-md">
+           <h2 className="text-white/40 font-serif italic text-xl md:text-2xl tracking-widest mb-3 drop-shadow-md">
              {zoneConfig[currentZone].name}
            </h2>
            <div className="w-8 h-[1px] bg-white/20 mx-auto mb-4 box-shadow-lg"></div>
@@ -50,16 +50,16 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
       <div className="flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto">
 
         {/* Mobile Navigation (Capsule) */}
-        <nav className="md:hidden flex bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-2xl overflow-hidden p-1">
+        <nav className="md:hidden flex bg-neutral-900/60 backdrop-blur-2xl rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] p-1.5 gap-1 mx-4 max-w-full overflow-x-auto no-scrollbar">
           {zones.map((zone) => (
             <button
               key={zone}
               onClick={() => onZoneChange(zone)}
-              className={`relative px-5 py-3 rounded-full transition-all duration-500 ${
-                currentZone === zone ? 'bg-white/10 text-white' : 'text-white/40'
+              className={`relative px-4 py-3 rounded-full transition-all duration-500 whitespace-nowrap ${
+                currentZone === zone ? 'bg-white/10 text-white shadow-inner' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
               }`}
             >
-              <span className="text-[10px] uppercase tracking-widest font-sans font-medium">
+              <span className="text-[10px] uppercase tracking-widest font-sans font-medium block text-center">
                 {zoneConfig[zone].name}
               </span>
             </button>
