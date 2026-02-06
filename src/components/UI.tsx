@@ -164,6 +164,11 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
            </span>
         </div>
 
+        {/* Bottom Center: Controls Hint */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none opacity-50 text-white/70 font-sans text-xs tracking-widest uppercase md:bottom-10">
+          Use Arrow Keys or Drag to Explore
+        </div>
+
         {/* Bottom Left: Audio Toggle */}
         <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto">
           <MagneticButton

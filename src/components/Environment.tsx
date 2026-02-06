@@ -211,7 +211,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
       {/* Ground - Custom Shader Material */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
-        <planeGeometry args={[300, 300, 32, 32]} />
+        <planeGeometry args={[2000, 2000, 128, 128]} />
         <primitive object={groundMaterial} attach="material" />
       </mesh>
     </>
