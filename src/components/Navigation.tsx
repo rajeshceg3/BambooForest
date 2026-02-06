@@ -20,6 +20,15 @@ export function Navigation() {
     currY: 0
   })
 
+  // Mouse Drag state
+  const mouseState = useRef({
+    active: false,
+    startX: 0,
+    startY: 0,
+    currX: 0,
+    currY: 0
+  })
+
   const velocity = useRef(new THREE.Vector3())
   const direction = useRef(new THREE.Vector3())
 
@@ -88,11 +97,42 @@ export function Navigation() {
         touchState.current.active = false
     }
 
+    // Mouse handlers
+    const onMouseDown = (e: MouseEvent) => {
+      // Only trigger on left click
+      if (e.button !== 0) return
+
+      mouseState.current.active = true
+      mouseState.current.startX = e.clientX
+      mouseState.current.startY = e.clientY
+      mouseState.current.currX = e.clientX
+      mouseState.current.currY = e.clientY
+    }
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!mouseState.current.active) return
+      mouseState.current.currX = e.clientX
+      mouseState.current.currY = e.clientY
+    }
+
+    const onMouseUp = () => {
+      mouseState.current.active = false
+    }
+
+    const onMouseLeave = () => {
+        mouseState.current.active = false
+    }
+
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('touchstart', onTouchStart, { passive: false })
     window.addEventListener('touchmove', onTouchMove, { passive: false })
     window.addEventListener('touchend', onTouchEnd)
+
+    window.addEventListener('mousedown', onMouseDown)
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    window.addEventListener('mouseleave', onMouseLeave)
 
     return () => {
       window.removeEventListener('keydown', onKeyDown)
@@ -100,6 +140,11 @@ export function Navigation() {
       window.removeEventListener('touchstart', onTouchStart)
       window.removeEventListener('touchmove', onTouchMove)
       window.removeEventListener('touchend', onTouchEnd)
+
+      window.removeEventListener('mousedown', onMouseDown)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+      window.removeEventListener('mouseleave', onMouseLeave)
     }
   }, [])
 
@@ -127,11 +172,23 @@ export function Navigation() {
         const nx = Math.max(-1, Math.min(1, dx / maxDist))
         const ny = Math.max(-1, Math.min(1, dy / maxDist))
 
-        // dy < 0 means drag UP (forward) -> ny < 0 -> inputZ decreases (fwd)
-        // dx < 0 means drag LEFT (turn left) -> nx < 0 -> inputX decreases (left)
-
         if (Math.abs(ny) > 0.1) inputZ += ny
         if (Math.abs(nx) > 0.1) inputX += nx
+    }
+
+    // Mouse Drag (Virtual Joystick logic)
+    if (mouseState.current.active) {
+        const dx = mouseState.current.currX - mouseState.current.startX
+        const dy = mouseState.current.currY - mouseState.current.startY
+
+        // Normalize sensitivity (pixels to full speed)
+        // Similar to touch, but maybe slightly different tuning if needed
+        const maxDist = 200
+        const nx = Math.max(-1, Math.min(1, dx / maxDist))
+        const ny = Math.max(-1, Math.min(1, dy / maxDist))
+
+        if (Math.abs(ny) > 0.05) inputZ += ny
+        if (Math.abs(nx) > 0.05) inputX += nx
     }
 
     // Physics/Movement Logic
@@ -152,13 +209,10 @@ export function Navigation() {
     direction.current.normalize()
 
     if (Math.abs(inputZ) > 0.01) {
-        // Clamp inputZ to [-1, 1] for keyboard, but touch is already clamped
+        // Clamp inputZ to [-1, 1] for keyboard, but touch/mouse is already clamped
         const throttle = Math.max(-1, Math.min(1, inputZ))
 
         velocity.current.x = direction.current.x * -throttle * speed
-        // Note: inputZ < 0 is forward. direction is forward.
-        // If inputZ is -1. -(-1) = 1. speed * 1 * direction = forward. Correct.
-
         velocity.current.z = direction.current.z * -throttle * speed
     } else {
         velocity.current.x = 0
