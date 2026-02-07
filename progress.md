@@ -36,9 +36,9 @@ The next steps will focus on building out these core features to bring the exper
 I estimate the project is approximately **40% complete**.
 
 **Current State:**
-*   Visual style is established (colors, fog, lighting).
-*   Bamboo forest is animated and performant.
-*   Basic fauna (fireflies) is present.
+*   **Visual style is established (colors, fog, lighting).**
+*   **Bamboo forest is animated and performant.**
+*   **Basic fauna (fireflies) is present.**
 
 **Remaining Work:**
 *   (Completed in Session 3)
@@ -151,3 +151,17 @@ Project remains at **100% complete**. This session focused on elevating the user
 ### Percentage of Completion
 
 Project remains at **100% complete**, achieving "Ultrathink" status by eliminating identified artificial artifacts.
+
+## Progress - Session 11 (Absolute Realism & Artifact Removal)
+
+### Achievements
+
+*   **Organic Bamboo Geometry:** Enhanced bamboo stalks with vertex-displaced "nodes" (bulges) and noise-based irregularity to eliminate the perfect cylinder look.
+*   **Dynamic Leaves:** Added gravitational drooping and cupping to leaves via vertex shaders, removing the stiffness of flat planes.
+*   **Detailed Ground Cover:** Replaced low-poly grass cones with 15,000 custom-generated, tapered, and curved grass blades that sway realistically in the wind.
+*   **High-Fidelity Environment:** Implemented Fractal Brownian Motion (FBM) ground shaders for detailed moss/dirt textures and integrated `<SoftShadows />` for realistic light falloff.
+*   **Natural Props:** Upgraded stream rocks with noise-displaced geometry and mossy textures, and added procedural stone grain and weathering to the lanterns.
+
+### Percentage of Completion
+
+Project remains at **100% complete**. This session focused on pixel-perfect realism and removing any remaining "artificial" 3D artifacts.
