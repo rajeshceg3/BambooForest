@@ -14,6 +14,7 @@ function App() {
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-black">
+      <div className="absolute inset-0 pointer-events-none z-[200] bg-grain opacity-[0.05] mix-blend-overlay"></div>
       <Canvas
         shadows
         camera={{ position: [0, 5, 25], fov: 45 }}
