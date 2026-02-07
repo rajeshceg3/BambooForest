@@ -4,6 +4,7 @@ import { useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
 import gsap from 'gsap'
 import { Zone } from '../types'
+import { GroundCover } from './GroundCover'
 
 interface EnvironmentProps {
   currentZone: Zone
@@ -214,6 +215,9 @@ export function Environment({ currentZone }: EnvironmentProps) {
         <planeGeometry args={[2000, 2000, 128, 128]} />
         <primitive object={groundMaterial} attach="material" />
       </mesh>
+
+      {/* Ground Cover - Grass */}
+      <GroundCover />
     </>
   )
 }
