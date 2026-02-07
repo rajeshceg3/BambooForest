@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react'
 import { Zone } from '../types'
 
 interface OverlayProps {
@@ -16,15 +15,6 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
     DEEP_FOREST: { name: 'Deep Forest', text: 'Silence, amplified.' },
   }
 
-  const [showText, setShowText] = useState(false)
-
-  // Trigger fade animation when zone changes
-  useEffect(() => {
-    setShowText(false)
-    const timer = setTimeout(() => setShowText(true), 100)
-    return () => clearTimeout(timer)
-  }, [currentZone])
-
   return (
     <div className="fixed inset-0 pointer-events-none flex flex-col justify-between z-10">
       {/* Header Spacer - keeps text visual center appropriate */}
@@ -32,7 +22,7 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
 
       {/* Centered Zone Description */}
       <div className="flex flex-col items-center justify-center flex-1 text-center px-8 pb-20 md:pb-0 relative">
-        <div className={`transition-all duration-1000 ease-out transform ${showText ? 'opacity-100 translate-y-0 blur-0' : 'opacity-0 translate-y-4 blur-sm'}`}>
+        <div key={currentZone} className="animate-blur-in transform">
            {/* Subtle backing for legibility against bright fog */}
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-black/20 blur-3xl rounded-full -z-10 pointer-events-none"></div>
 
@@ -50,7 +40,7 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
       <div className="flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto">
 
         {/* Mobile Navigation (Capsule) */}
-        <nav className="md:hidden flex bg-neutral-900/60 backdrop-blur-2xl rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] p-1.5 gap-1 mx-4 max-w-full overflow-x-auto no-scrollbar">
+        <nav className="md:hidden flex bg-black/20 backdrop-blur-xl rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] p-1.5 gap-1 mx-4 max-w-full overflow-x-auto no-scrollbar">
           {zones.map((zone) => (
             <button
               key={zone}
@@ -74,6 +64,7 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
               onClick={() => onZoneChange(zone)}
               className="group relative flex flex-col items-center justify-center w-4 h-16"
               aria-label={`Go to ${zoneConfig[zone].name}`}
+              data-cursor-text={zoneConfig[zone].name}
             >
                {/* Label (Reveals on Hover) */}
                <span className={`absolute bottom-full mb-6 text-[10px] tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-500 origin-bottom font-light ${

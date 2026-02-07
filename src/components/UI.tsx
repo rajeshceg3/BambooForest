@@ -68,8 +68,29 @@ interface UIProps {
 export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [hasInteracted, setHasInteracted] = useState(false)
+  const [isTouch, setIsTouch] = useState(false)
   const { progress, active } = useProgress()
   const titleRef = useRef<HTMLDivElement>(null)
+
+  // Interaction Detection
+  useEffect(() => {
+    setIsTouch(window.matchMedia('(pointer: coarse)').matches)
+
+    const handleInteraction = () => {
+      setHasInteracted(true)
+    }
+
+    window.addEventListener('keydown', handleInteraction, { once: true })
+    window.addEventListener('mousedown', handleInteraction, { once: true })
+    window.addEventListener('touchstart', handleInteraction, { once: true })
+
+    return () => {
+      window.removeEventListener('keydown', handleInteraction)
+      window.removeEventListener('mousedown', handleInteraction)
+      window.removeEventListener('touchstart', handleInteraction)
+    }
+  }, [])
 
   // Intro Animation on Mount
   useEffect(() => {
@@ -139,7 +160,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
 
           <button
             onClick={() => setStarted(true)}
-            className={`group relative px-10 py-5 overflow-hidden transition-all duration-1000 delay-[1200ms] rounded-sm hover:bg-white/5 ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
+            className={`group relative px-10 py-5 overflow-hidden transition-all duration-1000 delay-[1200ms] rounded-sm hover:bg-white/5 animate-pulse ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
           >
             <span className="relative z-10 font-sans text-xs md:text-sm tracking-[0.4em] uppercase text-white/70 group-hover:text-white transition-colors duration-500">
               Enter
@@ -165,12 +186,31 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         </div>
 
         {/* Bottom Center: Controls Hint */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none opacity-40 text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10">
-          Use Arrow Keys or Drag to Explore
+        <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-all duration-1000 ${hasInteracted ? 'opacity-0 translate-y-4' : 'opacity-60 translate-y-0'} text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10 flex flex-col items-center gap-3`}>
+          {isTouch ? (
+            <div className="flex flex-col items-center gap-2 animate-pulse">
+               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+                 <circle cx="12" cy="12" r="10" className="opacity-30"/>
+                 <path d="M8 12h8" />
+                 <path d="M12 8v8" />
+                 <path d="M16 12l-4-4-4 4" className="opacity-0" /> {/* Just a target icon really */}
+               </svg>
+               <span>Drag to Explore</span>
+            </div>
+          ) : (
+             <div className="flex flex-col items-center gap-2">
+                 <div className="flex gap-3 opacity-40">
+                    <div className="border border-white/40 rounded px-2 py-1 text-[8px] leading-none">WASD</div>
+                    <div className="w-[1px] h-3 bg-white/20"></div>
+                    <div className="border border-white/40 rounded px-2 py-1 text-[8px] leading-none">ARROWS</div>
+                 </div>
+                 <span>Use Keys or Drag to Explore</span>
+             </div>
+          )}
         </div>
 
         {/* Bottom Left: Audio Toggle */}
-        <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto">
+        <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto" data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
           <MagneticButton
             onClick={onToggleAudio}
             ariaLabel={audioEnabled ? "Mute" : "Unmute"}
@@ -192,7 +232,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         </div>
 
         {/* Bottom Right: Info Button */}
-        <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10 pointer-events-auto">
+        <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10 pointer-events-auto" data-cursor-text="About">
           <MagneticButton
             onClick={() => setAboutOpen(true)}
             ariaLabel="About"
