@@ -50,6 +50,22 @@ export function Deer(props: any) {
             // Mix base color with slightly darker/lighter variation
             float mixVal = 0.8 + 0.4 * furNoise;
             diffuseColor.rgb *= mixVal;
+
+            // Fresnel Rim Light (Velvet Effect)
+            // vViewPosition is calculated in vertex shader of MeshStandardMaterial
+            vec3 viewDir = normalize(vViewPosition);
+            // vNormal is calculated in normal_fragment_begin or similar
+            // But we can use 'normal' which is available after normal_fragment_maps
+
+            float fresnel = dot(viewDir, normal);
+            fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
+            fresnel = pow(fresnel, 2.5); // Tune power for width of rim
+
+            // Add soft warm rim light
+            vec3 rimColor = vec3(1.0, 0.95, 0.8);
+
+            // Soften the addition
+            diffuseColor.rgb = mix(diffuseColor.rgb, rimColor, fresnel * 0.4);
             `
         )
     }

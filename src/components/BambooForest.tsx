@@ -10,8 +10,9 @@ interface BambooForestProps {
 
 export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooForestProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
+  const leafMeshRef = useRef<THREE.InstancedMesh>(null)
 
-  // Custom material setup
+  // Custom material setup for Bamboo Stalks
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
         color: '#7b904b', // Base color, overridden by shader
@@ -118,10 +119,66 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
     return mat
   }, [])
 
+  // Custom material setup for Bamboo Leaves
+  const leafMaterial = useMemo(() => {
+    const mat = new THREE.MeshStandardMaterial({
+        color: '#7b904b', // Similar to top of bamboo
+        side: THREE.DoubleSide,
+        roughness: 0.6,
+        flatShading: false,
+    })
+
+    mat.onBeforeCompile = (shader) => {
+        shader.uniforms.uTime = { value: 0 }
+        mat.userData.shader = shader
+
+        shader.vertexShader = `
+            uniform float uTime;
+            ${shader.vertexShader}
+        `
+
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <begin_vertex>',
+            `
+            #include <begin_vertex>
+
+            #ifdef USE_INSTANCING
+                float worldX = instanceMatrix[3][0];
+                float worldZ = instanceMatrix[3][2];
+
+                // Wind sway
+                float sway = sin(uTime * 1.5 + worldX * 0.1 + worldZ * 0.1) * 0.3;
+                float sway2 = cos(uTime * 1.0 + worldX * 0.2) * 0.2;
+
+                // Rotate based on UV (pivot at bottom)
+                // Assuming geometry is translated so y=0 is bottom
+                // But plane geometry is usually centered. We will translate in JSX.
+
+                transformed.x += sway * position.y;
+                transformed.z += sway2 * position.y;
+
+                // Add flutter
+                transformed.y += sin(uTime * 3.0 + worldX) * 0.05 * position.x;
+            #endif
+            `
+        )
+    }
+    return mat
+  }, [])
+
+  const leafGeometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(0.2, 0.6, 2, 4)
+    geo.translate(0, 0.3, 0)
+    return geo
+  }, [])
+
   // Generate instances
-  const instances = useMemo(() => {
-    const temp: THREE.Matrix4[] = []
-    const tempObject = new THREE.Object3D()
+  const { stalkInstances, leafInstances } = useMemo(() => {
+    const stalks: THREE.Matrix4[] = []
+    const leaves: THREE.Matrix4[] = []
+
+    const tempStalk = new THREE.Object3D()
+    const tempLeaf = new THREE.Object3D()
 
     for (let i = 0; i < count; i++) {
       let x = 0, z = 0
@@ -144,42 +201,92 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
       const rotationY = Math.random() * Math.PI * 2
       const scale = 0.7 + Math.random() * 0.8
 
-      tempObject.position.set(x, 2.5, z)
-      tempObject.rotation.set(0, rotationY, 0)
-      tempObject.scale.set(scale, scale, scale)
-      tempObject.updateMatrix()
-      temp.push(tempObject.matrix.clone())
+      // Stalk
+      tempStalk.position.set(x, 2.5, z)
+      tempStalk.rotation.set(0, rotationY, 0)
+      tempStalk.scale.set(scale, scale, scale)
+      tempStalk.updateMatrix()
+      stalks.push(tempStalk.matrix.clone())
+
+      // Leaves - Generate 5-8 leaves per stalk
+      const numLeaves = 5 + Math.floor(Math.random() * 4)
+      for (let j = 0; j < numLeaves; j++) {
+          const localY = (Math.random() * 2.5) // 0 to 2.5 (top half)
+          const angle = Math.random() * Math.PI * 2
+          const dist = 0.1 * scale // Slightly out from center
+
+          tempLeaf.position.set(
+              x + Math.sin(angle) * dist,
+              2.5 + localY, // World Y
+              z + Math.cos(angle) * dist
+          )
+
+          // Rotate leaf to point outward and droop
+          tempLeaf.rotation.set(
+              Math.random() * 0.5, // Random droop
+              angle + Math.PI / 2, // Point outward
+              Math.random() * 0.5  // Tilt
+          )
+
+          const leafScale = (0.5 + Math.random() * 0.5) * scale
+          tempLeaf.scale.set(leafScale, leafScale, leafScale)
+
+          tempLeaf.updateMatrix()
+          leaves.push(tempLeaf.matrix.clone())
+      }
     }
-    return temp
+    return { stalkInstances: stalks, leafInstances: leaves }
   }, [count])
 
   useEffect(() => {
-    if (!meshRef.current) return
+    if (!meshRef.current || !leafMeshRef.current) return
 
-    instances.forEach((matrix, i) => {
+    stalkInstances.forEach((matrix, i) => {
       meshRef.current!.setMatrixAt(i, matrix)
     })
     meshRef.current.instanceMatrix.needsUpdate = true
-  }, [instances])
+
+    leafInstances.forEach((matrix, i) => {
+      leafMeshRef.current!.setMatrixAt(i, matrix)
+    })
+    leafMeshRef.current.instanceMatrix.needsUpdate = true
+
+  }, [stalkInstances, leafInstances])
 
   useFrame((state) => {
+      // Update stalk wind
       if (material.userData.shader) {
-          // Faster wind in deep forest
           const windSpeed = currentZone === 'DEEP_FOREST' ? 1.5 : 1.0
           material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime() * windSpeed
+      }
+      // Update leaf wind
+      if (leafMaterial.userData.shader) {
+          const windSpeed = currentZone === 'DEEP_FOREST' ? 1.5 : 1.0
+          leafMaterial.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime() * windSpeed
       }
   })
 
   return (
-    <instancedMesh
-      ref={meshRef}
-      args={[undefined, undefined, instances.length]}
-      castShadow
-      receiveShadow
-    >
-      {/* Bamboo geometry: top slightly narrower than bottom */}
-      <cylinderGeometry args={[0.08, 0.15, 5, 32]} />
-      <primitive object={material} attach="material" />
-    </instancedMesh>
+    <group>
+        <instancedMesh
+        ref={meshRef}
+        args={[undefined, undefined, stalkInstances.length]}
+        castShadow
+        receiveShadow
+        >
+        <cylinderGeometry args={[0.08, 0.15, 5, 32]} />
+        <primitive object={material} attach="material" />
+        </instancedMesh>
+
+        <instancedMesh
+        ref={leafMeshRef}
+        args={[undefined, undefined, leafInstances.length]}
+        castShadow
+        receiveShadow
+        geometry={leafGeometry}
+        >
+        <primitive object={leafMaterial} attach="material" />
+        </instancedMesh>
+    </group>
   )
 }
