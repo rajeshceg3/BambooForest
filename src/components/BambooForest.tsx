@@ -45,8 +45,22 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
              vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
           #endif
 
+          // --- NODAL BULGE ---
+          float nodeFreq = 1.0;
+          float yPos = position.y + 2.5;
+          float distToNode = abs(fract(yPos * nodeFreq) - 0.5);
+          float bulge = smoothstep(0.08, 0.0, distToNode) * 0.015;
+
+          float currentRadius = length(position.xz);
+          if (currentRadius > 0.001) {
+              transformed.xz += normalize(position.xz) * bulge;
+          }
+
+          // --- IRREGULARITY ---
+          float irregularity = sin(yPos * 10.0 + vWorldPosition.x) * 0.003;
+          transformed.xz += irregularity;
+
           // Wind Animation
-          // Height range is -2.5 to 2.5
           float heightFactor = smoothstep(-2.5, 2.5, position.y);
           float swayStrength = 0.5 * heightFactor * heightFactor;
 
@@ -77,8 +91,6 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
           #include <color_fragment>
 
           // Procedural Bamboo Texture
-
-          // Normalized height 0.0 (bottom) to 1.0 (top)
           float h = (vLocalPosition.y + 2.5) / 5.0;
 
           // 1. Vertical Gradient (Darker base, fresh green top)
@@ -90,25 +102,21 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
           stalkColor = mix(stalkColor, yellowGreen, smoothstep(0.6, 1.0, h));
 
           // 2. Nodes (Rings)
-          // Create rings every ~1.0 units
           float nodeFreq = 1.0;
           float nodeThickness = 0.03;
-
-          // Distance to nearest integer node
           float nodeDist = abs(fract(vLocalPosition.y * nodeFreq) - 0.5);
 
-          // Darken the ring area
           if (nodeDist < nodeThickness) {
-             stalkColor *= 0.7; // Darker ring
+             stalkColor *= 0.7;
           } else if (nodeDist < nodeThickness * 2.0) {
-             stalkColor *= 1.1; // Highlight edge of ring
+             stalkColor *= 1.1;
           }
 
-          // 3. Subtle vertical streaks (simulating fiber)
+          // 3. Subtle vertical streaks
           float streaks = sin(vWorldPosition.x * 20.0) * sin(vWorldPosition.z * 20.0) * 0.05;
           stalkColor += streaks;
 
-          // 4. Instance variation based on position
+          // 4. Instance variation
           float randomVar = sin(vWorldPosition.x * 0.1) * cos(vWorldPosition.z * 0.1);
           stalkColor += randomVar * 0.05;
 
@@ -122,7 +130,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
   // Custom material setup for Bamboo Leaves
   const leafMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-        color: '#7b904b', // Similar to top of bamboo
+        color: '#7b904b',
         side: THREE.DoubleSide,
         roughness: 0.6,
         flatShading: false,
@@ -134,6 +142,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
 
         shader.vertexShader = `
             uniform float uTime;
+            varying vec3 vWorldPos;
             ${shader.vertexShader}
         `
 
@@ -143,16 +152,26 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
             #include <begin_vertex>
 
             #ifdef USE_INSTANCING
+             vWorldPos = (instanceMatrix * vec4(position, 1.0)).xyz;
+            #endif
+
+            // --- DROOP & CUP ---
+            // Leaf geometry translated 0.3 up, so y is 0.0 to 0.6
+            float distFromStem = position.y;
+            float droop = distFromStem * distFromStem * 1.0;
+            transformed.y -= droop;
+
+            // Cup along width
+            float cup = position.x * position.x * 4.0;
+            transformed.y -= cup;
+
+            #ifdef USE_INSTANCING
                 float worldX = instanceMatrix[3][0];
                 float worldZ = instanceMatrix[3][2];
 
                 // Wind sway
                 float sway = sin(uTime * 1.5 + worldX * 0.1 + worldZ * 0.1) * 0.3;
                 float sway2 = cos(uTime * 1.0 + worldX * 0.2) * 0.2;
-
-                // Rotate based on UV (pivot at bottom)
-                // Assuming geometry is translated so y=0 is bottom
-                // But plane geometry is usually centered. We will translate in JSX.
 
                 transformed.x += sway * position.y;
                 transformed.z += sway2 * position.y;
@@ -162,12 +181,28 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
             #endif
             `
         )
+
+        shader.fragmentShader = `
+            varying vec3 vWorldPos;
+            ${shader.fragmentShader}
+        `
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <color_fragment>',
+            `
+            #include <color_fragment>
+            // Slight color variation
+            float noise = sin(vWorldPos.x * 0.5) * cos(vWorldPos.z * 0.5);
+            diffuseColor.rgb += noise * 0.05;
+            `
+        )
     }
     return mat
   }, [])
 
   const leafGeometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(0.2, 0.6, 2, 4)
+    // Increased segments for bending
+    const geo = new THREE.PlaneGeometry(0.2, 0.6, 4, 8)
     geo.translate(0, 0.3, 0)
     return geo
   }, [])
@@ -190,7 +225,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
 
         const distToCenter = Math.sqrt(x * x + z * z)
         const distToClearing = Math.sqrt((x - 10) ** 2 + (z - 10) ** 2)
-        const distToStream = Math.abs(x + z) / Math.sqrt(2) // Distance to line x+z=0 (approx stream)
+        const distToStream = Math.abs(x + z) / Math.sqrt(2)
 
         valid = true
         if (distToClearing < 12) valid = false
@@ -211,21 +246,20 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
       // Leaves - Generate 5-8 leaves per stalk
       const numLeaves = 5 + Math.floor(Math.random() * 4)
       for (let j = 0; j < numLeaves; j++) {
-          const localY = (Math.random() * 2.5) // 0 to 2.5 (top half)
+          const localY = (Math.random() * 2.5)
           const angle = Math.random() * Math.PI * 2
-          const dist = 0.1 * scale // Slightly out from center
+          const dist = 0.1 * scale
 
           tempLeaf.position.set(
               x + Math.sin(angle) * dist,
-              2.5 + localY, // World Y
+              2.5 + localY,
               z + Math.cos(angle) * dist
           )
 
-          // Rotate leaf to point outward and droop
           tempLeaf.rotation.set(
-              Math.random() * 0.5, // Random droop
-              angle + Math.PI / 2, // Point outward
-              Math.random() * 0.5  // Tilt
+              Math.random() * 0.5,
+              angle + Math.PI / 2,
+              Math.random() * 0.5
           )
 
           const leafScale = (0.5 + Math.random() * 0.5) * scale

@@ -1,4 +1,4 @@
-import { Environment as EnvironmentDrei } from '@react-three/drei'
+import { Environment as EnvironmentDrei, SoftShadows } from '@react-three/drei'
 import { useThree } from '@react-three/fiber'
 import { useEffect, useRef, useMemo } from 'react'
 import * as THREE from 'three'
@@ -19,8 +19,8 @@ export function Environment({ currentZone }: EnvironmentProps) {
   const groundMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
         color: '#3a4d2f',
-        roughness: 1,
-        metalness: 0,
+        roughness: 0.9,
+        metalness: 0.1,
     })
 
     mat.onBeforeCompile = (shader) => {
@@ -67,6 +67,20 @@ export function Environment({ currentZone }: EnvironmentProps) {
             return 130.0 * dot(m, g);
           }
 
+          // FBM for more detail
+          float fbm(vec2 x) {
+              float v = 0.0;
+              float a = 0.5;
+              vec2 shift = vec2(100.0);
+              mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
+              for (int i = 0; i < 5; ++i) {
+                  v += a * snoise(x);
+                  x = rot * x * 2.0 + shift;
+                  a *= 0.5;
+              }
+              return v;
+          }
+
           ${shader.fragmentShader}
         `
 
@@ -75,18 +89,20 @@ export function Environment({ currentZone }: EnvironmentProps) {
           `
           #include <color_fragment>
 
-          float noise = snoise(vWorldPosition.xz * 0.1);
-          float noise2 = snoise(vWorldPosition.xz * 0.5 + vec2(100.0));
+          float noise = fbm(vWorldPosition.xz * 0.1);
+          float noiseDetail = fbm(vWorldPosition.xz * 0.5);
 
-          vec3 mossColor = vec3(0.22, 0.3, 0.18); // #3a4d2f
-          vec3 dirtColor = vec3(0.29, 0.23, 0.16); // #4b3c2a
+          vec3 mossColor = vec3(0.15, 0.25, 0.10); // Darker moss
+          vec3 dirtColor = vec3(0.25, 0.20, 0.15); // Darker dirt
+          vec3 dryColor = vec3(0.35, 0.30, 0.20); // Dry patches
 
-          float mixFactor = smoothstep(-0.5, 0.5, noise + noise2 * 0.5);
+          float mixFactor = smoothstep(-0.2, 0.6, noise);
+          float dryFactor = smoothstep(0.4, 0.8, noiseDetail);
 
-          diffuseColor.rgb = mix(mossColor, dirtColor, mixFactor);
+          vec3 baseColor = mix(mossColor, dirtColor, mixFactor);
+          baseColor = mix(baseColor, dryColor, dryFactor * 0.5);
 
-          // Add subtle texture noise
-          diffuseColor.rgb *= 0.9 + 0.2 * noise2;
+          diffuseColor.rgb = baseColor;
           `
         )
 
@@ -96,12 +112,13 @@ export function Environment({ currentZone }: EnvironmentProps) {
             #include <normal_fragment_maps>
 
             // Perturb normal based on noise
-            float nHeight = snoise(vWorldPosition.xz * 2.0);
-            float nHeightX = snoise(vWorldPosition.xz * 2.0 + vec2(0.05, 0.0));
-            float nHeightZ = snoise(vWorldPosition.xz * 2.0 + vec2(0.0, 0.05));
+            float nHeight = fbm(vWorldPosition.xz * 1.5);
+            float nHeightX = fbm(vWorldPosition.xz * 1.5 + vec2(0.01, 0.0));
+            float nHeightZ = fbm(vWorldPosition.xz * 1.5 + vec2(0.0, 0.01));
 
-            vec3 bumpNormal = normalize(vec3(nHeight - nHeightX, 1.0, nHeight - nHeightZ));
-            normal = normalize(normal + (bumpNormal - vec3(0.0, 1.0, 0.0)) * 0.3);
+            // Calculate gradient
+            vec3 bumpNormal = normalize(vec3(nHeight - nHeightX, 0.1, nHeight - nHeightZ));
+            normal = normalize(normal + bumpNormal * 0.5);
             `
         )
     }
@@ -194,6 +211,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
   return (
     <>
+      <SoftShadows size={35} focus={0.5} samples={16} />
       <ambientLight ref={ambientLightRef} intensity={0.4} color="#ffffff" />
 
       <directionalLight
@@ -201,8 +219,8 @@ export function Environment({ currentZone }: EnvironmentProps) {
         castShadow
         position={[15, 25, 10]}
         intensity={1.2}
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0001}
+        shadow-mapSize={[4096, 4096]}
+        shadow-bias={-0.00005}
         color="#fff0d0"
       >
         <orthographicCamera attach="shadow-camera" args={[-65, 65, 65, -65]} />
@@ -212,7 +230,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
       {/* Ground - Custom Shader Material */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
-        <planeGeometry args={[2000, 2000, 128, 128]} />
+        <planeGeometry args={[2000, 2000, 256, 256]} />
         <primitive object={groundMaterial} attach="material" />
       </mesh>
 
