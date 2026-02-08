@@ -1,9 +1,10 @@
 import { useRef, useMemo, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
 export function GroundCover({ count = 15000 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
+  const { camera } = useThree()
 
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -15,6 +16,7 @@ export function GroundCover({ count = 15000 }) {
 
     mat.onBeforeCompile = (shader) => {
       shader.uniforms.uTime = { value: 0 }
+      shader.uniforms.uCameraPosition = { value: new THREE.Vector3() }
       mat.userData.shader = shader
 
       shader.vertexShader = `
@@ -44,6 +46,10 @@ export function GroundCover({ count = 15000 }) {
             float swayX = sin(uTime * windFreq + worldX * 0.5) * windAmp + noise * 0.05;
             float swayZ = cos(uTime * windFreq * 0.8 + worldZ * 0.5) * windAmp + noise * 0.05;
 
+            // Add flutter (high frequency)
+            float flutter = sin(uTime * 10.0 + worldX * 5.0) * 0.02 * smoothstep(0.0, 0.5, vHeight);
+            swayX += flutter;
+
             // Apply wind exponentially with height
             float stiffness = smoothstep(0.0, 0.5, vHeight); // 0 at bottom, 1 at top
             stiffness = pow(stiffness, 2.0);
@@ -59,6 +65,7 @@ export function GroundCover({ count = 15000 }) {
         varying vec2 vUv;
         varying float vHeight;
         varying vec3 vPosition;
+        uniform vec3 uCameraPosition;
         ${shader.fragmentShader}
       `
 
@@ -89,6 +96,16 @@ export function GroundCover({ count = 15000 }) {
         // Random variation
         float noise = sin(vPosition.x * 0.1) * cos(vPosition.z * 0.1);
         grassColor = mix(grassColor, grassColor * 1.2, noise * 0.2 + 0.2);
+
+        // Fake Subsurface Scattering (Backlight)
+        vec3 sunDir = normalize(vec3(15.0, 25.0, 10.0));
+        vec3 viewDir = normalize(uCameraPosition - vPosition);
+
+        float dotViewSun = dot(viewDir, sunDir);
+        float sunGlow = smoothstep(0.0, 1.0, -dotViewSun);
+
+        // Add warm glow
+        grassColor += vec3(0.4, 0.5, 0.2) * sunGlow * 0.5 * h; // Glow more at tip
 
         diffuseColor.rgb = grassColor;
         `
@@ -176,6 +193,7 @@ export function GroundCover({ count = 15000 }) {
   useFrame((state) => {
     if (material.userData.shader) {
         material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()
+        material.userData.shader.uniforms.uCameraPosition.value.copy(camera.position)
     }
   })
 

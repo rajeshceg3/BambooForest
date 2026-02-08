@@ -1,5 +1,5 @@
 import { useRef, useMemo, useEffect } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Zone } from '../types'
 
@@ -11,6 +11,7 @@ interface BambooForestProps {
 export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooForestProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const leafMeshRef = useRef<THREE.InstancedMesh>(null)
+  const { camera } = useThree()
 
   // Custom material setup for Bamboo Stalks
   const material = useMemo(() => {
@@ -49,7 +50,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
           float nodeFreq = 1.0;
           float yPos = position.y + 2.5;
           float distToNode = abs(fract(yPos * nodeFreq) - 0.5);
-          float bulge = smoothstep(0.08, 0.0, distToNode) * 0.015;
+          // Sharpened bulge for distinct ridge
+          float bulge = pow(smoothstep(0.05, 0.0, distToNode), 2.0) * 0.02;
 
           float currentRadius = length(position.xz);
           if (currentRadius > 0.001) {
@@ -84,6 +86,16 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
           varying vec3 vWorldPosition;
           ${shader.fragmentShader}
         `
+
+        // Inject roughness variation
+        shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <roughnessmap_fragment>',
+            `
+            #include <roughnessmap_fragment>
+            float striation = sin(vWorldPosition.x * 200.0) * 0.5 + 0.5;
+            roughnessFactor = mix(0.6, 0.9, striation);
+            `
+        )
 
         shader.fragmentShader = shader.fragmentShader.replace(
           '#include <color_fragment>',
@@ -138,6 +150,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
 
     mat.onBeforeCompile = (shader) => {
         shader.uniforms.uTime = { value: 0 }
+        shader.uniforms.uCameraPosition = { value: new THREE.Vector3() }
         mat.userData.shader = shader
 
         shader.vertexShader = `
@@ -161,8 +174,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
             float droop = distFromStem * distFromStem * 1.0;
             transformed.y -= droop;
 
-            // Cup along width
-            float cup = position.x * position.x * 4.0;
+            // Deep Cup along width
+            float cup = pow(abs(position.x), 1.5) * 5.0;
             transformed.y -= cup;
 
             #ifdef USE_INSTANCING
@@ -176,14 +189,17 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
                 transformed.x += sway * position.y;
                 transformed.z += sway2 * position.y;
 
-                // Add flutter
-                transformed.y += sin(uTime * 3.0 + worldX) * 0.05 * position.x;
+                // Add flutter and twist
+                float flutter = sin(uTime * 3.0 + worldX) * 0.05 * position.x;
+                float twist = position.x * sin(uTime * 2.0 + worldZ) * 0.2 * position.y;
+                transformed.y += flutter + twist;
             #endif
             `
         )
 
         shader.fragmentShader = `
             varying vec3 vWorldPos;
+            uniform vec3 uCameraPosition;
             ${shader.fragmentShader}
         `
 
@@ -194,6 +210,19 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
             // Slight color variation
             float noise = sin(vWorldPos.x * 0.5) * cos(vWorldPos.z * 0.5);
             diffuseColor.rgb += noise * 0.05;
+
+            // Fake Subsurface Scattering (Backlight)
+            vec3 sunDir = normalize(vec3(15.0, 25.0, 10.0));
+            vec3 viewDir = normalize(uCameraPosition - vWorldPos);
+
+            // Check if looking towards sun
+            float dotViewSun = dot(viewDir, sunDir);
+
+            // If looking towards sun (dot < 0), add glow
+            float sunGlow = smoothstep(0.0, 1.0, -dotViewSun);
+
+            // Add warm glow
+            diffuseColor.rgb += vec3(0.4, 0.5, 0.2) * sunGlow * 0.4;
             `
         )
     }
@@ -297,6 +326,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
       if (leafMaterial.userData.shader) {
           const windSpeed = currentZone === 'DEEP_FOREST' ? 1.5 : 1.0
           leafMaterial.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime() * windSpeed
+          leafMaterial.userData.shader.uniforms.uCameraPosition.value.copy(camera.position)
       }
   })
 
