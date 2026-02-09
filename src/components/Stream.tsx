@@ -8,7 +8,7 @@ export function Stream() {
   const rockMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
         color: '#5a5a5a',
-        roughness: 0.8,
+        roughness: 0.6, // Base roughness, varied by shader
         flatShading: false,
     })
 
@@ -23,12 +23,16 @@ export function Stream() {
             `
             #include <begin_vertex>
 
-            // Simple 3D noise function or just combination of sines
+            // Sharper noise for rock features
             float noise = sin(position.x * 3.0) * cos(position.y * 4.0 + position.z * 2.0);
-            float noise2 = cos(position.x * 5.0 + position.z * 4.0) * 0.5;
+            float noise2 = cos(position.x * 5.0 + position.z * 4.0);
+
+            // Create ridges using abs()
+            float ridges = 1.0 - abs(noise);
+            float bumps = noise2 * 0.5;
 
             // Displace along normal
-            float displacement = (noise + noise2) * 0.15;
+            float displacement = (ridges + bumps) * 0.15;
             transformed += normal * displacement;
 
             vWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;
@@ -40,6 +44,22 @@ export function Stream() {
             ${shader.fragmentShader}
         `
 
+        // Inject roughness variation
+        shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <roughnessmap_fragment>',
+            `
+            #include <roughnessmap_fragment>
+            float mossNoiseR = sin(vWorldPos.x * 2.0) * cos(vWorldPos.z * 2.0);
+            // Moss is rougher (0.9), wet rock is smoother (0.4)
+            float mossFactorR = smoothstep(0.4, 0.6, mossNoiseR);
+            // Also adjust for height (wet near water level)
+            float wetness = smoothstep(0.5, 0.0, vWorldPos.y);
+
+            float baseRoughness = mix(0.6, 0.3, wetness);
+            roughnessFactor = mix(baseRoughness, 0.9, mossFactorR);
+            `
+        )
+
         shader.fragmentShader = shader.fragmentShader.replace(
             '#include <color_fragment>',
             `
@@ -47,15 +67,22 @@ export function Stream() {
 
             // Procedural rock texture
             float n = sin(vWorldPos.x * 10.0) * cos(vWorldPos.z * 10.0);
-            float n2 = sin(vWorldPos.y * 20.0 + vWorldPos.x * 5.0);
 
             vec3 rockColor = diffuseColor.rgb;
 
+            // Varied rock color
+            rockColor += vec3(n * 0.05);
+
             // Add some mossy patches
             float mossNoise = sin(vWorldPos.x * 2.0) * cos(vWorldPos.z * 2.0);
-            if (mossNoise > 0.5 && vWorldPos.y > 0.1) { // Moss on top
-                 rockColor = mix(rockColor, vec3(0.2, 0.3, 0.15), 0.5);
-            }
+
+            // Soft blend for moss
+            float mossFactor = smoothstep(0.3, 0.7, mossNoise);
+            // Only on top surfaces/higher up
+            mossFactor *= smoothstep(0.0, 0.2, vWorldPos.y);
+
+            vec3 mossColor = vec3(0.2, 0.35, 0.15);
+            rockColor = mix(rockColor, mossColor, mossFactor);
 
             // Add speckles
             float speckle = fract(sin(dot(vWorldPos.xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
