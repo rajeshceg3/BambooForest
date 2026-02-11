@@ -23,6 +23,7 @@ export function GroundCover({ count = 15000 }) {
         uniform float uTime;
         varying vec2 vUv;
         varying float vHeight;
+        varying vec3 vPosition;
         ${shader.vertexShader}
       `
 
@@ -31,7 +32,7 @@ export function GroundCover({ count = 15000 }) {
         `
         #include <begin_vertex>
         vUv = uv;
-        vHeight = position.y; // 0.0 to 0.5
+        vHeight = position.y; // 0.0 to 0.6
 
         #ifdef USE_INSTANCING
             float worldX = instanceMatrix[3][0];
@@ -87,8 +88,8 @@ export function GroundCover({ count = 15000 }) {
         vec3 midGreen = vec3(0.3, 0.45, 0.15);   // Mid
         vec3 tipGreen = vec3(0.5, 0.6, 0.25);    // Light tip
 
-        // Height normalized (0 to 0.5 -> 0 to 1)
-        float h = smoothstep(0.0, 0.5, vHeight);
+        // Height normalized (0 to 0.6 -> 0 to 1)
+        float h = smoothstep(0.0, 0.6, vHeight);
 
         vec3 grassColor = mix(darkGreen, midGreen, h);
         grassColor = mix(grassColor, tipGreen, smoothstep(0.5, 1.0, h));
@@ -118,7 +119,8 @@ export function GroundCover({ count = 15000 }) {
       // Blade shape
       const width = 0.08;
       const height = 0.6;
-      const geo = new THREE.PlaneGeometry(width, height, 1, 4)
+      // 2 width segments (3 columns of verts) to create V-shape spine
+      const geo = new THREE.PlaneGeometry(width, height, 2, 4)
       geo.translate(0, height / 2, 0) // Pivot at bottom
 
       const pos = geo.attributes.position
@@ -127,17 +129,25 @@ export function GroundCover({ count = 15000 }) {
           const x = pos.getX(i)
 
           // Normalized height 0 to 1
-          const u = y / height
+          const u = Math.max(0, y / height)
 
           // Taper width
           // Quadratic taper looks more natural
           const taper = 1.0 - Math.pow(u, 1.5);
           pos.setX(i, x * taper)
 
-          // Bend forward (Z)
-          // Curve = u^2
+          // Bend forward (Z) - Curve = u^2
           const curve = u * u * 0.2;
-          pos.setZ(i, pos.getZ(i) - curve)
+
+          // Create V-shape cross section (Spine)
+          // If x is near 0, push it back (negative Z relative to blade face, but blade faces Z)
+          // Actually, let's push the sides forward (positive Z) and keep spine at 0?
+          // Or push spine back.
+          // Let's push spine back (negative Z) to create a groove.
+          const isSpine = Math.abs(x) < 0.001;
+          const spineOffset = isSpine ? -0.02 * (1.0 - u) : 0.0; // Taper the spine depth too
+
+          pos.setZ(i, pos.getZ(i) - curve + spineOffset)
       }
       geo.computeVertexNormals()
       return geo

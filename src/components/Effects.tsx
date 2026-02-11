@@ -11,7 +11,12 @@ export function Effects() {
         intensity={1.5}
         radius={0.4}
       />
-      <DepthOfField focusDistance={0.02} focalLength={0.5} bokehScale={3} height={480} />
+      <DepthOfField
+        focusDistance={0.05} // Increased to widen focus area
+        focalLength={0.3}    // Reduced to lessen miniature effect
+        bokehScale={3}
+        height={480}
+      />
       <Noise opacity={0.05} />
       <Vignette eskil={false} offset={0.1} darkness={0.5} />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />

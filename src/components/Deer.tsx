@@ -53,11 +53,21 @@ export function Deer(props: any) {
 
             // Fresnel Rim Light (Velvet Effect)
             // vViewPosition is calculated in vertex shader of MeshStandardMaterial
-            vec3 viewDir = normalize(vViewPosition);
-            // vNormal is calculated in normal_fragment_begin or similar
-            // But we can use 'normal' which is available after normal_fragment_maps
+            // In Three.js, vViewPosition is -mvPosition. So it points from camera to surface? No.
+            // standard vertex shader: vViewPosition = - mvPosition.xyz;
+            // So vViewPosition points from surface to camera (if camera is at 0,0,0 in view space).
+            // Actually, wait. mvPosition is (ModelView * pos). Camera is at (0,0,0).
+            // mvPosition is vector from Camera to Surface.
+            // vViewPosition = -mvPosition => Vector from Surface to Camera.
+            // So normalize(vViewPosition) is View Direction. Correct.
 
-            float fresnel = dot(viewDir, normal);
+            vec3 viewDir = normalize(vViewPosition);
+
+            // 'normal' is NOT yet defined in color_fragment (it's defined in normal_fragment_begin).
+            // We must use vNormal.
+            vec3 viewNormal = normalize(vNormal);
+
+            float fresnel = dot(viewDir, viewNormal);
             fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
             fresnel = pow(fresnel, 2.5); // Tune power for width of rim
 

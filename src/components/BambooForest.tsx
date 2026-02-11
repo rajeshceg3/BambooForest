@@ -26,7 +26,6 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
         shader.uniforms.uTime = { value: 0 }
         mat.userData.shader = shader
 
-        // --- VERTEX SHADER ---
         shader.vertexShader = `
           uniform float uTime;
           varying vec3 vLocalPosition;
@@ -34,6 +33,44 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
           ${shader.vertexShader}
         `
 
+        // --- MODIFY NORMALS (For Bulge) ---
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <beginnormal_vertex>',
+            `
+            #include <beginnormal_vertex>
+
+            // Re-calculate bulge params to adjust normal
+            float nFreq = 1.0;
+            // Matches the position logic: yPos = position.y + 2.5
+            float yP = position.y + 2.5;
+            float dToNode = fract(yP * nFreq) - 0.5;
+            float dist = abs(dToNode);
+
+            // Bulge exists if dist < 0.05
+            // It pushes geometry OUT in XZ.
+            // This means the normal (mostly XZ) should tilt in Y.
+
+            if (dist < 0.05) {
+                // Approximate derivative for visual pop
+                // If we are above the ring (dToNode > 0), the slope goes IN. Normal tilts UP.
+                // If we are below (dToNode < 0), normal tilts DOWN.
+
+                // Sign of dToNode: + is above center, - is below.
+                // But wait, bulge is widest at 0.
+                // So at +0.02, slope is negative (going back to radius).
+                // d(bulge)/dy is negative for y > 0.
+
+                // Normal adjustment:
+                // If surface slopes in, normal tilts out.
+                // Simplified:
+                float tilt = -sign(dToNode) * 0.5;
+                objectNormal.y += tilt;
+                objectNormal = normalize(objectNormal);
+            }
+            `
+        )
+
+        // --- MODIFY POSITION ---
         shader.vertexShader = shader.vertexShader.replace(
           '#include <begin_vertex>',
           `
@@ -159,6 +196,27 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
             ${shader.vertexShader}
         `
 
+        // --- MODIFY LEAF NORMAL ---
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <beginnormal_vertex>',
+            `
+            #include <beginnormal_vertex>
+            // Leaf bends along Y.
+            // droop = y^2.
+            // New normal tilts in Y.
+            // Slope is 2*y.
+
+            float distY = position.y; // 0 to 0.6
+            float slope = 2.0 * distY * 1.0; // *1.0 strength
+
+            // Adjust normal
+            // Original normal is (0,0,1).
+            // New normal should be (0, slope, 1).
+            objectNormal.y += slope;
+            objectNormal = normalize(objectNormal);
+            `
+        )
+
         shader.vertexShader = shader.vertexShader.replace(
             '#include <begin_vertex>',
             `
@@ -172,11 +230,13 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
             // Leaf geometry translated 0.3 up, so y is 0.0 to 0.6
             float distFromStem = position.y;
             float droop = distFromStem * distFromStem * 1.0;
-            transformed.y -= droop;
+
+            // Bend in Z direction (3D curve) instead of squashing Y
+            transformed.z -= droop;
 
             // Deep Cup along width
             float cup = pow(abs(position.x), 1.5) * 5.0;
-            transformed.y -= cup;
+            transformed.z += cup; // Cup also modifies Z (depth)
 
             #ifdef USE_INSTANCING
                 float worldX = instanceMatrix[3][0];
@@ -338,7 +398,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 4000 }: BambooFore
         castShadow
         receiveShadow
         >
-        <cylinderGeometry args={[0.08, 0.15, 5, 32]} />
+        <cylinderGeometry args={[0.08, 0.15, 5, 64]} /> {/* Increased segments to 64 */}
         <primitive object={material} attach="material" />
         </instancedMesh>
 
