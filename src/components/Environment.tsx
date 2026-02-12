@@ -18,8 +18,8 @@ export function Environment({ currentZone }: EnvironmentProps) {
   // Custom Ground Material with Procedural Texturing
   const groundMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-        color: '#3a4d2f',
-        roughness: 0.9,
+        color: '#2e3a24', // Darker base
+        roughness: 0.8,   // Slightly smoother for damp look
         metalness: 0.1,
     })
 
@@ -92,9 +92,9 @@ export function Environment({ currentZone }: EnvironmentProps) {
           float noise = fbm(vWorldPosition.xz * 0.1);
           float noiseDetail = fbm(vWorldPosition.xz * 0.5);
 
-          vec3 mossColor = vec3(0.15, 0.25, 0.10); // Darker moss
-          vec3 dirtColor = vec3(0.25, 0.20, 0.15); // Darker dirt
-          vec3 dryColor = vec3(0.35, 0.30, 0.20); // Dry patches
+          vec3 mossColor = vec3(0.12, 0.20, 0.08); // Darker moss
+          vec3 dirtColor = vec3(0.20, 0.16, 0.12); // Darker dirt
+          vec3 dryColor = vec3(0.28, 0.24, 0.16); // Darker dry patches
 
           float mixFactor = smoothstep(-0.2, 0.6, noise);
           float dryFactor = smoothstep(0.4, 0.8, noiseDetail);
@@ -220,7 +220,8 @@ export function Environment({ currentZone }: EnvironmentProps) {
         position={[15, 25, 10]}
         intensity={1.2}
         shadow-mapSize={[4096, 4096]}
-        shadow-bias={-0.00005}
+        shadow-bias={-0.0001}
+        shadow-normalBias={0.04}
         color="#fff0d0"
       >
         <orthographicCamera attach="shadow-camera" args={[-65, 65, 65, -65]} />

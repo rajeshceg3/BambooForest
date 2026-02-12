@@ -1,14 +1,15 @@
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+import { SimplexNoise } from 'three-stdlib'
 
-export function GroundCover({ count = 15000 }) {
+export function GroundCover({ count = 100000 }) { // Increased count significantly
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const { camera } = useThree()
 
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-      color: '#4a5d23', // Base color
+      color: '#4a5d23',
       roughness: 0.8,
       side: THREE.DoubleSide,
       flatShading: false,
@@ -32,14 +33,13 @@ export function GroundCover({ count = 15000 }) {
         `
         #include <begin_vertex>
         vUv = uv;
-        vHeight = position.y; // 0.0 to 0.6
+        vHeight = position.y;
 
         #ifdef USE_INSTANCING
             float worldX = instanceMatrix[3][0];
             float worldZ = instanceMatrix[3][2];
 
             // Wind sway
-            // More complex wind
             float windFreq = 2.0;
             float windAmp = 0.15;
             float noise = sin(worldX * 0.1 + uTime) * cos(worldZ * 0.1 + uTime * 0.5);
@@ -47,12 +47,10 @@ export function GroundCover({ count = 15000 }) {
             float swayX = sin(uTime * windFreq + worldX * 0.5) * windAmp + noise * 0.05;
             float swayZ = cos(uTime * windFreq * 0.8 + worldZ * 0.5) * windAmp + noise * 0.05;
 
-            // Add flutter (high frequency)
             float flutter = sin(uTime * 10.0 + worldX * 5.0) * 0.02 * smoothstep(0.0, 0.5, vHeight);
             swayX += flutter;
 
-            // Apply wind exponentially with height
-            float stiffness = smoothstep(0.0, 0.5, vHeight); // 0 at bottom, 1 at top
+            float stiffness = smoothstep(0.0, 0.5, vHeight);
             stiffness = pow(stiffness, 2.0);
 
             transformed.x += swayX * stiffness;
@@ -61,7 +59,6 @@ export function GroundCover({ count = 15000 }) {
         `
       )
 
-      // Color variation in fragment shader
       shader.fragmentShader = `
         varying vec2 vUv;
         varying float vHeight;
@@ -83,30 +80,25 @@ export function GroundCover({ count = 15000 }) {
         `
         #include <color_fragment>
 
-        // Vertical gradient
-        vec3 darkGreen = vec3(0.15, 0.25, 0.05); // Dark base
-        vec3 midGreen = vec3(0.3, 0.45, 0.15);   // Mid
-        vec3 tipGreen = vec3(0.5, 0.6, 0.25);    // Light tip
+        vec3 darkGreen = vec3(0.15, 0.25, 0.05);
+        vec3 midGreen = vec3(0.3, 0.45, 0.15);
+        vec3 tipGreen = vec3(0.5, 0.6, 0.25);
 
-        // Height normalized (0 to 0.6 -> 0 to 1)
         float h = smoothstep(0.0, 0.6, vHeight);
 
         vec3 grassColor = mix(darkGreen, midGreen, h);
         grassColor = mix(grassColor, tipGreen, smoothstep(0.5, 1.0, h));
 
-        // Random variation
         float noise = sin(vPosition.x * 0.1) * cos(vPosition.z * 0.1);
         grassColor = mix(grassColor, grassColor * 1.2, noise * 0.2 + 0.2);
 
-        // Fake Subsurface Scattering (Backlight)
         vec3 sunDir = normalize(vec3(15.0, 25.0, 10.0));
         vec3 viewDir = normalize(uCameraPosition - vPosition);
 
         float dotViewSun = dot(viewDir, sunDir);
         float sunGlow = smoothstep(0.0, 1.0, -dotViewSun);
 
-        // Add warm glow
-        grassColor += vec3(0.4, 0.5, 0.2) * sunGlow * 0.5 * h; // Glow more at tip
+        grassColor += vec3(0.4, 0.5, 0.2) * sunGlow * 0.5 * h;
 
         diffuseColor.rgb = grassColor;
         `
@@ -116,39 +108,31 @@ export function GroundCover({ count = 15000 }) {
   }, [])
 
   const geometry = useMemo(() => {
-      // Blade shape
-      const width = 0.08;
-      const height = 0.6;
-      // 2 width segments (3 columns of verts) to create V-shape spine
+      const width = 0.1; // Slightly wider
+      const height = 0.8; // Slightly taller
       const geo = new THREE.PlaneGeometry(width, height, 2, 4)
-      geo.translate(0, height / 2, 0) // Pivot at bottom
+      geo.translate(0, height / 2, 0)
 
       const pos = geo.attributes.position
       for (let i = 0; i < pos.count; i++) {
           const y = pos.getY(i)
           const x = pos.getX(i)
 
-          // Normalized height 0 to 1
           const u = Math.max(0, y / height)
-
-          // Taper width
-          // Quadratic taper looks more natural
           const taper = 1.0 - Math.pow(u, 1.5);
           pos.setX(i, x * taper)
 
-          // Bend forward (Z) - Curve = u^2
-          const curve = u * u * 0.2;
+          // Curve
+          const curve = u * u * 0.3;
 
-          // Create V-shape cross section (Spine)
-          // If x is near 0, push it back (negative Z relative to blade face, but blade faces Z)
-          // Actually, let's push the sides forward (positive Z) and keep spine at 0?
-          // Or push spine back.
-          // Let's push spine back (negative Z) to create a groove.
+          // Spine indent
           const isSpine = Math.abs(x) < 0.001;
-          const spineOffset = isSpine ? -0.02 * (1.0 - u) : 0.0; // Taper the spine depth too
+          const spineOffset = isSpine ? -0.05 * (1.0 - u) : 0.0;
 
+          // Apply curve to Z
           pos.setZ(i, pos.getZ(i) - curve + spineOffset)
       }
+
       geo.computeVertexNormals()
       return geo
   }, [])
@@ -156,34 +140,54 @@ export function GroundCover({ count = 15000 }) {
   const instances = useMemo(() => {
     const temp = []
     const tempObject = new THREE.Object3D()
+    const simplex = new SimplexNoise()
 
     for (let i = 0; i < count; i++) {
         let x = 0, z = 0
         let valid = false
 
         // Try to place grass
-        while (!valid) {
+        for(let attempt = 0; attempt < 5; attempt++) {
             x = (Math.random() - 0.5) * 2000
             z = (Math.random() - 0.5) * 2000
 
-            // Logic matching BambooForest
+            // Noise Clustering
+            // Match bamboo noise scale
+            const noiseVal = simplex.noise(x * 0.015, z * 0.015);
+            const n = noiseVal * 0.5 + 0.5;
+
+            // Bamboo is > 0.45.
+            // We want grass EVERYWHERE, but denser in clearings (< 0.45)
+            // and sparser in groves (> 0.45).
+
+            let probability = 1.0;
+            if (n > 0.45) {
+                // In bamboo grove -> Sparse grass
+                probability = 0.3;
+            } else {
+                // In clearing -> Dense grass
+                probability = 0.9;
+            }
+
+            // Random check against probability
+            if (Math.random() > probability) continue;
+
             const distToStream = Math.abs(x + z) / Math.sqrt(2)
             const distToCenter = Math.sqrt(x * x + z * z)
 
-            valid = true
-            // Don't put grass IN the stream, but near it is ok
-            if (distToStream < 2) valid = false
-            // Keep grass out of the absolute center where the camera might start
-            if (distToCenter < 2) valid = false
+            if (distToStream < 2) continue // Too close to water
+            if (distToCenter < 2) continue
+
+            valid = true;
+            break;
         }
 
-        const scale = 0.6 + Math.random() * 0.6
+        if (!valid) continue; // Skip this instance slot if couldn't place
+
+        const scale = 0.6 + Math.random() * 0.8 // Varied scale
         tempObject.position.set(x, 0, z)
 
-        // Random rotation Y
         tempObject.rotation.y = Math.random() * Math.PI * 2
-
-        // Random tilt (sway static)
         tempObject.rotation.x = (Math.random() - 0.5) * 0.3
         tempObject.rotation.z = (Math.random() - 0.5) * 0.3
 
@@ -196,6 +200,15 @@ export function GroundCover({ count = 15000 }) {
 
   useEffect(() => {
     if (!meshRef.current) return
+    // Note: instances.length might be less than count due to skipping
+    // But we initialized InstancedMesh with `count`.
+    // We should update the count or just set unused matrices to 0 scale.
+    // However, usually we just set the count to the actual number of instances.
+
+    // Resize logic:
+    // instancedMesh.count is writable.
+    meshRef.current.count = instances.length;
+
     instances.forEach((matrix, i) => meshRef.current!.setMatrixAt(i, matrix))
     meshRef.current.instanceMatrix.needsUpdate = true
   }, [instances])
@@ -210,7 +223,7 @@ export function GroundCover({ count = 15000 }) {
   return (
     <instancedMesh
       ref={meshRef}
-      args={[undefined, undefined, count]}
+      args={[undefined, undefined, count]} // Initial buffer size
       castShadow
       receiveShadow
       geometry={geometry}
