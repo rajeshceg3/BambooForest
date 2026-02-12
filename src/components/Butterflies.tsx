@@ -1,9 +1,11 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { SimplexNoise } from 'three-stdlib'
 
-export function Butterflies({ count = 5 }) {
+export function Butterflies({ count = 15 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
+  const simplex = useMemo(() => new SimplexNoise(), [])
 
   const [instances, offsets] = useMemo(() => {
     const inst = []
@@ -11,14 +13,15 @@ export function Butterflies({ count = 5 }) {
     const tempObject = new THREE.Object3D()
 
     for (let i = 0; i < count; i++) {
-      const x = 10 + (Math.random() - 0.5) * 10
-      const y = 1 + Math.random() * 2
-      const z = 10 + (Math.random() - 0.5) * 10
+      // Start randomly around
+      const x = (Math.random() - 0.5) * 30
+      const y = 1 + Math.random() * 4
+      const z = (Math.random() - 0.5) * 30
 
       tempObject.position.set(x, y, z)
       tempObject.updateMatrix()
       inst.push(tempObject.matrix.clone())
-      off.push(Math.random() * Math.PI * 2)
+      off.push(Math.random() * 100) // Random time offset
     }
     return [inst, off]
   }, [count])
@@ -39,9 +42,10 @@ export function Butterflies({ count = 5 }) {
         '#include <begin_vertex>',
         `
         #include <begin_vertex>
-        float flap = sin(uTime * 15.0) * 0.1;
+        // Very fast flutter
+        float flap = sin(uTime * 25.0 + position.x * 10.0) * 0.4;
         if (abs(position.x) > 0.01) {
-            transformed.y += flap * abs(position.x) * 10.0;
+            transformed.y += flap * abs(position.x);
         }
         `
       )
@@ -51,7 +55,13 @@ export function Butterflies({ count = 5 }) {
   }, [])
 
   const dummy = useMemo(() => new THREE.Object3D(), [])
-  const tempPos = useMemo(() => new THREE.Vector3(), [])
+
+  // Store original home positions
+  const homes = useMemo(() => instances.map(m => {
+      const p = new THREE.Vector3()
+      p.setFromMatrixPosition(m)
+      return p
+  }), [instances])
 
   useFrame((state) => {
     if (!meshRef.current) return
@@ -59,16 +69,37 @@ export function Butterflies({ count = 5 }) {
       material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()
     }
 
-    instances.forEach((m, i) => {
-      tempPos.setFromMatrixPosition(m)
+    const t = state.clock.getElapsedTime()
 
-      const time = state.clock.getElapsedTime() + offsets[i]
-      tempPos.x += Math.sin(time * 0.5) * 0.01
-      tempPos.y += Math.sin(time * 1.2) * 0.01
-      tempPos.z += Math.cos(time * 0.8) * 0.01
+    homes.forEach((home, i) => {
+      const off = offsets[i]
+      const time = t + off
 
-      dummy.position.copy(tempPos)
-      dummy.rotation.y = time
+      // Erratic movement around home
+      // Use noise for smooth but random path
+      const nX = simplex.noise(time * 0.5, i * 0.1)
+      const nY = simplex.noise(time * 0.5 + 100, i * 0.1)
+      const nZ = simplex.noise(time * 0.5 + 200, i * 0.1)
+
+      const wanderRadius = 3.0
+
+      const x = home.x + nX * wanderRadius
+      const y = home.y + nY * 1.5 // Less vertical range
+      const z = home.z + nZ * wanderRadius
+
+      dummy.position.set(x, y, z)
+
+      // Face direction of movement (derivative of noise)
+      // d(noise)/dt approx noise(t+dt) - noise(t)
+      const dt = 0.1
+      const nX_next = simplex.noise((time + dt) * 0.5, i * 0.1)
+      const nZ_next = simplex.noise((time + dt) * 0.5 + 200, i * 0.1)
+
+      const dx = (nX_next - nX)
+      const dz = (nZ_next - nZ)
+
+      dummy.rotation.y = Math.atan2(dx, dz)
+
       dummy.scale.set(0.1, 0.1, 0.1)
       dummy.updateMatrix()
       meshRef.current!.setMatrixAt(i, dummy.matrix)
@@ -76,9 +107,14 @@ export function Butterflies({ count = 5 }) {
     meshRef.current.instanceMatrix.needsUpdate = true
   })
 
+  const geometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(0.3, 0.3, 2, 1)
+    geo.rotateX(-Math.PI / 2) // Lay flat
+    return geo
+  }, [])
+
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} material={material}>
-      <planeGeometry args={[0.2, 0.2]} />
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} material={material} geometry={geometry}>
     </instancedMesh>
   )
 }

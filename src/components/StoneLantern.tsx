@@ -6,7 +6,7 @@ function useStoneMaterial(color: string) {
     const mat = new THREE.MeshStandardMaterial({
       color: color,
       roughness: 0.9,
-      flatShading: false,
+      flatShading: true, // Use flat shading to emphasize the chiseled/hexagonal form
     })
 
     mat.onBeforeCompile = (shader) => {
@@ -43,10 +43,7 @@ function useStoneMaterial(color: string) {
 
         vec3 grainBump = (vec3(nX, nY, nZ) - 0.5) * 0.1;
 
-        // 2. Large noise for surface unevenness (Analytical Gradient)
-        // f = sin(5x) * cos(5y) * sin(5z)
-        // We want to perturb normal by gradient of f.
-
+        // 2. Large noise for surface unevenness
         float scale = 5.0;
         float sx = sin(vWorldPos.x * scale);
         float cx = cos(vWorldPos.x * scale);
@@ -62,24 +59,6 @@ function useStoneMaterial(color: string) {
 
         vec3 largeBump = vec3(dfdx, dfdy, dfdz) * 0.02; // Strength 0.02
 
-        // Apply bumps
-        // We add to the tangent space normal or world space normal?
-        // 'normal' here is view space normal in standard shader?
-        // No, in 'normal_fragment_maps', 'normal' is the perturbed normal from normal map (if any).
-        // If no normal map, it's the interpolated vertex normal (view space usually).
-
-        // Wait, THREE.js shaders work in View Space for 'normal'.
-        // My bumps are calculated in World Space.
-        // This is a mismatch. I should transform bumps to View Space.
-        // viewMatrix is available as uniform.
-        // mat3 normalMatrix is available (ModelView inverse transpose).
-
-        // Actually, vWorldPos is world space. The gradient is world space.
-        // To add to 'normal' (View Space), we must rotate the gradient by viewMatrix (rotation part).
-        // Since viewMatrix is ModelView, and we want World->View.
-        // Actually, just transforming by viewMatrix logic is enough (assuming no non-uniform scale on view).
-
-        // Correct way: transform world space gradient to view space normal perturbation.
         vec3 bumpWorld = grainBump + largeBump;
         vec3 bumpView = (viewMatrix * vec4(bumpWorld, 0.0)).xyz;
 
@@ -112,34 +91,89 @@ export function StoneLantern(props: any) {
   const lightBoxMat = useStoneMaterial('#999999')
   const roofMat = useStoneMaterial('#777777')
 
+  // Geometry Profiles - using LatheGeometry with 6 segments to create hexagonal forms
+  const baseGeo = useMemo(() => {
+      const points = []
+      points.push(new THREE.Vector2(0.35, 0)) // Bottom width
+      points.push(new THREE.Vector2(0.25, 0.15))
+      points.push(new THREE.Vector2(0.20, 0.4)) // Top of base
+      points.push(new THREE.Vector2(0, 0.4)) // Cap
+      return new THREE.LatheGeometry(points, 6)
+  }, [])
+
+  const postGeo = useMemo(() => {
+      const points = []
+      points.push(new THREE.Vector2(0.15, 0))
+      points.push(new THREE.Vector2(0.12, 0.8)) // Tapered post
+      points.push(new THREE.Vector2(0, 0.8))
+      return new THREE.LatheGeometry(points, 6)
+  }, [])
+
+  const platformGeo = useMemo(() => {
+      const points = []
+      points.push(new THREE.Vector2(0.12, 0))
+      points.push(new THREE.Vector2(0.35, 0.1)) // Flare out
+      points.push(new THREE.Vector2(0.35, 0.2)) // Thickness
+      points.push(new THREE.Vector2(0.25, 0.3)) // Taper in
+      points.push(new THREE.Vector2(0, 0.3))
+      return new THREE.LatheGeometry(points, 6)
+  }, [])
+
+  const lightBoxGeo = useMemo(() => {
+      const points = []
+      points.push(new THREE.Vector2(0.22, 0))
+      points.push(new THREE.Vector2(0.25, 0.4)) // Slightly wider at top
+      points.push(new THREE.Vector2(0, 0.4))
+      return new THREE.LatheGeometry(points, 6)
+  }, [])
+
+  const roofGeo = useMemo(() => {
+      const points = []
+      points.push(new THREE.Vector2(0.35, 0)) // Overhang start
+      points.push(new THREE.Vector2(0.5, 0.05)) // Eave tip
+      // Curve up
+      for(let i=1; i<=5; i++) {
+          const t = i/5
+          const x = 0.5 * (1-t)
+          const y = 0.05 + Math.pow(t, 2) * 0.35 // Quadratic curve up
+          points.push(new THREE.Vector2(x, y))
+      }
+      return new THREE.LatheGeometry(points, 6)
+  }, [])
+
+  const jewelGeo = useMemo(() => {
+      const points = []
+      points.push(new THREE.Vector2(0.08, 0))
+      points.push(new THREE.Vector2(0.12, 0.08))
+      points.push(new THREE.Vector2(0, 0.25)) // Point
+      return new THREE.LatheGeometry(points, 8) // Rounder
+  }, [])
+
   return (
     <group {...props}>
       {/* Base */}
-      <mesh position={[0, 0.25, 0]} castShadow receiveShadow material={baseMat}>
-        <boxGeometry args={[0.8, 0.5, 0.8]} />
-      </mesh>
-      {/* Pillar */}
-      <mesh position={[0, 1.25, 0]} castShadow receiveShadow material={baseMat}>
-        <cylinderGeometry args={[0.2, 0.3, 1.5, 6]} />
-      </mesh>
-      {/* Platform */}
-      <mesh position={[0, 2.1, 0]} castShadow receiveShadow material={baseMat}>
-        <boxGeometry args={[1.2, 0.2, 1.2]} />
-      </mesh>
-      {/* Light box */}
-      <mesh position={[0, 2.6, 0]} castShadow receiveShadow material={lightBoxMat}>
-        <boxGeometry args={[0.7, 0.8, 0.7]} />
-      </mesh>
-      {/* Roof */}
-      <mesh position={[0, 3.1, 0]} castShadow receiveShadow material={roofMat}>
-        <cylinderGeometry args={[0.1, 1, 0.4, 4]} />
-      </mesh>
+      <mesh geometry={baseGeo} material={baseMat} castShadow receiveShadow position={[0, 0, 0]} />
 
-      {/* The light itself */}
-      <pointLight position={[0, 2.6, 0]} intensity={0.5} color="#ffaa44" distance={5} />
-      <mesh position={[0, 2.6, 0]}>
-        <boxGeometry args={[0.5, 0.6, 0.5]} />
-        <meshBasicMaterial color="#ffaa44" transparent opacity={0.3} />
+      {/* Post */}
+      <mesh geometry={postGeo} material={baseMat} castShadow receiveShadow position={[0, 0.4, 0]} />
+
+      {/* Platform */}
+      <mesh geometry={platformGeo} material={baseMat} castShadow receiveShadow position={[0, 1.2, 0]} />
+
+      {/* Light Box */}
+      <mesh geometry={lightBoxGeo} material={lightBoxMat} castShadow receiveShadow position={[0, 1.5, 0]} />
+
+      {/* Roof */}
+      <mesh geometry={roofGeo} material={roofMat} castShadow receiveShadow position={[0, 1.9, 0]} />
+
+      {/* Jewel */}
+      <mesh geometry={jewelGeo} material={baseMat} castShadow receiveShadow position={[0, 2.3, 0]} />
+
+      {/* Light */}
+      <pointLight position={[0, 1.7, 0]} intensity={1.5} color="#ffaa44" distance={3} decay={2} />
+      <mesh position={[0, 1.7, 0]}>
+        <cylinderGeometry args={[0.15, 0.15, 0.35, 6]} />
+        <meshBasicMaterial color="#ffaa44" transparent opacity={0.5} />
       </mesh>
     </group>
   )
