@@ -1,9 +1,11 @@
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { SimplexNoise } from 'three-stdlib'
 
-export function Birds({ count = 10 }) {
+export function Birds({ count = 20 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
+  const simplex = useMemo(() => new SimplexNoise(), [])
 
   const [instances, velocities] = useMemo(() => {
     const inst = []
@@ -12,7 +14,7 @@ export function Birds({ count = 10 }) {
 
     for (let i = 0; i < count; i++) {
       const x = (Math.random() - 0.5) * 60
-      const y = 5 + Math.random() * 10
+      const y = 10 + Math.random() * 10
       const z = (Math.random() - 0.5) * 60
 
       tempObject.position.set(x, y, z)
@@ -40,10 +42,15 @@ export function Birds({ count = 10 }) {
         '#include <begin_vertex>',
         `
         #include <begin_vertex>
-        // Simple wing flap
-        float flap = sin(uTime * 10.0 + position.x * 2.0) * 0.2;
-        if (abs(position.x) > 0.1) {
-            transformed.y += flap * abs(position.x);
+        // Flap wings
+        float flapSpeed = 15.0;
+        float flapAmp = 0.15;
+        float flap = sin(uTime * flapSpeed + position.x * 5.0) * flapAmp;
+
+        // Bend wings up/down based on X distance from center
+        float dist = abs(position.x);
+        if (dist > 0.05) {
+            transformed.y += flap * (dist * 5.0);
         }
         `
       )
@@ -65,28 +72,65 @@ export function Birds({ count = 10 }) {
       material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()
     }
 
+    const t = state.clock.getElapsedTime()
+
     currentPositions.forEach((pos, i) => {
       const v = velocities[i]
+
+      // Noise steering
+      // Use i to offset noise space
+      const noiseX = simplex.noise(t * 0.1 + i * 10.0, i * 0.1)
+      const noiseZ = simplex.noise(t * 0.1 + i * 10.0 + 100.0, i * 0.1)
+
+      v.x += noiseX * 0.003
+      v.z += noiseZ * 0.003
+
+      // Height control
+      // Tend towards y=15
+      const targetY = 15.0 + Math.sin(t * 0.2 + i) * 5.0
+      v.y += (targetY - pos.y) * 0.001
+
+      // Speed limit
+      const speed = 0.15
+      v.normalize().multiplyScalar(speed)
+
       pos.add(v)
 
-      // Keep within bounds
-      if (Math.abs(pos.x) > 50) v.x *= -1
-      if (Math.abs(pos.z) > 50) v.z *= -1
-
-      // Gentle altitude change
-      pos.y += Math.sin(state.clock.getElapsedTime() * 0.5 + i) * 0.01
+      // Soft Bounds
+      const bound = 80
+      if (pos.x > bound) v.x -= 0.01
+      if (pos.x < -bound) v.x += 0.01
+      if (pos.z > bound) v.z -= 0.01
+      if (pos.z < -bound) v.z += 0.01
 
       dummy.position.copy(pos)
-      dummy.rotation.y = Math.atan2(v.x, v.z) + Math.PI / 2
+      // Orient to velocity
+      dummy.rotation.y = Math.atan2(-v.z, v.x) // atan2(y, x) -> z is y here.
+      // ThreeJS rotation Y 0 is facing +Z usually?
+      // Plane is XY.
+      // If we want plane to fly "forward" along X axis?
+      // Let's assume plane length is X axis.
+      // Then rotation should be atan2(v.z, v.x)?
+      dummy.rotation.y = Math.atan2(-v.z, v.x)
+
+      // Bank based on turn
+      const turn = v.x * noiseZ - v.z * noiseX // Cross product-ish
+      dummy.rotation.z = turn * 20.0
+
       dummy.updateMatrix()
       meshRef.current!.setMatrixAt(i, dummy.matrix)
     })
     meshRef.current.instanceMatrix.needsUpdate = true
   })
 
+  const geometry = useMemo(() => {
+     const geo = new THREE.PlaneGeometry(0.5, 0.15, 8, 1)
+     geo.rotateX(-Math.PI / 2) // Lay flat. Width (wings) is X. Length (body) is Z.
+     return geo
+  }, [])
+
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} material={material}>
-      <planeGeometry args={[0.4, 0.1]} />
+    <instancedMesh ref={meshRef} args={[undefined, undefined, count]} material={material} geometry={geometry}>
     </instancedMesh>
   )
 }
