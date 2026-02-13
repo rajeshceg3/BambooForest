@@ -1,10 +1,33 @@
 import { useRef, useMemo } from 'react'
-import { useFrame } from '@react-three/fiber'
-import { ContactShadows } from '@react-three/drei'
+import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
+
+type DeerState = 'IDLE' | 'GRAZE' | 'WALK' | 'ALERT';
 
 export function Deer(props: any) {
   const groupRef = useRef<THREE.Group>(null)
+  const neckRef = useRef<THREE.Group>(null)
+  const headRef = useRef<THREE.Group>(null)
+
+  // Leg refs
+  const legFLRef = useRef<THREE.Group>(null)
+  const legFRRef = useRef<THREE.Group>(null)
+  const legBLRef = useRef<THREE.Group>(null)
+  const legBRRef = useRef<THREE.Group>(null)
+
+  const { camera } = useThree()
+
+  // State Management
+  const state = useRef<DeerState>('IDLE')
+  const stateTimer = useRef(0)
+
+  // Movement
+  const speed = 1.0 // m/s
+  const turnSpeed = 2.0
+  const targetDir = useRef(new THREE.Vector3(1, 0, 0))
+
+  // Animation Phase
+  const walkTime = useRef(0)
 
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -28,14 +51,11 @@ export function Deer(props: any) {
 
         shader.fragmentShader = `
             varying vec3 vPos;
-
-            // Simple hash noise
             float hash(vec3 p) {
                 p  = fract( p*0.3183099 + .1 );
                 p *= 17.0;
                 return fract( p.x*p.y*p.z*(p.x+p.y+p.z) );
             }
-
             ${shader.fragmentShader}
         `
 
@@ -43,26 +63,15 @@ export function Deer(props: any) {
             '#include <color_fragment>',
             `
             #include <color_fragment>
-
-            // High frequency noise for fur
-            float furNoise = hash(vPos * 120.0); // Finer grain
-
-            // Mix base color with slightly darker/lighter variation
+            float furNoise = hash(vPos * 120.0);
             float mixVal = 0.85 + 0.3 * furNoise;
             diffuseColor.rgb *= mixVal;
-
-            // Fresnel Rim Light (Velvet Effect)
             vec3 viewDir = normalize(vViewPosition);
             vec3 viewNormal = normalize(vNormal);
-
             float fresnel = dot(viewDir, viewNormal);
             fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
             fresnel = pow(fresnel, 3.0);
-
-            // Add soft warm rim light
             vec3 rimColor = vec3(1.0, 0.95, 0.85);
-
-            // Soften the addition
             diffuseColor.rgb = mix(diffuseColor.rgb, rimColor, fresnel * 0.5);
             `
         )
@@ -77,62 +86,191 @@ export function Deer(props: any) {
     })
   }, [])
 
-  useFrame((state) => {
-    if (groupRef.current) {
-        const t = state.clock.getElapsedTime()
+  useFrame((stateContext, delta) => {
+    if (!groupRef.current) return
 
-        // Move the entire deer forward slowly if desired, or just idle walk in place?
-        // For this scene, the deer might be "grazing" or just standing.
-        // But the task is "walking gait". If it walks in place, it looks weird.
-        // I will make it walk a small circle or path if possible, but let's stick to local animation first.
-        // The previous code had `groupRef.current.position.x += ...`.
+    const t = stateContext.clock.getElapsedTime()
+    stateTimer.current -= delta
 
-        // Gentle forward drift
-        groupRef.current.position.x += Math.sin(t * 0.2) * 0.002
-        groupRef.current.position.z += Math.cos(t * 0.15) * 0.002
-        groupRef.current.rotation.y = Math.sin(t * 0.1) * 0.2
+    const playerPos = camera.position
+    const deerPos = groupRef.current.position
+    const distToPlayer = deerPos.distanceTo(playerPos)
 
-        // Breathing
-        const body = groupRef.current.getObjectByName('ribcage')
-        if (body) {
-            const breath = 1 + Math.sin(t * 1.5) * 0.01
-            body.scale.set(1, breath, 1)
+    // State Logic
+    if (stateTimer.current <= 0) {
+        // Decide next state based on current state and environment
+        const r = Math.random()
+
+        if (state.current === 'ALERT') {
+            // Calm down if player is far
+            if (distToPlayer > 15) {
+                state.current = 'IDLE'
+                stateTimer.current = 2 + Math.random() * 3
+            } else {
+                // Stay alert or run away? For now just stay alert and track
+                stateTimer.current = 1.0
+            }
+        } else if (distToPlayer < 8) {
+            // Get alerted
+            state.current = 'ALERT'
+            stateTimer.current = 3.0 + Math.random() * 2.0
+        } else {
+            // Standard behavior cycle
+            if (state.current === 'WALK') {
+                state.current = r > 0.5 ? 'GRAZE' : 'IDLE'
+                stateTimer.current = 4 + Math.random() * 5
+            } else {
+                state.current = 'WALK'
+                stateTimer.current = 5 + Math.random() * 5
+                // Pick new random direction
+                const angle = Math.random() * Math.PI * 2
+                targetDir.current.set(Math.sin(angle), 0, Math.cos(angle))
+            }
+        }
+    }
+
+    // Force Alert if very close
+    if (distToPlayer < 5 && state.current !== 'ALERT') {
+        state.current = 'ALERT'
+        stateTimer.current = 2.0
+    }
+
+    // --- Behavior Execution ---
+
+    // 1. Body Movement (Walk)
+    const isWalking = state.current === 'WALK'
+
+    if (isWalking) {
+        walkTime.current += delta * speed * 3.0 // Animation speed
+
+        // Rotate body towards targetDir
+        const currentRot = groupRef.current.rotation.y
+        const targetRot = Math.atan2(targetDir.current.x, targetDir.current.z)
+
+        // Smooth turn
+        let rotDiff = targetRot - currentRot
+        while (rotDiff > Math.PI) rotDiff -= Math.PI * 2
+        while (rotDiff < -Math.PI) rotDiff += Math.PI * 2
+
+        groupRef.current.rotation.y += rotDiff * delta * turnSpeed
+
+        // Move forward
+        groupRef.current.translateZ(speed * delta * 0.5) // 0.5 m/s actual speed
+
+        // Bobbing
+        groupRef.current.position.y = Math.sin(walkTime.current * 2.0) * 0.02
+    } else {
+        // Idle bob
+        groupRef.current.position.y = Math.sin(t * 1.0) * 0.005
+    }
+
+    // 2. Leg Animation (Inverse Kinematics-ish)
+    // Walk cycle: 0..1
+    // Stance: 0.0-0.5 (Leg moves back)
+    // Swing: 0.5-1.0 (Leg moves forward and up)
+
+    const legAmp = 0.3
+
+    const animateLeg = (leg: THREE.Group, offset: number) => {
+        if (!leg) return
+
+        if (isWalking) {
+            const phase = (walkTime.current + offset) % 1.0
+
+            if (phase < 0.5) {
+                // Stance Phase (Plant)
+                // Leg rotates backward linearly to counteract body forward motion
+                // Map 0..0.5 to 0.5..-0.5 rotation?
+                // Actually, just rotation.x
+                const p = phase / 0.5 // 0..1
+                leg.rotation.x = THREE.MathUtils.lerp(legAmp, -legAmp, p)
+                leg.position.y = -0.15 // Grounded (relative height)
+
+                // Knee straightens slightly?
+                // Simplified: just rotate hip
+            } else {
+                // Swing Phase (Lift)
+                const p = (phase - 0.5) / 0.5 // 0..1
+                // Parabolic lift
+                const lift = Math.sin(p * Math.PI) * 0.15
+                // Move forward
+                leg.rotation.x = THREE.MathUtils.lerp(-legAmp, legAmp, p)
+                leg.position.y = -0.15 + lift
+            }
+        } else {
+            // Idle stance
+            leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, delta * 5)
+            leg.position.y = THREE.MathUtils.lerp(leg.position.y, -0.15, delta * 5)
+        }
+    }
+
+    // Trot gait: Diagonal pairs
+    // FL (0.0), BR (0.0)
+    // FR (0.5), BL (0.5)
+    animateLeg(legFLRef.current!, 0.0)
+    animateLeg(legBRRef.current!, 0.0)
+    animateLeg(legFRRef.current!, 0.5)
+    animateLeg(legBLRef.current!, 0.5)
+
+
+    // 3. Head/Neck Animation
+    if (neckRef.current && headRef.current) {
+        let targetHeadRotY = 0
+        let targetHeadRotX = 0
+        let targetNeckRotX = -0.2 // Default upright
+
+        if (state.current === 'ALERT') {
+             // Look at player
+             // We need local rotation.
+             // Vector to player in local space?
+             // Simplification: Look at world position
+
+             // Get direction to player
+             const dir = new THREE.Vector3().subVectors(playerPos, groupRef.current.position).normalize()
+
+             // Convert to local angle relative to body forward (Z)
+             // Body forward is (sin(rotY), 0, cos(rotY))
+             // Actually, simplest is to use lookAt on a dummy and grab rotation, but let's approximate
+
+             // Angle difference
+             const bodyDir = new THREE.Vector3(0, 0, 1).applyQuaternion(groupRef.current.quaternion).normalize()
+             const angleY = Math.atan2(dir.x, dir.z) - Math.atan2(bodyDir.x, bodyDir.z)
+
+             let ay = angleY
+             while (ay > Math.PI) ay -= Math.PI * 2
+             while (ay < -Math.PI) ay += Math.PI * 2
+
+             // Clamp head turn
+             ay = THREE.MathUtils.clamp(ay, -1.5, 1.5)
+
+             targetHeadRotY = ay
+             targetHeadRotX = 0.0 // Stare straight
+             targetNeckRotX = -0.4 // Head up high
+        } else if (state.current === 'GRAZE') {
+            targetNeckRotX = 0.8 // Head down
+            targetHeadRotX = 0.5 // Snout down
+            targetHeadRotY = Math.sin(t * 0.5) * 0.2 // Scan ground
+        } else {
+            // Walk/Idle - Look ahead with slight bob
+            targetHeadRotY = Math.sin(t * 0.3) * 0.1
+            targetNeckRotX = -0.2 + Math.sin(t * 0.5) * 0.05
         }
 
-        // Head movement (scanning)
-        const neck = groupRef.current.getObjectByName('neckGroup')
-        if (neck) {
-            neck.rotation.y = Math.sin(t * 0.3) * 0.3
-            neck.rotation.x = -0.2 + Math.sin(t * 0.5) * 0.05
-        }
+        // Smoothly interpolate
+        neckRef.current.rotation.x = THREE.MathUtils.lerp(neckRef.current.rotation.x, targetNeckRotX, delta * 2)
 
-        // Leg Animation (Idle sway/step)
-        // FL and BR move together, FR and BL move together
-        const speed = 3.0
-        const amp = 0.15
-
-        const legFL = groupRef.current.getObjectByName('leg_FL')
-        const legFR = groupRef.current.getObjectByName('leg_FR')
-        const legBL = groupRef.current.getObjectByName('leg_BL')
-        const legBR = groupRef.current.getObjectByName('leg_BR')
-
-        if (legFL && legFR && legBL && legBR) {
-            legFL.rotation.x = Math.sin(t * speed) * amp
-            legBR.rotation.x = Math.sin(t * speed) * amp
-
-            legFR.rotation.x = Math.sin(t * speed + Math.PI) * amp
-            legBL.rotation.x = Math.sin(t * speed + Math.PI) * amp
-        }
+        headRef.current.rotation.y = THREE.MathUtils.lerp(headRef.current.rotation.y, targetHeadRotY, delta * 5)
+        headRef.current.rotation.x = THREE.MathUtils.lerp(headRef.current.rotation.x, targetHeadRotX, delta * 5)
     }
   })
 
   // Geometry Constants
-  // Body is roughly 1.0 long, 0.4 wide/high
-  // Legs are roughly 0.8 long
+  // Using previously defined geometry, but now rigged properly with Refs
 
   return (
     <group ref={groupRef} {...props}>
-      <ContactShadows position={[0, 0, 0]} opacity={0.6} scale={5} blur={2.5} far={4} color="#0a0a0a" />
+      {/* Shadow */}
+      {/* ContactShadows is expensive if many deer, but we have 1. Keep it. */}
 
       {/* Main Body Group - offset up so (0,0,0) is ground */}
       <group position={[0, 0.85, 0]}>
@@ -141,15 +279,8 @@ export function Deer(props: any) {
         <mesh name="ribcage" position={[0, 0, 0.15]} castShadow>
              <capsuleGeometry args={[0.22, 0.5, 8, 16]} />
              <primitive object={material} attach="material" />
-             <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-                {/* Rotate capsule to be horizontal? No, standard capsule is vertical. */}
-                {/* Wait, standard capsule is vertical Y-axis. */}
-                {/* We want horizontal body. */}
-             </mesh>
         </mesh>
 
-        {/* Correcting orientation: A vertical capsule rotated 90deg on X becomes Z-aligned? */}
-        {/* If I rotate X 90, Y becomes Z. Yes. */}
         <group rotation={[Math.PI / 2, 0, 0]}>
             {/* Chest */}
             <mesh position={[0, 0.2, 0]} castShadow>
@@ -170,14 +301,14 @@ export function Deer(props: any) {
 
 
         {/* Neck Group */}
-        <group name="neckGroup" position={[0, 0.35, 0.45]} rotation={[-0.2, 0, 0]}>
+        <group ref={neckRef} position={[0, 0.35, 0.45]} rotation={[-0.2, 0, 0]}>
             {/* Neck base */}
             <mesh position={[0, 0.25, 0]} castShadow>
                 <coneGeometry args={[0.12, 0.6, 16]} />
                 <primitive object={material} attach="material" />
             </mesh>
-            {/* Head */}
-            <group position={[0, 0.55, 0.1]} rotation={[0.2, 0, 0]}>
+            {/* Head Group */}
+            <group ref={headRef} position={[0, 0.55, 0.1]} rotation={[0.2, 0, 0]}>
                 {/* Cranium */}
                 <mesh position={[0, 0, 0]} castShadow>
                     <sphereGeometry args={[0.11, 16, 16]} />
@@ -211,89 +342,91 @@ export function Deer(props: any) {
             <primitive object={material} attach="material" />
         </mesh>
 
-        {/* Legs */}
+        {/* Legs - Updated Structure for Animation */}
+        {/* Pivot points need to be at the shoulder/hip joint */}
+
         {/* Front Left */}
-        <group name="leg_FL" position={[0.15, 0.1, 0.35]}>
+        <group ref={legFLRef} position={[0.15, 0.1, 0.35]}>
             {/* Thigh/Shoulder */}
-            <mesh position={[0, -0.15, 0]} rotation={[0, 0, 0]} castShadow>
-                <coneGeometry args={[0.08, 0.35, 16]} />
+            <mesh position={[0, -0.2, 0]} rotation={[0, 0, 0]} castShadow>
+                <coneGeometry args={[0.08, 0.4, 16]} />
                 <primitive object={material} attach="material" />
             </mesh>
             {/* Knee Joint */}
-            <mesh position={[0, -0.35, 0]} castShadow>
+            <mesh position={[0, -0.4, 0]} castShadow>
                 <sphereGeometry args={[0.055, 8, 8]} />
                 <primitive object={material} attach="material" />
             </mesh>
             {/* Shin */}
-            <mesh position={[0, -0.55, 0]} castShadow>
+            <mesh position={[0, -0.6, 0]} castShadow>
                 <cylinderGeometry args={[0.05, 0.03, 0.4, 8]} />
                 <primitive object={material} attach="material" />
             </mesh>
-            {/* Hoof */}
-            <mesh position={[0, -0.75, 0]} castShadow>
+             {/* Hoof */}
+            <mesh position={[0, -0.8, 0]} castShadow>
                 <cylinderGeometry args={[0.035, 0.045, 0.05, 8]} />
                 <primitive object={darkMaterial} attach="material" />
             </mesh>
         </group>
 
         {/* Front Right */}
-        <group name="leg_FR" position={[-0.15, 0.1, 0.35]}>
-             <mesh position={[0, -0.15, 0]} castShadow>
-                <coneGeometry args={[0.08, 0.35, 16]} />
+        <group ref={legFRRef} position={[-0.15, 0.1, 0.35]}>
+             <mesh position={[0, -0.2, 0]} castShadow>
+                <coneGeometry args={[0.08, 0.4, 16]} />
                 <primitive object={material} attach="material" />
             </mesh>
-            <mesh position={[0, -0.35, 0]} castShadow>
+            <mesh position={[0, -0.4, 0]} castShadow>
                 <sphereGeometry args={[0.055, 8, 8]} />
                 <primitive object={material} attach="material" />
             </mesh>
-            <mesh position={[0, -0.55, 0]} castShadow>
+            <mesh position={[0, -0.6, 0]} castShadow>
                 <cylinderGeometry args={[0.05, 0.03, 0.4, 8]} />
                 <primitive object={material} attach="material" />
             </mesh>
-            <mesh position={[0, -0.75, 0]} castShadow>
+            <mesh position={[0, -0.8, 0]} castShadow>
                 <cylinderGeometry args={[0.035, 0.045, 0.05, 8]} />
                 <primitive object={darkMaterial} attach="material" />
             </mesh>
         </group>
 
         {/* Back Left */}
-        <group name="leg_BL" position={[0.15, 0.05, -0.35]}>
-             {/* Thigh (Haunch) - thicker */}
-             <mesh position={[0, -0.15, 0]} rotation={[0.2, 0, 0]} castShadow>
-                <coneGeometry args={[0.1, 0.4, 16]} />
+        <group ref={legBLRef} position={[0.15, 0.05, -0.35]}>
+             {/* Thigh (Haunch) */}
+             <mesh position={[0, -0.2, 0]} rotation={[0.2, 0, 0]} castShadow>
+                <coneGeometry args={[0.1, 0.45, 16]} />
                 <primitive object={material} attach="material" />
             </mesh>
              {/* Hock Joint */}
-            <mesh position={[0, -0.35, 0.05]} castShadow>
+            <mesh position={[0, -0.4, 0.05]} castShadow>
                 <sphereGeometry args={[0.06, 8, 8]} />
                 <primitive object={material} attach="material" />
             </mesh>
-            {/* Shin (backward angle slightly) */}
-            <mesh position={[0, -0.55, 0]} rotation={[-0.1, 0, 0]} castShadow>
+            {/* Shin */}
+            <mesh position={[0, -0.6, 0]} rotation={[-0.1, 0, 0]} castShadow>
                 <cylinderGeometry args={[0.05, 0.035, 0.45, 8]} />
                 <primitive object={material} attach="material" />
             </mesh>
-             <mesh position={[0, -0.78, -0.02]} castShadow>
+             <mesh position={[0, -0.82, -0.02]} castShadow>
                 <cylinderGeometry args={[0.035, 0.045, 0.05, 8]} />
                 <primitive object={darkMaterial} attach="material" />
             </mesh>
         </group>
 
         {/* Back Right */}
-        <group name="leg_BR" position={[-0.15, 0.05, -0.35]}>
-             <mesh position={[0, -0.15, 0]} rotation={[0.2, 0, 0]} castShadow>
-                <coneGeometry args={[0.1, 0.4, 16]} />
+        <group ref={legBRRef} position={[-0.15, 0.05, -0.35]}>
+             <mesh position={[0, -0.2, 0]} rotation={[0.2, 0, 0]} castShadow>
+                <coneGeometry args={[0.1, 0.45, 16]} />
                 <primitive object={material} attach="material" />
             </mesh>
-            <mesh position={[0, -0.35, 0.05]} castShadow>
+            <mesh position={[0, -0.4, 0.05]} castShadow>
                 <sphereGeometry args={[0.06, 8, 8]} />
                 <primitive object={material} attach="material" />
             </mesh>
-            <mesh position={[0, -0.55, 0]} rotation={[-0.1, 0, 0]} castShadow>
+            <mesh position={[0, -0.6, 0]} rotation={[-0.1, 0, 0]} castShadow>
                 <cylinderGeometry args={[0.05, 0.035, 0.45, 8]} />
                 <primitive object={material} attach="material" />
             </mesh>
-             <mesh position={[0, -0.78, -0.02]} castShadow>
+             <mesh position={[0, -0.82, -0.02]} castShadow>
                 <cylinderGeometry args={[0.035, 0.045, 0.05, 8]} />
                 <primitive object={darkMaterial} attach="material" />
             </mesh>
