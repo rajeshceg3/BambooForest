@@ -15,6 +15,38 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
   const leafMeshRef = useRef<THREE.InstancedMesh>(null)
   const { camera } = useThree()
 
+  // Shared Interaction Shader Logic
+  const interactionLogic = `
+          // Player Interaction
+          vec3 iWorldPos = vec3(instanceMatrix[3][0], 0.0, instanceMatrix[3][2]);
+          // Use a unified height factor based on actual world height if possible,
+          // but for branches/leaves, instanceMatrix[3][1] is their height.
+          // For stalks, instanceMatrix[3][1] is usually 2.5 (center).
+
+          vec3 camPosFlat = vec3(uCameraPosition.x, 0.0, uCameraPosition.z);
+          vec3 dirToPlayer = iWorldPos - camPosFlat;
+
+          float distToPlayer = length(dirToPlayer);
+          float interactRadius = 3.0; // Slightly larger for bamboo
+
+          if (distToPlayer < interactRadius) {
+              float pushStrength = 1.0 - (distToPlayer / interactRadius);
+              pushStrength = pow(pushStrength, 2.0);
+
+              vec3 pushDir = normalize(dirToPlayer);
+              float pushAmt = 1.5 * pushStrength;
+
+              // Calculate height for stiffness
+              // We need world Y of the vertex
+              float wY = (instanceMatrix * vec4(position, 1.0)).y;
+              float bendFactor = smoothstep(0.0, 5.0, wY);
+              bendFactor = pow(bendFactor, 1.5);
+
+              transformed.x += pushDir.x * pushAmt * bendFactor;
+              transformed.z += pushDir.z * pushAmt * bendFactor;
+          }
+  `;
+
   // Custom material setup for Bamboo Stalks
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -25,10 +57,12 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
     mat.onBeforeCompile = (shader) => {
         shader.uniforms.uTime = { value: 0 }
+        shader.uniforms.uCameraPosition = { value: new THREE.Vector3() }
         mat.userData.shader = shader
 
         shader.vertexShader = `
           uniform float uTime;
+          uniform vec3 uCameraPosition;
           varying vec3 vLocalPosition;
           varying vec3 vWorldPosition;
           ${shader.vertexShader}
@@ -84,6 +118,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             float windZ = cos(uTime * 0.4 + worldZ * 0.3) * swayStrength + cos(uTime * 1.5 + worldX * 0.8) * swayStrength * 0.2;
             transformed.x += windX;
             transformed.z += windZ;
+
+            ${interactionLogic}
           #endif
           `
         )
@@ -146,10 +182,12 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
     mat.onBeforeCompile = (shader) => {
         shader.uniforms.uTime = { value: 0 }
+        shader.uniforms.uCameraPosition = { value: new THREE.Vector3() }
         mat.userData.shader = shader
 
         shader.vertexShader = `
           uniform float uTime;
+          uniform vec3 uCameraPosition;
           ${shader.vertexShader}
         `
 
@@ -169,6 +207,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
              transformed.x += swayX;
              transformed.z += swayZ;
+
+             ${interactionLogic}
           #endif
           `
         )
@@ -192,6 +232,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
         shader.vertexShader = `
             uniform float uTime;
+            uniform vec3 uCameraPosition;
             varying vec3 vWorldPos;
             ${shader.vertexShader}
         `
@@ -231,6 +272,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
                 float flutter = sin(uTime * 3.0 + worldX) * 0.05 * position.x;
                 float twist = position.x * sin(uTime * 2.0 + worldZ) * 0.2 * position.y;
                 transformed.y += flutter + twist;
+
+                ${interactionLogic}
             #endif
             `
         )
@@ -430,9 +473,11 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
       if (material.userData.shader) {
           material.userData.shader.uniforms.uTime.value = time * windSpeed
+          material.userData.shader.uniforms.uCameraPosition.value.copy(camera.position)
       }
       if (branchMaterial.userData.shader) {
           branchMaterial.userData.shader.uniforms.uTime.value = time * windSpeed
+          branchMaterial.userData.shader.uniforms.uCameraPosition.value.copy(camera.position)
       }
       if (leafMaterial.userData.shader) {
           leafMaterial.userData.shader.uniforms.uTime.value = time * windSpeed

@@ -20,8 +20,10 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
       shader.uniforms.uCameraPosition = { value: new THREE.Vector3() }
       mat.userData.shader = shader
 
+      // Add uniform to vertex shader
       shader.vertexShader = `
         uniform float uTime;
+        uniform vec3 uCameraPosition;
         varying vec2 vUv;
         varying float vHeight;
         varying vec3 vPosition;
@@ -51,10 +53,35 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
             swayX += flutter;
 
             float stiffness = smoothstep(0.0, 0.5, vHeight);
-            stiffness = pow(stiffness, 2.0);
+            float bendStiffness = pow(stiffness, 2.0);
 
-            transformed.x += swayX * stiffness;
-            transformed.z += swayZ * stiffness;
+            transformed.x += swayX * bendStiffness;
+            transformed.z += swayZ * bendStiffness;
+
+            // Player Interaction
+            vec3 iWorldPos = vec3(worldX, 0.0, worldZ);
+            vec3 dirToPlayer = iWorldPos - uCameraPosition;
+            dirToPlayer.y = 0.0;
+
+            float distToPlayer = length(dirToPlayer);
+            float interactRadius = 2.5;
+
+            if (distToPlayer < interactRadius) {
+                float pushStrength = 1.0 - (distToPlayer / interactRadius);
+                pushStrength = pow(pushStrength, 2.0); // Smooth falloff
+
+                vec3 pushDir = normalize(dirToPlayer);
+
+                // Bend away
+                float pushAmt = 1.2 * pushStrength;
+
+                // Only bend upper part
+                transformed.x += pushDir.x * pushAmt * bendStiffness;
+                transformed.z += pushDir.z * pushAmt * bendStiffness;
+
+                // Also flatten slightly?
+                // transformed.y -= pushAmt * 0.3 * bendStiffness;
+            }
         #endif
         `
       )
