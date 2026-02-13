@@ -2,7 +2,11 @@ import { useFrame, useThree } from '@react-three/fiber'
 import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 
-export function Navigation() {
+interface NavigationProps {
+  enabled?: boolean
+}
+
+export function Navigation({ enabled = true }: NavigationProps) {
   const { camera } = useThree()
   const moveState = useRef({
     forward: false,
@@ -32,8 +36,19 @@ export function Navigation() {
   const velocity = useRef(new THREE.Vector3())
   const direction = useRef(new THREE.Vector3())
 
+  // Reset state when disabled
+  useEffect(() => {
+    if (!enabled) {
+      moveState.current = { forward: false, backward: false, left: false, right: false }
+      touchState.current.active = false
+      mouseState.current.active = false
+      velocity.current.set(0, 0, 0)
+    }
+  }, [enabled])
+
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
+      if (!enabled) return
       switch (e.code) {
         case 'ArrowUp':
         case 'KeyW':
@@ -55,6 +70,7 @@ export function Navigation() {
     }
 
     const onKeyUp = (e: KeyboardEvent) => {
+      if (!enabled) return
       switch (e.code) {
         case 'ArrowUp':
         case 'KeyW':
@@ -77,6 +93,7 @@ export function Navigation() {
 
     // Touch handlers
     const onTouchStart = (e: TouchEvent) => {
+        if (!enabled) return
         touchState.current.active = true
         touchState.current.startX = e.touches[0].clientX
         touchState.current.startY = e.touches[0].clientY
@@ -85,7 +102,7 @@ export function Navigation() {
     }
 
     const onTouchMove = (e: TouchEvent) => {
-        if (!touchState.current.active) return
+        if (!enabled || !touchState.current.active) return
         touchState.current.currX = e.touches[0].clientX
         touchState.current.currY = e.touches[0].clientY
 
@@ -100,7 +117,7 @@ export function Navigation() {
     // Mouse handlers
     const onMouseDown = (e: MouseEvent) => {
       // Only trigger on left click
-      if (e.button !== 0) return
+      if (e.button !== 0 || !enabled) return
 
       mouseState.current.active = true
       mouseState.current.startX = e.clientX
@@ -110,7 +127,7 @@ export function Navigation() {
     }
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!mouseState.current.active) return
+      if (!mouseState.current.active || !enabled) return
       mouseState.current.currX = e.clientX
       mouseState.current.currY = e.clientY
     }
@@ -146,9 +163,11 @@ export function Navigation() {
       window.removeEventListener('mouseup', onMouseUp)
       window.removeEventListener('mouseleave', onMouseLeave)
     }
-  }, [])
+  }, [enabled]) // Add enabled dependency to re-bind if needed, or just check enabled in handlers (which capture the prop if effect depends on it)
 
   useFrame((_state, delta) => {
+    if (!enabled) return
+
     const speed = 10.0 // Units per second
     const turnSpeed = 1.5
 

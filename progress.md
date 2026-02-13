@@ -195,3 +195,17 @@ Project remains at **100% complete**, pushing the boundaries of WebGL realism.
 ### Percentage of Completion
 
 Project remains at **100% complete**, achieving a dense, photorealistic forest environment.
+
+## Progress - Session 14 (Guided Tour & Progressive Disclosure)
+
+### Achievements
+
+*   **Immersive Guided Tour:** Implemented a cinematic "Guided Tour" feature that takes control of the camera to showcase key points of interest (The Clearing, Ancient Guardian, Flowing Reflection, Deep Forest, Ascent).
+*   **Progressive Disclosure UI:** Designed a minimalist `TourOverlay` that reveals information contextually only when the camera arrives at a destination, adhering to the "progressive disclosure" principle.
+*   **Smooth Navigation:** Created a `TourController` using GSAP for buttery-smooth camera transitions (`power2.inOut`) and continuous, organic drift motion (`Math.sin`) during pauses.
+*   **Context Management:** Architected a robust `TourContext` to manage tour state, ensuring the 3D environment (Zone, Audio, Fog) updates dynamically as the tour progresses.
+*   **Safety & Polish:** Refactored `Navigation` to gracefully disable user input during the tour, preventing conflicts, and added glassmorphism UI elements consistent with the existing aesthetic.
+
+### Percentage of Completion
+
+Project remains at **100% complete**, now featuring a directed experience mode alongside free exploration.

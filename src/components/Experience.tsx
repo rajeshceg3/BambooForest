@@ -9,16 +9,21 @@ import { Deer } from './Deer'
 import { Crane } from './Crane'
 import { Butterflies } from './Butterflies'
 import { Effects } from './Effects'
+import { TourController } from './TourController'
+import { useTour } from './TourContext'
 import { Zone } from '../types'
 
 interface ExperienceProps {
   currentZone: Zone
+  onZoneChange: (zone: Zone) => void
 }
 
-export function Experience({ currentZone }: ExperienceProps) {
+export function Experience({ currentZone, onZoneChange }: ExperienceProps) {
+  const { isActive } = useTour()
+
   return (
     <>
-      <Navigation />
+      <Navigation enabled={!isActive} />
       <Environment currentZone={currentZone} />
       <BambooForest currentZone={currentZone} />
       <Fireflies count={currentZone === 'DEEP_FOREST' ? 250 : 150} />
@@ -29,6 +34,7 @@ export function Experience({ currentZone }: ExperienceProps) {
       <Crane position={[-12, 0, 5]} rotation={[0, -Math.PI / 4, 0]} />
       <Butterflies count={8} />
       <Effects />
+      <TourController onZoneChange={onZoneChange} />
     </>
   )
 }
