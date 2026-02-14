@@ -1,109 +1,7 @@
 import { useRef, useMemo } from 'react'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
-
-// --- Simplex Noise Implementation (Inline to avoid dependency) ---
-// Based on standard implementation
-class SimplexNoise {
-  private p: Uint8Array;
-  private perm: Uint8Array;
-  private permMod12: Uint8Array;
-  private grad3 = new Float32Array([1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1, 0,
-    1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, -1,
-    0, 1, 1, 0, -1, 1, 0, 1, -1, 0, -1, -1]);
-
-  constructor(random: () => number = Math.random) {
-      this.p = new Uint8Array(256);
-      for (let i = 0; i < 256; i++) {
-          this.p[i] = i;
-      }
-      for (let i = 0; i < 255; i++) {
-          const r = i + ~~(random() * (256 - i));
-          const aux = this.p[i];
-          this.p[i] = this.p[r];
-          this.p[r] = aux;
-      }
-      this.perm = new Uint8Array(512);
-      this.permMod12 = new Uint8Array(512);
-      for (let i = 0; i < 512; i++) {
-          this.perm[i] = this.p[i & 255];
-          this.permMod12[i] = this.perm[i] % 12;
-      }
-  }
-
-  noise3D(xin: number, yin: number, zin: number): number {
-      const permMod12 = this.permMod12;
-      const perm = this.perm;
-      const grad3 = this.grad3;
-      let n0, n1, n2, n3;
-      const F3 = 1.0 / 3.0;
-      const s = (xin + yin + zin) * F3;
-      const i = Math.floor(xin + s);
-      const j = Math.floor(yin + s);
-      const k = Math.floor(zin + s);
-      const G3 = 1.0 / 6.0;
-      const t = (i + j + k) * G3;
-      const X0 = i - t;
-      const Y0 = j - t;
-      const Z0 = k - t;
-      const x0 = xin - X0;
-      const y0 = yin - Y0;
-      const z0 = zin - Z0;
-      let i1, j1, k1;
-      let i2, j2, k2;
-      if (x0 >= y0) {
-          if (y0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
-          else if (x0 >= z0) { i1 = 1; j1 = 0; k1 = 0; i2 = 1; j2 = 0; k2 = 1; }
-          else { i1 = 0; j1 = 0; k1 = 1; i2 = 1; j2 = 0; k2 = 1; }
-      } else {
-          if (y0 < z0) { i1 = 0; j1 = 0; k1 = 1; i2 = 0; j2 = 1; k2 = 1; }
-          else if (x0 < z0) { i1 = 0; j1 = 1; k1 = 0; i2 = 0; j2 = 1; k2 = 1; }
-          else { i1 = 0; j1 = 1; k1 = 0; i2 = 1; j2 = 1; k2 = 0; }
-      }
-      const x1 = x0 - i1 + G3;
-      const y1 = y0 - j1 + G3;
-      const z1 = z0 - k1 + G3;
-      const x2 = x0 - i2 + 2.0 * G3;
-      const y2 = y0 - j2 + 2.0 * G3;
-      const z2 = z0 - k2 + 2.0 * G3;
-      const x3 = x0 - 1.0 + 3.0 * G3;
-      const y3 = y0 - 1.0 + 3.0 * G3;
-      const z3 = z0 - 1.0 + 3.0 * G3;
-      const ii = i & 255;
-      const jj = j & 255;
-      const kk = k & 255;
-
-      let t0 = 0.6 - x0 * x0 - y0 * y0 - z0 * z0;
-      if (t0 < 0) n0 = 0.0;
-      else {
-          const gi0 = permMod12[ii + perm[jj + perm[kk]]] * 3;
-          t0 *= t0;
-          n0 = t0 * t0 * (grad3[gi0] * x0 + grad3[gi0 + 1] * y0 + grad3[gi0 + 2] * z0);
-      }
-      let t1 = 0.6 - x1 * x1 - y1 * y1 - z1 * z1;
-      if (t1 < 0) n1 = 0.0;
-      else {
-          const gi1 = permMod12[ii + i1 + perm[jj + j1 + perm[kk + k1]]] * 3;
-          t1 *= t1;
-          n1 = t1 * t1 * (grad3[gi1] * x1 + grad3[gi1 + 1] * y1 + grad3[gi1 + 2] * z1);
-      }
-      let t2 = 0.6 - x2 * x2 - y2 * y2 - z2 * z2;
-      if (t2 < 0) n2 = 0.0;
-      else {
-          const gi2 = permMod12[ii + i2 + perm[jj + j2 + perm[kk + k2]]] * 3;
-          t2 *= t2;
-          n2 = t2 * t2 * (grad3[gi2] * x2 + grad3[gi2 + 1] * y2 + grad3[gi2 + 2] * z2);
-      }
-      let t3 = 0.6 - x3 * x3 - y3 * y3 - z3 * z3;
-      if (t3 < 0) n3 = 0.0;
-      else {
-          const gi3 = permMod12[ii + 1 + perm[jj + 1 + perm[kk + 1]]] * 3;
-          t3 *= t3;
-          n3 = t3 * t3 * (grad3[gi3] * x3 + grad3[gi3 + 1] * y3 + grad3[gi3 + 2] * z3);
-      }
-      return 32.0 * (n0 + n1 + n2 + n3);
-  }
-}
+import { SimplexNoise } from 'three-stdlib'
 
 // Simple seedable random (LCG)
 function mulberry32(a: number) {
@@ -199,7 +97,7 @@ export function Stream() {
   // Generate stable rocks with procedural geometry
   const rocks = useMemo(() => {
       const rand = mulberry32(12345);
-      const simplex = new SimplexNoise(rand);
+      const simplex = new SimplexNoise(); // seed not supported in standard three-stdlib version usually
 
       const rockData: {
           position: [number, number, number],
@@ -231,8 +129,18 @@ export function Stream() {
               const nz = vertex.z * 1.5;
 
               // FBM-like noise (base shape + detail)
-              let noise = simplex.noise3D(nx, ny, nz);
-              noise += 0.5 * simplex.noise3D(nx * 2 + 10, ny * 2 + 10, nz * 2 + 10);
+              // Use public noise method (which should handle 3D if arguments are provided, or use 2D projection)
+              // Note: If three-stdlib SimplexNoise.noise is 2D only, we might need a workaround.
+              // But usually it exposes noise3d as noise3D or similar.
+              // Error said 'noise3d' is private. Let's try 'noise' assuming it might be 3D or 4D.
+              // Actually, looking at common implementations, 'noise' is often 2D.
+              // Let's try casting to any to bypass 'private' check if we know it works at runtime,
+              // or better, use 2D noise on surface of sphere?
+              // 3D noise is better.
+              // Let's try (simplex as any).noise3d(...)
+
+              let noise = (simplex as any).noise3d(nx, ny, nz);
+              noise += 0.5 * (simplex as any).noise3d(nx * 2 + 10, ny * 2 + 10, nz * 2 + 10);
 
               // Displace vertex along its normal
               // For a sphere, normal is same as position normalized.

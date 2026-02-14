@@ -230,7 +230,12 @@ export function Environment({ currentZone }: EnvironmentProps) {
       <EnvironmentDrei preset="forest" background={false} />
 
       {/* Ground - Custom Shader Material */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow position={[0, -0.01, 0]}>
+      <mesh
+        ref={(mesh) => { if (mesh) mesh.layers.enable(1); }}
+        rotation={[-Math.PI / 2, 0, 0]}
+        receiveShadow
+        position={[0, -0.01, 0]}
+      >
         <planeGeometry args={[2000, 2000, 256, 256]} />
         <primitive object={groundMaterial} attach="material" />
       </mesh>
