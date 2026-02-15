@@ -10,9 +10,9 @@ interface BambooForestProps {
 }
 
 export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooForestProps) {
-  const meshRef = useRef<THREE.InstancedMesh>(null)
-  const branchMeshRef = useRef<THREE.InstancedMesh>(null)
-  const leafMeshRef = useRef<THREE.InstancedMesh>(null)
+  const meshRef = useRef<THREE.InstancedMesh | null>(null)
+  const branchMeshRef = useRef<THREE.InstancedMesh | null>(null)
+  const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const { camera } = useThree()
 
   // Shared Interaction Shader Logic
@@ -130,12 +130,48 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
           ${shader.fragmentShader}
         `
 
+        // Inject Noise Function
+        shader.fragmentShader = `
+            vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+            vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+            float snoise(vec2 v) {
+                const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                vec2 i  = floor(v + dot(v, C.yy) );
+                vec2 x0 = v - i + dot(i, C.xx);
+                vec2 i1;
+                i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                vec4 x12 = x0.xyxy + C.xxzz;
+                x12.xy -= i1;
+                i = mod289(i);
+                vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                m = m*m ;
+                m = m*m ;
+                vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                vec3 h = abs(x) - 0.5;
+                vec3 ox = floor(x + 0.5);
+                vec3 a0 = x - ox;
+                m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                vec3 g;
+                g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                return 130.0 * dot(m, g);
+            }
+            ${shader.fragmentShader}
+        `
+
         shader.fragmentShader = shader.fragmentShader.replace(
             '#include <roughnessmap_fragment>',
             `
             #include <roughnessmap_fragment>
-            float striation = sin(vWorldPosition.x * 200.0) * 0.5 + 0.5;
-            roughnessFactor = mix(0.6, 0.9, striation);
+            float noiseVal = snoise(vWorldPosition.xy * 20.0); // High freq noise
+            float striation = sin(vWorldPosition.x * 200.0 + noiseVal * 10.0) * 0.5 + 0.5;
+            roughnessFactor = mix(0.5, 0.95, striation * 0.8 + noiseVal * 0.1);
+
+            // Add weathering patches
+            float weatherNoise = snoise(vWorldPosition.xz * 2.0);
+            if (weatherNoise > 0.3) roughnessFactor = 0.9;
             `
         )
 
@@ -147,23 +183,29 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
           vec3 darkGreen = vec3(0.18, 0.25, 0.12);
           vec3 lightGreen = vec3(0.55, 0.65, 0.35);
           vec3 yellowGreen = vec3(0.7, 0.75, 0.45);
+          vec3 brown = vec3(0.4, 0.35, 0.2);
+
           vec3 stalkColor = mix(darkGreen, lightGreen, smoothstep(0.0, 0.6, h));
           stalkColor = mix(stalkColor, yellowGreen, smoothstep(0.6, 1.0, h));
 
+          // Nodes
           float nodeFreq = 1.0;
           float nodeThickness = 0.03;
           float nodeDist = abs(fract(vLocalPosition.y * nodeFreq) - 0.5);
 
           if (nodeDist < nodeThickness) {
-             stalkColor *= 0.7;
+             stalkColor *= 0.7; // Darker ring
           } else if (nodeDist < nodeThickness * 2.0) {
-             stalkColor *= 1.1;
+             stalkColor *= 1.1; // Highlight
           }
 
-          float streaks = sin(vWorldPosition.x * 20.0) * sin(vWorldPosition.z * 20.0) * 0.05;
-          stalkColor += streaks;
-          float randomVar = sin(vWorldPosition.x * 0.1) * cos(vWorldPosition.z * 0.1);
-          stalkColor += randomVar * 0.05;
+          // Weathering/Age
+          float ageNoise = snoise(vWorldPosition.xz * 0.5 + vec2(0, vWorldPosition.y * 0.2));
+          stalkColor = mix(stalkColor, brown, smoothstep(0.4, 0.8, ageNoise));
+
+          // Micro-details (spots)
+          float spots = snoise(vWorldPosition.xy * 50.0);
+          if (spots > 0.6) stalkColor *= 0.9;
 
           diffuseColor.rgb = stalkColor;
           `
@@ -234,6 +276,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             uniform float uTime;
             uniform vec3 uCameraPosition;
             varying vec3 vWorldPos;
+            varying vec3 vNormal;
             ${shader.vertexShader}
         `
 
@@ -245,6 +288,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             float slope = 2.0 * distY * 1.0;
             objectNormal.y += slope;
             objectNormal = normalize(objectNormal);
+            vNormal = normalize(normalMatrix * objectNormal);
             `
         )
 
@@ -254,6 +298,18 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             #include <begin_vertex>
             #ifdef USE_INSTANCING
              vWorldPos = (instanceMatrix * vec4(position, 1.0)).xyz;
+
+             // Random twist for organic variation
+             float randRot = sin(instanceMatrix[3][0] * 12.0 + instanceMatrix[3][2] * 34.0);
+             float c = cos(randRot * 0.5);
+             float s = sin(randRot * 0.5);
+             // Twist around Y (length of leaf is Y?) No, PlaneGeometry(0.2, 0.6) translated 0.3 Y.
+             // Twist around local Y (stem axis)
+             mat2 rot = mat2(c, -s, s, c);
+             transformed.xz = rot * transformed.xz;
+             // Also update normal for correct lighting
+             objectNormal.xz = rot * objectNormal.xz;
+             vNormal = normalize(normalMatrix * objectNormal);
             #endif
 
             float distFromStem = position.y;
@@ -280,6 +336,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
         shader.fragmentShader = `
             varying vec3 vWorldPos;
+            varying vec3 vNormal;
             uniform vec3 uCameraPosition;
             ${shader.fragmentShader}
         `
@@ -290,11 +347,30 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             #include <color_fragment>
             float noise = sin(vWorldPos.x * 0.5) * cos(vWorldPos.z * 0.5);
             diffuseColor.rgb += noise * 0.05;
+
+            // Fake Subsurface Scattering (SSS)
             vec3 sunDir = normalize(vec3(15.0, 25.0, 10.0));
             vec3 viewDir = normalize(uCameraPosition - vWorldPos);
-            float dotViewSun = dot(viewDir, sunDir);
-            float sunGlow = smoothstep(0.0, 1.0, -dotViewSun);
-            diffuseColor.rgb += vec3(0.4, 0.5, 0.2) * sunGlow * 0.4;
+
+            // 1. View looking at Sun through leaf
+            float dotViewSun = dot(viewDir, -sunDir); // -sunDir points FROM sun
+            float backlight = smoothstep(-0.2, 1.0, dotViewSun);
+
+            // 2. Normal facing AWAY from sun (backside lit)
+            float normalSun = dot(vNormal, sunDir);
+            // If normal points to sun (1.0), it's front lit. If (-1.0), back lit.
+            // We want transmission when back lit.
+            float transmission = smoothstep(0.0, 1.0, -normalSun);
+
+            // Combine
+            float sss = backlight * transmission;
+
+            vec3 sssColor = vec3(0.5, 0.6, 0.1) * sss * 0.8;
+            diffuseColor.rgb += sssColor;
+
+            // Soften edges using Fresnel?
+            float fresnel = 1.0 - abs(dot(viewDir, vNormal));
+            diffuseColor.rgb += vec3(0.1, 0.2, 0.05) * fresnel * 0.5;
             `
         )
     }
@@ -496,7 +572,10 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
   return (
     <group>
         <instancedMesh
-            ref={meshRef}
+            ref={(node) => {
+                if (meshRef) meshRef.current = node;
+                if (node) node.layers.enable(1);
+            }}
             args={[undefined, undefined, stalkInstances.length]}
             castShadow
             receiveShadow
