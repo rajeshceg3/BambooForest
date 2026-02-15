@@ -57,6 +57,7 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
         varying vec2 vUv;
         varying float vHeight;
         varying vec3 vPosition;
+        varying float vRandId;
         ${noiseFunc}
         ${shader.vertexShader}
       `
@@ -70,8 +71,10 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
 
         #ifdef USE_INSTANCING
              vPosition = (instanceMatrix * vec4(position, 1.0)).xyz;
+             vRandId = fract(sin(dot(instanceMatrix[3].xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
         #else
              vPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+             vRandId = 0.5;
         #endif
 
         #ifdef USE_INSTANCING
@@ -125,9 +128,6 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
                 // Only bend upper part
                 transformed.x += pushDir.x * pushAmt * bendStiffness;
                 transformed.z += pushDir.z * pushAmt * bendStiffness;
-
-                // Also flatten slightly?
-                // transformed.y -= pushAmt * 0.3 * bendStiffness;
             }
         #endif
         `
@@ -137,6 +137,7 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
         varying vec2 vUv;
         varying float vHeight;
         varying vec3 vPosition;
+        varying float vRandId;
         uniform vec3 uCameraPosition;
         ${noiseFunc}
         ${shader.fragmentShader}
@@ -147,35 +148,41 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
         `
         #include <color_fragment>
 
-        vec3 darkGreen = vec3(0.15, 0.25, 0.05);
-        vec3 midGreen = vec3(0.3, 0.45, 0.15);
-        vec3 tipGreen = vec3(0.5, 0.6, 0.25);
-        vec3 deadGreen = vec3(0.4, 0.4, 0.2);
+        vec3 darkGreen = vec3(0.12, 0.22, 0.04);
+        vec3 midGreen = vec3(0.28, 0.42, 0.12);
+        vec3 tipGreen = vec3(0.48, 0.58, 0.22);
+        vec3 deadGreen = vec3(0.55, 0.50, 0.25);
+        vec3 freshGreen = vec3(0.35, 0.65, 0.15); // Extra fresh for variation
 
-        float h = smoothstep(0.0, 0.6, vHeight);
+        float h = smoothstep(0.0, 0.8, vHeight);
+
+        // Instance Variation
+        vec3 iTipColor = mix(tipGreen, freshGreen, vRandId);
+        if (vRandId > 0.8) iTipColor = deadGreen; // Occasional dead grass
 
         // Gradient
         vec3 grassColor = mix(darkGreen, midGreen, h);
-        grassColor = mix(grassColor, tipGreen, smoothstep(0.5, 1.0, h));
+        grassColor = mix(grassColor, iTipColor, smoothstep(0.4, 1.0, h));
 
-        // Noise Variation (Color)
-        float colorNoise = snoise(vPosition.xz * 0.1); // Low freq patchiness
-        grassColor = mix(grassColor, deadGreen, smoothstep(0.6, 0.9, colorNoise));
+        // Noise Variation (Patchiness)
+        float colorNoise = snoise(vPosition.xz * 0.08);
+        grassColor = mix(grassColor, deadGreen, smoothstep(0.5, 0.9, colorNoise));
 
-        // Highlights
-        grassColor = mix(grassColor, grassColor * 1.3, smoothstep(0.3, 1.0, snoise(vPosition.xz * 1.0)));
+        // Highlights/Sheen
+        vec3 viewDir = normalize(uCameraPosition - vPosition);
+        vec3 sheenNormal = normalize(vNormal); // Standard normal
+        // Fake anisotropic sheen
+        float sheen = 1.0 - abs(dot(viewDir, sheenNormal));
+        sheen = pow(sheen, 4.0);
+        grassColor += vec3(0.2, 0.3, 0.1) * sheen * 0.5;
 
         // Backlight / Translucency
         vec3 sunDir = normalize(vec3(15.0, 25.0, 10.0));
-        vec3 viewDir = normalize(uCameraPosition - vPosition);
-
         float dotViewSun = dot(viewDir, -sunDir);
         float sunGlow = smoothstep(0.0, 1.0, dotViewSun);
 
         // Additive glow only at tips and when looking at sun
-        // Use a mix instead of pure add to preserve shadow info partially?
-        // Actually, translucency ADDS light.
-        vec3 translucencyColor = vec3(0.6, 0.7, 0.2) * sunGlow * 0.6 * h;
+        vec3 translucencyColor = vec3(0.6, 0.8, 0.1) * sunGlow * 0.8 * h;
 
         diffuseColor.rgb = grassColor + translucencyColor;
         `

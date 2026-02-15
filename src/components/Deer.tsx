@@ -60,19 +60,39 @@ export function Deer(props: any) {
         `
 
         shader.fragmentShader = shader.fragmentShader.replace(
+            '#include <normal_fragment_maps>',
+            `
+            #include <normal_fragment_maps>
+            // Bump map from fur noise
+            float scale = 120.0;
+            float h = hash(vPos * scale);
+            // Finite differences for bump
+            float hx = hash((vPos + vec3(0.01, 0.0, 0.0)) * scale);
+            float hy = hash((vPos + vec3(0.0, 0.01, 0.0)) * scale);
+            float hz = hash((vPos + vec3(0.0, 0.0, 0.01)) * scale);
+
+            vec3 bump = normalize(vec3(h - hx, h - hy, h - hz));
+            normal = normalize(normal + bump * 0.3); // Perturb normal
+            `
+        )
+
+        shader.fragmentShader = shader.fragmentShader.replace(
             '#include <color_fragment>',
             `
             #include <color_fragment>
             float furNoise = hash(vPos * 120.0);
             float mixVal = 0.85 + 0.3 * furNoise;
             diffuseColor.rgb *= mixVal;
+
             vec3 viewDir = normalize(vViewPosition);
-            vec3 viewNormal = normalize(vNormal);
+            vec3 viewNormal = normalize(vNormal); // Perturbed normal
             float fresnel = dot(viewDir, viewNormal);
             fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
-            fresnel = pow(fresnel, 3.0);
-            vec3 rimColor = vec3(1.0, 0.95, 0.85);
-            diffuseColor.rgb = mix(diffuseColor.rgb, rimColor, fresnel * 0.5);
+            fresnel = pow(fresnel, 2.5); // Softer falloff
+
+            // Warm Rim Light
+            vec3 rimColor = vec3(1.0, 0.9, 0.7);
+            diffuseColor.rgb += rimColor * fresnel * 0.6;
             `
         )
     }
