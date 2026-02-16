@@ -240,3 +240,17 @@ Project remains at **100% complete**, pushing the visual fidelity to "Ultrathink
 ### Percentage of Completion
 
 Project remains at **100% complete**, achieving the highest level of visual fidelity ("Ultrathink").
+
+## Progress - Session 17 (Unified Wind System & Artifact Removal)
+
+### Achievements
+
+*   **Unified Wind Shader:** Refactored `BambooForest.tsx` to implement a global `getWindOffset` GLSL function based on world position. This unifies the wind sway calculation across Bamboo Stalks, Branches, and Leaves.
+*   **Artifact Elimination:** Completely eliminated the visual artifact where branches and leaves would "detach" from swaying stalks due to mismatched wind logic. Now, the entire bamboo structure moves as a cohesive physical object.
+*   **Unified Interaction:** Consolidated the player interaction logic (bending away from player) into the global wind system, ensuring consistent reaction across all bamboo parts.
+*   **Shader Optimization:** Removed redundant and disparate wind code from individual material shaders, streamlining the codebase and ensuring maintainability.
+*   **Visual Verification:** Verified the changes preserve the scene integrity and render correctly without shader compilation errors.
+
+### Percentage of Completion
+
+Project remains at **100% complete**, with improved physical realism and elimination of "artificial" separation artifacts.
