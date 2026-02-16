@@ -224,3 +224,19 @@ Project remains at **100% complete**, now featuring a directed experience mode a
 ### Percentage of Completion
 
 Project remains at **100% complete**, pushing the visual fidelity to "Ultrathink" standards.
+
+## Progress - Session 16 (Ultrathink Realism Polish)
+
+### Achievements
+
+*   **Bamboo Stalks:** Implemented tapered geometry (thicker at base), sharper nodal displacement for realistic rings, and added high-frequency surface noise texture.
+*   **Bamboo Leaves:** Transformed rectangular planes into lanceolate (leaf) shapes via vertex shaders, improved SSS for better light transmission, and added color variation (fresh vs dry) based on instance ID.
+*   **Ground Cover:** Enhanced grass material with specular sheen, per-blade color variation, and improved translucency to simulate backlighting.
+*   **Stream & Stones:** Increased water surface area and rock density (25 -> 300) to create a more substantial river environment, and refined rock material with sharper normal maps.
+*   **Stone Lantern:** Injected vertex deformation noise into the shader to simulate hand-carved imperfections, breaking the perfect lathe symmetry.
+*   **Deer:** Added normal map perturbation derived from noise for a fur-like texture and softened rim lighting for a more organic look.
+*   **Shader Fixes:** Resolved shader compilation errors related to variable redefinition in custom shader injections.
+
+### Percentage of Completion
+
+Project remains at **100% complete**, achieving the highest level of visual fidelity ("Ultrathink").

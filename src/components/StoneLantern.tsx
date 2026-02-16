@@ -19,6 +19,10 @@ function useStoneMaterial(color: string) {
         '#include <begin_vertex>',
         `
         #include <begin_vertex>
+        // Deform vertex based on local position to simulate hand-carving
+        float def = sin(position.x * 20.0) * cos(position.y * 15.0) * sin(position.z * 18.0);
+        transformed += normal * def * 0.005;
+
         vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
         `
       )

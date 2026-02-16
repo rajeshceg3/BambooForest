@@ -106,13 +106,14 @@ export function Stream() {
           geometry: THREE.BufferGeometry
       }[] = [];
 
-      for(let i=0; i<25; i++) {
-          const scaleX = 0.3 + rand() * 0.4
-          const scaleZ = 0.3 + rand() * 0.4
-          const scaleY = 0.2 + rand() * 0.2
+      for(let i=0; i<300; i++) {
+          const scaleX = 0.3 + rand() * 0.5
+          const scaleZ = 0.3 + rand() * 0.5
+          const scaleY = 0.2 + rand() * 0.3
 
           // Create base geometry (high resolution sphere)
-          const geometry = new THREE.IcosahedronGeometry(1, 10); // Subdivision 10
+          // Subdivision 3 for balance between detail and performance (300 rocks)
+          const geometry = new THREE.IcosahedronGeometry(1, 3);
           const posAttribute = geometry.attributes.position;
 
           const vertex = new THREE.Vector3();
@@ -167,9 +168,9 @@ export function Stream() {
 
           rockData.push({
               position: [
-                  (rand() - 0.5) * 12,
-                  scaleY * 0.3, // Embed in ground
-                  (rand() - 0.5) * 80
+                  (rand() - 0.5) * 18,
+                  scaleY * 0.2, // Embed in ground
+                  (rand() - 0.5) * 2000
               ],
               scale: [scaleX, scaleY, scaleZ],
               rotation: [
@@ -187,7 +188,7 @@ export function Stream() {
     <group position={[-15, 0.05, 0]} rotation={[0, Math.PI / 4, 0]}>
       {/* Water Surface */}
       <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[10, 100, 20, 100]} />
+        <planeGeometry args={[20, 2000, 32, 512]} />
         {/* Advanced Transmission Material for realistic water */}
         <MeshTransmissionMaterial
             resolution={512}
