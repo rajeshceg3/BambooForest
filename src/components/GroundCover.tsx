@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { SimplexNoise } from 'three-stdlib'
 
-export function GroundCover({ count = 100000 }) { // Increased count significantly
+export function GroundCover({ count = 100000 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const { camera } = useThree()
 
@@ -106,7 +106,9 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
             transformed.z += (swayZ + windBias) * bendStiffness;
 
             // Droop when strong wind
+            // Flatten more when gust is strong
             transformed.y -= abs(swayX + swayZ) * 0.2 * bendStiffness;
+            transformed.y *= 1.0 - gustStrength * 0.3 * stiffness;
 
             // Player Interaction
             vec3 iWorldPos = vec3(worldX, 0.0, worldZ);
@@ -152,7 +154,10 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
         vec3 midGreen = vec3(0.28, 0.42, 0.12);
         vec3 tipGreen = vec3(0.48, 0.58, 0.22);
         vec3 deadGreen = vec3(0.55, 0.50, 0.25);
-        vec3 freshGreen = vec3(0.35, 0.65, 0.15); // Extra fresh for variation
+        vec3 freshGreen = vec3(0.35, 0.65, 0.15);
+
+        // Brown base
+        vec3 brownBase = vec3(0.20, 0.16, 0.10);
 
         float h = smoothstep(0.0, 0.8, vHeight);
 
@@ -162,6 +167,11 @@ export function GroundCover({ count = 100000 }) { // Increased count significant
 
         // Gradient
         vec3 grassColor = mix(darkGreen, midGreen, h);
+
+        // Mix in brown base at bottom 20%
+        float baseMix = smoothstep(0.3, 0.0, vHeight); // 1 at bottom, 0 at 0.3 height
+        grassColor = mix(grassColor, brownBase, baseMix * 0.8);
+
         grassColor = mix(grassColor, iTipColor, smoothstep(0.4, 1.0, h));
 
         // Noise Variation (Patchiness)
