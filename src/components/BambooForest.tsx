@@ -9,43 +9,44 @@ interface BambooForestProps {
   count?: number
 }
 
+// Global Wind Logic for Stalks, Branches, and Leaves
+const windShaderLogic = `
+vec3 getWindOffset(vec3 pos, float time, vec3 camPos) {
+    float h = pos.y;
+    // Normalized height factor (assuming max height ~ 8.0 for tall stalks)
+    float hFactor = smoothstep(0.0, 8.0, h);
+    float swayStrength = 0.5 * hFactor * hFactor;
+
+    // Wind pattern
+    float windX = sin(time * 0.5 + pos.x * 0.3) * swayStrength + sin(time * 1.2 + pos.z * 0.7) * swayStrength * 0.2;
+    float windZ = cos(time * 0.4 + pos.z * 0.3) * swayStrength + cos(time * 1.5 + pos.x * 0.8) * swayStrength * 0.2;
+
+    // Interaction
+    vec3 dirToPlayer = pos - camPos;
+    dirToPlayer.y = 0.0;
+    float distToPlayer = length(dirToPlayer);
+    float interactRadius = 3.0;
+
+    if (distToPlayer < interactRadius) {
+        float pushStrength = 1.0 - (distToPlayer / interactRadius);
+        pushStrength = pow(pushStrength, 2.0);
+        vec3 pushDir = normalize(dirToPlayer);
+        // Add extra bending for interaction
+        float pushAmt = 1.5 * pushStrength * pow(hFactor, 1.5);
+
+        windX += pushDir.x * pushAmt;
+        windZ += pushDir.z * pushAmt;
+    }
+
+    return vec3(windX, 0.0, windZ);
+}
+`;
+
 export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooForestProps) {
   const meshRef = useRef<THREE.InstancedMesh | null>(null)
   const branchMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const { camera } = useThree()
-
-  // Shared Interaction Shader Logic
-  const interactionLogic = `
-          // Player Interaction
-          vec3 iWorldPos = vec3(instanceMatrix[3][0], 0.0, instanceMatrix[3][2]);
-          // Use a unified height factor based on actual world height if possible,
-          // but for branches/leaves, instanceMatrix[3][1] is their height.
-          // For stalks, instanceMatrix[3][1] is usually 2.5 (center).
-
-          vec3 camPosFlat = vec3(uCameraPosition.x, 0.0, uCameraPosition.z);
-          vec3 dirToPlayer = iWorldPos - camPosFlat;
-
-          float distToPlayer = length(dirToPlayer);
-          float interactRadius = 3.0; // Slightly larger for bamboo
-
-          if (distToPlayer < interactRadius) {
-              float pushStrength = 1.0 - (distToPlayer / interactRadius);
-              pushStrength = pow(pushStrength, 2.0);
-
-              vec3 pushDir = normalize(dirToPlayer);
-              float pushAmt = 1.5 * pushStrength;
-
-              // Calculate height for stiffness
-              // We need world Y of the vertex
-              float wY = (instanceMatrix * vec4(position, 1.0)).y;
-              float bendFactor = smoothstep(0.0, 5.0, wY);
-              bendFactor = pow(bendFactor, 1.5);
-
-              transformed.x += pushDir.x * pushAmt * bendFactor;
-              transformed.z += pushDir.z * pushAmt * bendFactor;
-          }
-  `;
 
   // Custom material setup for Bamboo Stalks
   const material = useMemo(() => {
@@ -65,6 +66,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
           uniform vec3 uCameraPosition;
           varying vec3 vLocalPosition;
           varying vec3 vWorldPosition;
+          ${windShaderLogic}
           ${shader.vertexShader}
         `
 
@@ -109,7 +111,6 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
               transformed.xz += normalize(position.xz) * bulge;
 
               // Tapering: Thicker at bottom (y=-2.5), thinner at top (y=2.5)
-              // height factor 0..1
               float hFactor = (position.y + 2.5) / 5.0;
               float taper = mix(1.2, 0.8, hFactor);
               transformed.xz *= taper;
@@ -117,21 +118,28 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
           float irregularity = sin(yPos * 10.0 + vWorldPosition.x) * 0.003;
           transformed.xz += irregularity;
-
-          float heightFactor = smoothstep(-2.5, 2.5, position.y);
-          float swayStrength = 0.5 * heightFactor * heightFactor;
-
-          #ifdef USE_INSTANCING
-            float worldX = instanceMatrix[3][0];
-            float worldZ = instanceMatrix[3][2];
-            float windX = sin(uTime * 0.5 + worldX * 0.3) * swayStrength + sin(uTime * 1.2 + worldZ * 0.7) * swayStrength * 0.2;
-            float windZ = cos(uTime * 0.4 + worldZ * 0.3) * swayStrength + cos(uTime * 1.5 + worldX * 0.8) * swayStrength * 0.2;
-            transformed.x += windX;
-            transformed.z += windZ;
-
-            ${interactionLogic}
-          #endif
           `
+        )
+
+        // Inject Global Wind in Project Vertex
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <project_vertex>',
+            `
+            vec4 mvPosition = vec4( transformed, 1.0 );
+            #ifdef USE_INSTANCING
+                mvPosition = instanceMatrix * mvPosition;
+            #endif
+            // Transform to World Space (assuming modelMatrix is identity or close)
+            mvPosition = modelMatrix * mvPosition;
+
+            // Apply Global Wind
+            vec3 windOffset = getWindOffset(mvPosition.xyz, uTime, uCameraPosition);
+            mvPosition.xyz += windOffset;
+
+            // Transform to View Space
+            mvPosition = viewMatrix * mvPosition;
+            gl_Position = projectionMatrix * mvPosition;
+            `
         )
 
         shader.fragmentShader = `
@@ -245,30 +253,28 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
         shader.vertexShader = `
           uniform float uTime;
           uniform vec3 uCameraPosition;
+          ${windShaderLogic}
           ${shader.vertexShader}
         `
 
         shader.vertexShader = shader.vertexShader.replace(
-          '#include <begin_vertex>',
-          `
-          #include <begin_vertex>
+            '#include <project_vertex>',
+            `
+            vec4 mvPosition = vec4( transformed, 1.0 );
+            #ifdef USE_INSTANCING
+                mvPosition = instanceMatrix * mvPosition;
+            #endif
+            mvPosition = modelMatrix * mvPosition;
 
-          // Wind for branches - matches stalk movement roughly
-          #ifdef USE_INSTANCING
-             float worldX = instanceMatrix[3][0];
-             float worldZ = instanceMatrix[3][2];
+            vec3 windOffset = getWindOffset(mvPosition.xyz, uTime, uCameraPosition);
+            mvPosition.xyz += windOffset;
 
-             // Simple sway
-             float swayX = sin(uTime * 0.5 + worldX * 0.3) * 0.1;
-             float swayZ = cos(uTime * 0.4 + worldZ * 0.3) * 0.1;
-
-             transformed.x += swayX;
-             transformed.z += swayZ;
-
-             ${interactionLogic}
-          #endif
-          `
+            mvPosition = viewMatrix * mvPosition;
+            gl_Position = projectionMatrix * mvPosition;
+            `
         )
+
+        // NOTE: No changes to begin_vertex needed as we removed the old sway logic
     }
     return mat
   }, [])
@@ -292,6 +298,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             uniform vec3 uCameraPosition;
             varying vec3 vWorldPos;
             varying float vRandId;
+            ${windShaderLogic}
             ${shader.vertexShader}
         `
 
@@ -317,10 +324,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
              float randRot = sin(instanceMatrix[3][0] * 12.0 + instanceMatrix[3][2] * 34.0);
              float c = cos(randRot * 0.5);
              float s = sin(randRot * 0.5);
-             // Twist around local Y (stem axis)
              mat2 rot = mat2(c, -s, s, c);
              transformed.xz = rot * transformed.xz;
-             // Also update normal for correct lighting
              objectNormal.xz = rot * objectNormal.xz;
              vNormal = normalize(normalMatrix * objectNormal);
 
@@ -328,11 +333,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             #endif
 
             // Leaf Shaping (Lanceolate)
-            // Geometry is translated up 0.3. Bounds Y: [0, 0.6]. X: [-0.1, 0.1].
             float len = 0.6;
             float yNorm = position.y / len; // 0 to 1
-            // Sine shape for width: 0 at ends, 1 in middle
-            // pow to sharpen the tip
             float widthFactor = sin(yNorm * 3.14159);
             widthFactor = pow(widthFactor, 0.8);
             transformed.x *= widthFactor;
@@ -342,22 +344,35 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             transformed.z -= droop;
 
             // Cup the leaf
-            float cup = pow(abs(position.x), 1.5) * 5.0 * (1.0 - yNorm * 0.5); // Less cup at tip
+            float cup = pow(abs(position.x), 1.5) * 5.0 * (1.0 - yNorm * 0.5);
             transformed.z += cup;
 
             #ifdef USE_INSTANCING
                 float worldX = instanceMatrix[3][0];
                 float worldZ = instanceMatrix[3][2];
-                float sway = sin(uTime * 1.5 + worldX * 0.1 + worldZ * 0.1) * 0.3;
-                float sway2 = cos(uTime * 1.0 + worldX * 0.2) * 0.2;
-                transformed.x += sway * position.y;
-                transformed.z += sway2 * position.y;
+                // Kept local flutter/twist (high frequency)
                 float flutter = sin(uTime * 3.0 + worldX) * 0.05 * position.x;
                 float twist = position.x * sin(uTime * 2.0 + worldZ) * 0.2 * position.y;
                 transformed.y += flutter + twist;
-
-                ${interactionLogic}
             #endif
+            `
+        )
+
+        // Inject Global Wind in Project Vertex
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include <project_vertex>',
+            `
+            vec4 mvPosition = vec4( transformed, 1.0 );
+            #ifdef USE_INSTANCING
+                mvPosition = instanceMatrix * mvPosition;
+            #endif
+            mvPosition = modelMatrix * mvPosition;
+
+            vec3 windOffset = getWindOffset(mvPosition.xyz, uTime, uCameraPosition);
+            mvPosition.xyz += windOffset;
+
+            mvPosition = viewMatrix * mvPosition;
+            gl_Position = projectionMatrix * mvPosition;
             `
         )
 
@@ -374,42 +389,33 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             #include <color_fragment>
             float noise = sin(vWorldPos.x * 0.5) * cos(vWorldPos.z * 0.5);
 
-            // Color Variation
             vec3 freshColor = vec3(0.48, 0.60, 0.28);
             vec3 darkColor = vec3(0.25, 0.35, 0.15);
             vec3 dryColor = vec3(0.70, 0.65, 0.30);
 
             vec3 baseCol = mix(darkColor, freshColor, 0.5 + 0.5 * noise);
 
-            // Random dry leaves (10% chance)
             if (vRandId > 0.9) {
                 baseCol = mix(baseCol, dryColor, 0.7);
             }
-            // Yellow tips logic based on UVs isn't easy without varying UVs passed.
-            // We can use world pos Y relative to something, but easier to just use noise.
 
             diffuseColor.rgb = baseCol;
 
-            // Fake Subsurface Scattering (SSS)
+            // Fake SSS
             vec3 sunDir = normalize(vec3(15.0, 25.0, 10.0));
             vec3 viewDir = normalize(uCameraPosition - vWorldPos);
 
-            // 1. View looking at Sun through leaf
-            float dotViewSun = dot(viewDir, -sunDir); // -sunDir points FROM sun
-            float backlight = smoothstep(0.0, 1.0, dotViewSun); // Sharper falloff
+            float dotViewSun = dot(viewDir, -sunDir);
+            float backlight = smoothstep(0.0, 1.0, dotViewSun);
 
-            // 2. Normal facing AWAY from sun (backside lit)
             float normalSun = dot(vNormal, sunDir);
             float transmission = smoothstep(0.0, 0.5, -normalSun);
 
-            // Combine
             float sss = backlight * transmission;
 
-            // Transmission color should be saturated green/yellow
             vec3 sssColor = vec3(0.6, 0.75, 0.1) * sss * 1.5;
             diffuseColor.rgb += sssColor;
 
-            // Soften edges using Fresnel?
             float fresnel = 1.0 - abs(dot(viewDir, vNormal));
             diffuseColor.rgb += vec3(0.1, 0.2, 0.05) * fresnel * 0.5;
             `
@@ -439,19 +445,13 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
       let x = 0, z = 0
       let valid = false
 
-      // Try up to 10 times to find a valid spot
       for (let attempt = 0; attempt < 10; attempt++) {
         x = (Math.random() - 0.5) * 2000
         z = (Math.random() - 0.5) * 2000
 
-        // Noise Clustering
-        // Scale noise to create groves
         const noiseVal = simplex.noise(x * 0.015, z * 0.015);
-        // Normalize -1..1 to 0..1
         const n = noiseVal * 0.5 + 0.5;
 
-        // Threshold: Only place if noise > 0.4 (groves)
-        // Also keep clearings clear
         if (n < 0.45) continue;
 
         const distToCenter = Math.sqrt(x * x + z * z)
@@ -469,69 +469,32 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
       const rotationY = Math.random() * Math.PI * 2
       const scale = 0.7 + Math.random() * 0.8
 
-      // Stalk
       tempStalk.position.set(x, 2.5, z)
       tempStalk.rotation.set(0, rotationY, 0)
       tempStalk.scale.set(scale, scale, scale)
       tempStalk.updateMatrix()
       stalks.push(tempStalk.matrix.clone())
 
-      // Branches & Leaves
-      // Generate branches at nodes
-      const numNodes = 5; // Height 5, nodes every ~1 unit? Shader assumes 1.0 freq
-      // Stalk goes from -2.5 to 2.5 locally.
-      // Nodes at y = -1.5, -0.5, 0.5, 1.5, 2.5
-
+      const numNodes = 5;
       for (let h = 0; h < numNodes; h++) {
-          // Height from bottom (-2.5) upwards
           const localY = -1.5 + h * 1.0 + (Math.random() * 0.2 - 0.1);
-          if (localY > 2.0) continue; // Don't go too high
+          if (localY > 2.0) continue;
 
-          // Chance to spawn branch
           if (Math.random() > 0.3) {
               const branchAngle = Math.random() * Math.PI * 2;
 
-              // Branch Logic
               tempBranch.position.set(x, 2.5 + localY * scale, z);
-              // Rotate around Y (direction) and X (upward tilt)
-              // Tilt up ~45-60 deg
               tempBranch.rotation.set(0, branchAngle, 0);
               tempBranch.rotateX(-Math.PI / 4 - Math.random() * 0.2);
 
-              // Branch length
               const branchLen = 0.8 + Math.random() * 0.5;
-              tempBranch.scale.set(scale * 0.5, branchLen, scale * 0.5); // Thinner width
+              tempBranch.scale.set(scale * 0.5, branchLen, scale * 0.5);
 
               tempBranch.updateMatrix();
               branches.push(tempBranch.matrix.clone());
 
-              // Leaves at the end of the branch
-              // Branch tip local position is (0, branchLen, 0) if cylinder is Y-up?
-              // Cylinder default is Y-up centered. If we didn't translate geometry, we need to be careful.
-              // Let's assume branch geometry is translated 0.5 up so pivot is bottom.
-
-              // We'll handle branch geometry translation in the mesh prop or use a translated geometry
-
-              // Calculate world tip position for leaves
-              // We can just use the tempBranch transformation
-              // Local tip is (0, branchLen, 0) (if pivoted at bottom)
-
-              // To spawn leaves, we can just cluster them around the "end" of the branch
-              // Since we don't have easy access to transformed points here without math,
-              // we can cheat: Just place leaves relative to branch position + vector
-
-              // Vector from branch angle
-              // Y-rotation = branchAngle
-              // X-rotation = -PI/4 ...
-
-              // Math for tip position:
-              // y = sin(tilt) * len
-              // r = cos(tilt) * len
-              // x = sin(angle) * r
-              // z = cos(angle) * r
-
-              const tilt = Math.PI / 4 + 0.1; // Approx
-              const dy = Math.sin(tilt) * branchLen * scale; // scale affects length
+              const tilt = Math.PI / 4 + 0.1;
+              const dy = Math.sin(tilt) * branchLen * scale;
               const dr = Math.cos(tilt) * branchLen * scale;
               const dx = Math.sin(branchAngle) * dr;
               const dz = Math.cos(branchAngle) * dr;
@@ -540,7 +503,6 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
               const tipY = (2.5 + localY * scale) + dy;
               const tipZ = z + dz;
 
-              // Spawn 3-5 leaves at tip
               const numLeaves = 3 + Math.floor(Math.random() * 3);
               for (let L = 0; L < numLeaves; L++) {
                    const leafAngle = Math.random() * Math.PI * 2;
@@ -551,7 +513,6 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
                        tipZ + (Math.random() - 0.5) * 0.2
                    );
 
-                   // Rotate leaf to face somewhat outwards or random
                    tempLeaf.rotation.set(
                        Math.random() * 0.5,
                        leafAngle,
@@ -602,11 +563,9 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
       }
   })
 
-  // Geometries
-  // Branch geometry - translated up so pivot is at bottom
   const branchGeometry = useMemo(() => {
       const geo = new THREE.CylinderGeometry(0.02, 0.04, 1, 6);
-      geo.translate(0, 0.5, 0); // Pivot at bottom
+      geo.translate(0, 0.5, 0);
       return geo;
   }, []);
 
