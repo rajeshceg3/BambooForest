@@ -97,7 +97,7 @@ export function Stream() {
   // Generate stable rocks with procedural geometry
   const rocks = useMemo(() => {
       const rand = mulberry32(12345);
-      const simplex = new SimplexNoise(); // seed not supported in standard three-stdlib version usually
+      const simplex = new SimplexNoise();
 
       const rockData: {
           position: [number, number, number],
@@ -124,39 +124,23 @@ export function Stream() {
               vertex.fromBufferAttribute(posAttribute, v);
 
               // Scale coordinates for noise frequency
-              // Use vertex position relative to center (0,0,0)
               const nx = vertex.x * 1.5;
               const ny = vertex.y * 1.5;
               const nz = vertex.z * 1.5;
 
-              // FBM-like noise (base shape + detail)
-              // Use public noise method (which should handle 3D if arguments are provided, or use 2D projection)
-              // Note: If three-stdlib SimplexNoise.noise is 2D only, we might need a workaround.
-              // But usually it exposes noise3d as noise3D or similar.
-              // Error said 'noise3d' is private. Let's try 'noise' assuming it might be 3D or 4D.
-              // Actually, looking at common implementations, 'noise' is often 2D.
-              // Let's try casting to any to bypass 'private' check if we know it works at runtime,
-              // or better, use 2D noise on surface of sphere?
-              // 3D noise is better.
-              // Let's try (simplex as any).noise3d(...)
-
+              // Use 3D noise (casting to any because types might be missing noise3d)
               let noise = (simplex as any).noise3d(nx, ny, nz);
               noise += 0.5 * (simplex as any).noise3d(nx * 2 + 10, ny * 2 + 10, nz * 2 + 10);
 
               // Displace vertex along its normal
-              // For a sphere, normal is same as position normalized.
-              // We assume initial radius is 1, so vertex is already normal.
               scratch.copy(vertex).normalize();
-
-              const displacement = noise * 0.3; // Strength
+              const displacement = noise * 0.3;
               vertex.addScaledVector(scratch, displacement);
 
               // Flatten bottom slightly for stability look
               if (vertex.y < -0.4) {
-                  // Smooth flattening
                   const d = -0.4 - vertex.y;
                   vertex.y += d * 0.5;
-                  // Expand XZ to fake "squish"
                   vertex.x *= 1.0 + d * 0.2;
                   vertex.z *= 1.0 + d * 0.2;
               }
@@ -169,7 +153,7 @@ export function Stream() {
           rockData.push({
               position: [
                   (rand() - 0.5) * 18,
-                  scaleY * 0.2, // Embed in ground
+                  scaleY * 0.2,
                   (rand() - 0.5) * 2000
               ],
               scale: [scaleX, scaleY, scaleZ],
@@ -189,7 +173,6 @@ export function Stream() {
       {/* Water Surface */}
       <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[20, 2000, 32, 512]} />
-        {/* Advanced Transmission Material for realistic water */}
         <MeshTransmissionMaterial
             resolution={512}
             samples={6}
@@ -209,6 +192,7 @@ export function Stream() {
       {rocks.map((rock, i) => (
           <mesh
             key={i}
+            ref={(mesh) => { if (mesh) mesh.layers.enable(1); }} // Enable focus
             position={rock.position}
             scale={rock.scale}
             rotation={rock.rotation}

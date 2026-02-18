@@ -1,4 +1,4 @@
-import { EffectComposer, Bloom, Noise, Vignette, ToneMapping, N8AO, DepthOfField } from '@react-three/postprocessing'
+import { EffectComposer, Bloom, Noise, Vignette, ToneMapping, N8AO, DepthOfField, SMAA } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
 import { useRef } from 'react'
 import { Autofocus } from './Autofocus'
@@ -8,23 +8,23 @@ export function Effects() {
 
   return (
     <EffectComposer enableNormalPass={false}>
+      {/* Anti-aliasing first? Usually FXAA/SMAA is last, but EffectComposer handles it.
+          Actually, SMAA should be one of the last passes, but tone mapping and vignette are also last.
+          Usually ToneMapping is very last. Let's put SMAA before Noise/Vignette/ToneMapping.
+      */}
+      <SMAA />
       <N8AO aoRadius={1.0} intensity={1.0} distanceFalloff={3.0} />
       <Bloom
         luminanceThreshold={1}
         mipmapBlur
-        intensity={1.5}
+        intensity={1.0} // Reduced from 1.5 for subtlety
         radius={0.4}
       />
       <DepthOfField
         ref={dofRef}
         target={[0, 0, 0]}
         focusDistance={0.0} // Dynamic
-        focalLength={0.02} // Realistic lens (e.g. 50mm on 35mm sensor -> approx 0.05? Postprocessing units are weird)
-        // Default focalLength is often 0.1?
-        // Let's stick to previous roughly but tuned.
-        // 0.3 was "miniature effect". Real cameras have longer focal lengths for portrait/macro.
-        // But for landscape, shorter.
-        // Let's try 0.1
+        focalLength={0.02} // Realistic lens
         bokehScale={2}
         height={480}
       />

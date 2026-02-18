@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -23,6 +23,16 @@ export function Crane(props: any) {
     color: "#cc0000",
     roughness: 0.8,
   }), [])
+
+  useEffect(() => {
+    if (groupRef.current) {
+        groupRef.current.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.layers.enable(1)
+            }
+        })
+    }
+  }, [])
 
   useFrame((state) => {
     if (groupRef.current) {

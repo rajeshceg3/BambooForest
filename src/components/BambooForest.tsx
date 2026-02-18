@@ -79,8 +79,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             float dToNode = fract(yP * nFreq) - 0.5;
             float dist = abs(dToNode);
             // Sharper normal deviation for nodes
-            if (dist < 0.04) {
-                float tilt = -sign(dToNode) * 1.5 * (1.0 - dist/0.04);
+            if (dist < 0.06) {
+                float tilt = -sign(dToNode) * 2.0 * smoothstep(0.06, 0.0, dist);
                 objectNormal.y += tilt;
                 objectNormal = normalize(objectNormal);
             }
@@ -100,15 +100,20 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
           float nodeFreq = 1.0;
           float yPos = position.y + 2.5;
-          float distToNode = abs(fract(yPos * nodeFreq) - 0.5);
+          float distToNode = fract(yPos * nodeFreq) - 0.5;
+          float absDist = abs(distToNode);
 
-          // Sharper, distinct ring bulge
-          float bulge = pow(smoothstep(0.04, 0.0, distToNode), 3.0) * 0.035;
+          // Sharper, distinct ring bulge with depression
+          // Bulge right at the ring
+          float bulge = smoothstep(0.04, 0.02, absDist) * 0.03 + smoothstep(0.015, 0.0, absDist) * 0.02;
+
+          // Slight depression above/below ring
+          float depression = smoothstep(0.04, 0.1, absDist) * smoothstep(0.15, 0.1, absDist) * -0.01;
 
           float currentRadius = length(position.xz);
           if (currentRadius > 0.001) {
               // Apply bulge
-              transformed.xz += normalize(position.xz) * bulge;
+              transformed.xz += normalize(position.xz) * (bulge + depression);
 
               // Tapering: Thicker at bottom (y=-2.5), thinner at top (y=2.5)
               float hFactor = (position.y + 2.5) / 5.0;
@@ -184,8 +189,12 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             `
             #include <roughnessmap_fragment>
             float noiseVal = snoise(vWorldPosition.xy * 20.0); // High freq noise
-            float striation = sin(vWorldPosition.x * 200.0 + noiseVal * 10.0) * 0.5 + 0.5;
-            roughnessFactor = mix(0.5, 0.95, striation * 0.8 + noiseVal * 0.1);
+
+            // Fibrous striation
+            float fiber = snoise(vec2(vWorldPosition.x * 200.0, vWorldPosition.y * 5.0));
+            float striation = fiber * 0.5 + 0.5;
+
+            roughnessFactor = mix(0.5, 0.95, striation * 0.6 + noiseVal * 0.2);
 
             // Add weathering patches
             float weatherNoise = snoise(vWorldPosition.xz * 2.0);
@@ -226,9 +235,9 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
           float spots = smoothstep(0.4, 0.7, microNoise);
           stalkColor = mix(stalkColor, brown * 0.8, spots * 0.3);
 
-          // Subtle vertical streaks
-          float streaks = snoise(vec2(vWorldPosition.x * 50.0, vWorldPosition.y * 2.0));
-          stalkColor *= 0.95 + 0.1 * streaks;
+          // Subtle vertical streaks (fibers)
+          float fiber = snoise(vec2(vWorldPosition.x * 200.0, vWorldPosition.y * 5.0));
+          stalkColor *= 0.9 + 0.2 * smoothstep(0.2, 0.8, fiber);
 
           diffuseColor.rgb = stalkColor;
           `
@@ -309,6 +318,14 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             float distY = position.y;
             float slope = 2.0 * distY * 1.0;
             objectNormal.y += slope;
+
+            // Midrib normal adjustment
+            if (abs(position.x) < 0.02) {
+                // V-shape normal
+                float signX = sign(position.x);
+                objectNormal.x += signX * 0.5;
+            }
+
             objectNormal = normalize(objectNormal);
             `
         )
@@ -346,6 +363,16 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             // Cup the leaf
             float cup = pow(abs(position.x), 1.5) * 5.0 * (1.0 - yNorm * 0.5);
             transformed.z += cup;
+
+            // Midrib Crease
+            // Local X is width. Assuming leaf width ~0.2 (from geometry args)
+            // Crease logic: depress center Z
+            float midribWidth = 0.04;
+            float absX = abs(position.x);
+            if (absX < midribWidth) {
+                float depression = (1.0 - absX/midribWidth) * 0.02; // 0.02 deep
+                transformed.z -= depression;
+            }
 
             #ifdef USE_INSTANCING
                 float worldX = instanceMatrix[3][0];
@@ -413,7 +440,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
             float sss = backlight * transmission;
 
-            vec3 sssColor = vec3(0.6, 0.75, 0.1) * sss * 1.5;
+            // Desaturated yellow-green for SSS
+            vec3 sssColor = vec3(0.5, 0.6, 0.2) * sss * 1.5;
             diffuseColor.rgb += sssColor;
 
             float fresnel = 1.0 - abs(dot(viewDir, vNormal));
@@ -425,7 +453,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
   }, [])
 
   const leafGeometry = useMemo(() => {
-    const geo = new THREE.PlaneGeometry(0.2, 0.6, 4, 8)
+    // Increased segments for midrib
+    const geo = new THREE.PlaneGeometry(0.2, 0.6, 6, 8)
     geo.translate(0, 0.3, 0)
     return geo
   }, [])

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useEffect } from 'react'
 import * as THREE from 'three'
 
 function useStoneMaterial(color: string) {
@@ -91,6 +91,7 @@ function useStoneMaterial(color: string) {
 }
 
 export function StoneLantern(props: any) {
+  const groupRef = useRef<THREE.Group>(null)
   const baseMat = useStoneMaterial('#888888')
   const lightBoxMat = useStoneMaterial('#999999')
   const roofMat = useStoneMaterial('#777777')
@@ -153,8 +154,18 @@ export function StoneLantern(props: any) {
       return new THREE.LatheGeometry(points, 8) // Rounder
   }, [])
 
+  useEffect(() => {
+    if (groupRef.current) {
+        groupRef.current.traverse((child) => {
+            if (child instanceof THREE.Mesh) {
+                child.layers.enable(1)
+            }
+        })
+    }
+  }, [])
+
   return (
-    <group {...props}>
+    <group ref={groupRef} {...props}>
       {/* Base */}
       <mesh geometry={baseGeo} material={baseMat} castShadow receiveShadow position={[0, 0, 0]} />
 
