@@ -52,7 +52,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
         color: '#7b904b',
-        roughness: 0.8,
+        roughness: 0.4,
         flatShading: false,
     })
 
@@ -120,6 +120,11 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
               float taper = mix(1.2, 0.8, hFactor);
               transformed.xz *= taper;
           }
+
+          // Add low frequency curve
+          float curve = sin(yPos * 0.5 + vWorldPosition.x * 0.1) * 0.1 + cos(yPos * 0.3 + vWorldPosition.z * 0.1) * 0.05;
+          transformed.x += curve;
+          transformed.z += curve * 0.5;
 
           float irregularity = sin(yPos * 10.0 + vWorldPosition.x) * 0.003;
           transformed.xz += irregularity;
@@ -194,7 +199,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             float fiber = snoise(vec2(vWorldPosition.x * 200.0, vWorldPosition.y * 5.0));
             float striation = fiber * 0.5 + 0.5;
 
-            roughnessFactor = mix(0.5, 0.95, striation * 0.6 + noiseVal * 0.2);
+            roughnessFactor = mix(0.3, 0.9, striation * 0.6 + noiseVal * 0.2);
 
             // Add weathering patches
             float weatherNoise = snoise(vWorldPosition.xz * 2.0);
@@ -609,7 +614,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
             castShadow
             receiveShadow
         >
-            <cylinderGeometry args={[0.08, 0.15, 5, 32]} />
+            <cylinderGeometry args={[0.08, 0.15, 32, 32]} />
             <primitive object={material} attach="material" />
         </instancedMesh>
 

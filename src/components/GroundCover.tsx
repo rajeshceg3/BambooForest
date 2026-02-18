@@ -88,7 +88,7 @@ export function GroundCover({ count = 100000 }) {
             float gustStrength = smoothstep(-0.2, 0.6, gustNoise); // 0..1
 
             // Micro wind (flutter)
-            float flutter = sin(uTime * 8.0 + worldX * 2.0 + worldZ * 1.5) * 0.05;
+            float flutter = sin(uTime * 15.0 + worldX * 2.0 + worldZ * 1.5) * 0.03;
 
             // Directional sway
             float swayAmp = 0.1 + gustStrength * 0.4; // Base sway + gust
@@ -163,7 +163,10 @@ export function GroundCover({ count = 100000 }) {
 
         // Instance Variation
         vec3 iTipColor = mix(tipGreen, freshGreen, vRandId);
-        if (vRandId > 0.8) iTipColor = deadGreen; // Occasional dead grass
+
+        // Add yellow/dry variation
+        iTipColor = mix(iTipColor, vec3(0.6, 0.5, 0.2), smoothstep(0.6, 1.0, vRandId) * 0.5);
+        if (vRandId > 0.9) iTipColor = deadGreen; // Occasional dead grass
 
         // Gradient
         vec3 grassColor = mix(darkGreen, midGreen, h);
@@ -204,7 +207,7 @@ export function GroundCover({ count = 100000 }) {
   const geometry = useMemo(() => {
       const width = 0.1; // Slightly wider
       const height = 0.8; // Slightly taller
-      const geo = new THREE.PlaneGeometry(width, height, 2, 4)
+      const geo = new THREE.PlaneGeometry(width, height, 4, 8)
       geo.translate(0, height / 2, 0)
 
       const pos = geo.attributes.position
