@@ -118,7 +118,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
             // Calculate gradient
             vec3 bumpNormal = normalize(vec3(nHeight - nHeightX, 0.1, nHeight - nHeightZ));
-            normal = normalize(normal + bumpNormal * 0.5);
+            normal = normalize(normal + bumpNormal * 0.8);
             `
         )
     }
@@ -211,7 +211,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
   return (
     <>
-      <SoftShadows size={35} focus={0.5} samples={16} />
+      <SoftShadows size={25} focus={0.8} samples={16} />
       <ambientLight ref={ambientLightRef} intensity={0.4} color="#ffffff" />
 
       <directionalLight
