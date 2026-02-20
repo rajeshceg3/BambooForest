@@ -48,13 +48,13 @@ export function Stream() {
             `
             #include <roughnessmap_fragment>
             float mossNoiseR = sin(vWorldPos.x * 2.0) * cos(vWorldPos.z * 2.0);
-            // Moss is rougher (0.9), wet rock is smoother (0.4)
+            // Moss is rougher (0.9), wet rock is smoother (0.2)
             float mossFactorR = smoothstep(0.4, 0.6, mossNoiseR);
-            // Also adjust for height (wet near water level)
-            float wetness = smoothstep(0.5, 0.0, vWorldPos.y);
+            // Also adjust for height (wet near water level 0.0)
+            float wetness = smoothstep(0.4, -0.1, vWorldPos.y);
 
-            float baseRoughness = mix(0.6, 0.3, wetness);
-            roughnessFactor = mix(baseRoughness, 0.9, mossFactorR);
+            float baseRoughness = mix(0.7, 0.2, wetness); // Wet rocks are very glossy
+            roughnessFactor = mix(baseRoughness, 1.0, mossFactorR);
             `
         )
 
@@ -71,13 +71,18 @@ export function Stream() {
             // Varied rock color
             rockColor += vec3(n * 0.05);
 
+            // Wetness Darkening
+            float wetnessColor = smoothstep(0.4, -0.1, vWorldPos.y);
+            // Wet rocks are darker and more saturated
+            rockColor = mix(rockColor, rockColor * 0.5, wetnessColor * 0.8);
+
             // Add some mossy patches
             float mossNoise = sin(vWorldPos.x * 2.0) * cos(vWorldPos.z * 2.0);
 
             // Soft blend for moss
             float mossFactor = smoothstep(0.3, 0.7, mossNoise);
-            // Only on top surfaces/higher up
-            mossFactor *= smoothstep(0.0, 0.2, vWorldPos.y);
+            // Only on top surfaces/higher up, not under water
+            mossFactor *= smoothstep(0.0, 0.3, vWorldPos.y);
 
             vec3 mossColor = vec3(0.2, 0.35, 0.15);
             rockColor = mix(rockColor, mossColor, mossFactor);
@@ -86,6 +91,17 @@ export function Stream() {
             float speckle = fract(sin(dot(vWorldPos.xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
             if (speckle > 0.9) rockColor *= 0.8;
             if (speckle < 0.1) rockColor *= 1.2;
+
+            // Ground Occlusion (Bottom of rock darkened)
+            // Assuming rock sits around y=0 to y=0.5
+            // But vWorldPos.y is world height. Stream is at y=0.05
+            // Rocks are positioned at rock.position which has y scale.
+
+            // We want to darken the very bottom of the geometry, regardless of world position if possible.
+            // But vWorldPos works if we assume the rock sits on the ground.
+            // Darken below y=0.1
+            float groundOcc = smoothstep(0.2, 0.0, vWorldPos.y);
+            rockColor *= mix(1.0, 0.3, groundOcc); // Darken bottom significantly
 
             diffuseColor.rgb = rockColor;
             `

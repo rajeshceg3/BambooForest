@@ -235,14 +235,36 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
           float ageNoise = snoise(vWorldPosition.xz * 0.5 + vec2(0, vWorldPosition.y * 0.2));
           stalkColor = mix(stalkColor, brown, smoothstep(0.4, 0.8, ageNoise));
 
+          // Lichen / Moss (Second layer of noise - FBM style approximation)
+          // Use XY and ZY projections to avoid stretching on sides
+          float lichenNoise = (snoise(vWorldPosition.xy * 15.0) + snoise(vWorldPosition.zy * 15.0)) * 0.5;
+          lichenNoise += (snoise(vWorldPosition.xy * 30.0) + snoise(vWorldPosition.zy * 30.0)) * 0.25;
+
+          vec3 lichenColor = vec3(0.4, 0.45, 0.35); // Pale grey-green
+          float lichenPatch = smoothstep(0.3, 0.6, lichenNoise);
+          // Less lichen higher up
+          lichenPatch *= smoothstep(4.0, 0.0, vLocalPosition.y + 2.5);
+          stalkColor = mix(stalkColor, lichenColor, lichenPatch * 0.6);
+
           // Micro-details (spots)
           float microNoise = snoise(vWorldPosition.xy * 80.0);
           float spots = smoothstep(0.4, 0.7, microNoise);
           stalkColor = mix(stalkColor, brown * 0.8, spots * 0.3);
 
           // Subtle vertical streaks (fibers)
-          float fiber = snoise(vec2(vWorldPosition.x * 200.0, vWorldPosition.y * 5.0));
-          stalkColor *= 0.9 + 0.2 * smoothstep(0.2, 0.8, fiber);
+          float fiberColor = snoise(vec2(vWorldPosition.x * 200.0, vWorldPosition.y * 5.0));
+          stalkColor *= 0.9 + 0.2 * smoothstep(0.2, 0.8, fiberColor);
+
+          // Ground Occlusion (Fake AO)
+          float heightFromBase = vLocalPosition.y + 2.5; // Base is at -2.5
+          float groundOcc = smoothstep(0.0, 0.5, heightFromBase);
+          // Darken significantly at the very bottom
+          stalkColor *= mix(0.4, 1.0, groundOcc);
+
+          // Dirt gradient at base
+          vec3 dirtColor = vec3(0.25, 0.2, 0.15);
+          float dirtMix = smoothstep(0.3, 0.0, heightFromBase);
+          stalkColor = mix(stalkColor, dirtColor, dirtMix * 0.8);
 
           diffuseColor.rgb = stalkColor;
           `
@@ -433,24 +455,31 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
             diffuseColor.rgb = baseCol;
 
-            // Fake SSS
+            // Improved SSS (Subsurface Scattering)
             vec3 sunDir = normalize(vec3(15.0, 25.0, 10.0));
             vec3 viewDir = normalize(uCameraPosition - vWorldPos);
 
+            // Backlight intensity: strongest when looking towards sun
             float dotViewSun = dot(viewDir, -sunDir);
-            float backlight = smoothstep(0.0, 1.0, dotViewSun);
+            float backlight = smoothstep(-0.2, 1.0, dotViewSun); // Widen the angle slightly
+            backlight = pow(backlight, 2.0); // Focus it
 
-            float normalSun = dot(vNormal, sunDir);
-            float transmission = smoothstep(0.0, 0.5, -normalSun);
+            // Transmission: light passing through back of leaf
+            // Using a wrapped cosine approximation for thickness/transmission
+            float dotNormalSun = dot(vNormal, sunDir);
+            float transmission = smoothstep(0.2, -0.5, dotNormalSun); // Allow some wrap-around lighting
 
-            float sss = backlight * transmission;
+            float sssStrength = backlight * transmission;
 
-            // Desaturated yellow-green for SSS
-            vec3 sssColor = vec3(0.5, 0.6, 0.2) * sss * 1.5;
-            diffuseColor.rgb += sssColor;
+            // Thin leaf color (bright yellowish green)
+            vec3 sssColor = vec3(0.65, 0.85, 0.35);
+            // Add SSS glow
+            diffuseColor.rgb += sssColor * sssStrength * 1.2;
 
+            // Fresnel Rim Light (Top of leaves)
             float fresnel = 1.0 - abs(dot(viewDir, vNormal));
-            diffuseColor.rgb += vec3(0.1, 0.2, 0.05) * fresnel * 0.5;
+            fresnel = pow(fresnel, 3.0);
+            diffuseColor.rgb += vec3(0.2, 0.3, 0.1) * fresnel * 0.8;
             `
         )
     }
