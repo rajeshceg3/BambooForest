@@ -189,22 +189,20 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-all duration-1000 ${hasInteracted ? 'opacity-0 translate-y-4' : 'opacity-60 translate-y-0'} text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10 flex flex-col items-center gap-3`}>
           {isTouch ? (
             <div className="flex flex-col items-center gap-2 animate-pulse">
-               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
-                 <circle cx="12" cy="12" r="10" className="opacity-30"/>
-                 <path d="M8 12h8" />
-                 <path d="M12 8v8" />
-                 <path d="M16 12l-4-4-4 4" className="opacity-0" /> {/* Just a target icon really */}
-               </svg>
-               <span>Drag to Explore</span>
+               <div className="flex gap-4 opacity-40 mb-1">
+                 <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px]">L</div>
+                 <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px]">R</div>
+               </div>
+               <span>Left: Move • Right: Look</span>
             </div>
           ) : (
              <div className="flex flex-col items-center gap-2">
                  <div className="flex gap-3 opacity-40">
                     <div className="border border-white/40 rounded px-2 py-1 text-[8px] leading-none">WASD</div>
                     <div className="w-[1px] h-3 bg-white/20"></div>
-                    <div className="border border-white/40 rounded px-2 py-1 text-[8px] leading-none">ARROWS</div>
+                    <div className="border border-white/40 rounded px-2 py-1 text-[8px] leading-none">MOUSE</div>
                  </div>
-                 <span>Use Keys or Drag to Explore</span>
+                 <span>WASD to Move • Click to Look</span>
              </div>
           )}
         </div>
