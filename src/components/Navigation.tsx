@@ -94,8 +94,8 @@ export function Navigation({
         const movementX = e.movementX || 0
         const movementY = e.movementY || 0
 
-        targetRotation.current.theta -= movementX * 0.002 * lookSensitivity
-        targetRotation.current.phi -= movementY * 0.002 * lookSensitivity
+        targetRotation.current.theta -= movementX * 0.0015 * lookSensitivity
+        targetRotation.current.phi -= movementY * 0.0015 * lookSensitivity
 
         // Clamp Pitch
         targetRotation.current.phi = Math.max(
@@ -110,8 +110,8 @@ export function Navigation({
           mouseState.current.lastX = e.clientX
           mouseState.current.lastY = e.clientY
 
-          targetRotation.current.theta -= movementX * 0.002 * lookSensitivity
-          targetRotation.current.phi -= movementY * 0.002 * lookSensitivity
+          targetRotation.current.theta -= movementX * 0.0015 * lookSensitivity
+          targetRotation.current.phi -= movementY * 0.0015 * lookSensitivity
 
           targetRotation.current.phi = Math.max(
             -Math.PI / 2 + 0.1,
@@ -204,8 +204,8 @@ export function Navigation({
         const y = t.clientY
         const width = window.innerWidth
 
-        // Logic: Left 30% = Move Joystick, Right 70% = Look
-        if (x < width * 0.3) {
+        // Logic: Left 25% = Move Joystick, Right 75% = Look
+        if (x < width * 0.25) {
            if (touchState.current.leftId === null) {
               touchState.current.leftId = t.identifier
               touchState.current.leftStart = { x, y }
@@ -240,8 +240,8 @@ export function Navigation({
              touchState.current.rightCurr = { x: t.clientX, y: t.clientY }
 
              // Apply to look target
-             targetRotation.current.theta -= dx * 0.005 * lookSensitivity
-             targetRotation.current.phi -= dy * 0.005 * lookSensitivity
+             targetRotation.current.theta -= dx * 0.004 * lookSensitivity
+             targetRotation.current.phi -= dy * 0.004 * lookSensitivity
 
              // Clamp Pitch
              targetRotation.current.phi = Math.max(
@@ -308,7 +308,7 @@ export function Navigation({
     // 1. Rotation Smoothing
     // Damp towards target
     // Smooth factor (higher = faster)
-    const damp = 15.0
+    const damp = 12.0
     rotation.current.theta += (targetRotation.current.theta - rotation.current.theta) * damp * delta
     rotation.current.phi += (targetRotation.current.phi - rotation.current.phi) * damp * delta
 
@@ -340,20 +340,33 @@ export function Navigation({
         const dx = touchState.current.leftCurr.x - touchState.current.leftStart.x
         const dy = touchState.current.leftCurr.y - touchState.current.leftStart.y
         const maxDist = 50.0 // Joystick radius
+        const deadzone = 0.15 // 15% deadzone
 
-        // Normalize -1 to 1
-        const nx = Math.max(-1, Math.min(1, dx / maxDist))
-        const ny = Math.max(-1, Math.min(1, dy / maxDist))
+        // Calculate distance and direction
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const magnitude = Math.min(dist / maxDist, 1.0)
 
-        // Forward is -z (up on screen is negative y delta, which maps to forward)
-        // Right is +x
+        if (magnitude > deadzone) {
+            // Rescale magnitude to avoid jump at deadzone
+            const smoothedMagnitude = (magnitude - deadzone) / (1.0 - deadzone)
 
-        // Add proportional movement
-        const touchForward = forward.clone().multiplyScalar(-ny) // Up(-y) -> Forward
-        const touchRight = right.clone().multiplyScalar(nx)
+            // Normalized direction
+            const dirX = dx / dist
+            const dirY = dy / dist
 
-        inputVector.add(touchForward)
-        inputVector.add(touchRight)
+            const nx = dirX * smoothedMagnitude
+            const ny = dirY * smoothedMagnitude
+
+            // Forward is -z (up on screen is negative y delta, which maps to forward)
+            // Right is +x
+
+            // Add proportional movement
+            const touchForward = forward.clone().multiplyScalar(-ny) // Up(-y) -> Forward
+            const touchRight = right.clone().multiplyScalar(nx)
+
+            inputVector.add(touchForward)
+            inputVector.add(touchRight)
+        }
     }
 
     // Normalize if length > 1 (so diagonal isn't faster)
@@ -361,15 +374,15 @@ export function Navigation({
 
     // Acceleration / Deceleration
     // If input, accelerate towards target velocity. If no input, decelerate (friction).
-    const friction = 10.0 // Deceleration factor
+    const friction = 8.0 // Deceleration factor
 
     const targetVelX = inputVector.x * speed
     const targetVelZ = inputVector.z * speed
 
     if (inputVector.lengthSq() > 0.001) {
        // Accelerate
-       velocity.current.x = THREE.MathUtils.lerp(velocity.current.x, targetVelX, delta * 8)
-       velocity.current.z = THREE.MathUtils.lerp(velocity.current.z, targetVelZ, delta * 8)
+       velocity.current.x = THREE.MathUtils.lerp(velocity.current.x, targetVelX, delta * 5)
+       velocity.current.z = THREE.MathUtils.lerp(velocity.current.z, targetVelZ, delta * 5)
     } else {
        // Decelerate
        velocity.current.x = THREE.MathUtils.lerp(velocity.current.x, 0, delta * friction)

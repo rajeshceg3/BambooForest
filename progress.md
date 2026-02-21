@@ -1,3 +1,18 @@
+## Progress - Session 21 (Navigation Polish)
+
+### Achievements
+
+*   **Refined Navigation Physics:** Tuned movement acceleration (5.0), friction (8.0), and rotation damping (12.0) to create a heavier, more grounded feel consistent with a serene walking experience.
+*   **Touch Control Polish:**
+    *   Adjusted touch zones to a 25% (joystick) / 75% (look) split for better ergonomics.
+    *   Implemented a 15% radial deadzone for the virtual joystick to prevent drift and accidental movement.
+    *   Added smooth scaling for joystick input post-deadzone to avoid jumpy starts.
+*   **Sensitivity Tuning:** Lowered look sensitivity for both mouse (0.0015) and touch (0.004) to encourage slower, more contemplative observation.
+
+### Percentage of Completion
+
+Project remains at **100% complete**. This session focused on "feel" and polish of the core navigation mechanics.
+
 ## Progress - Session 20 (Navigation & Controls)
 
 ### Achievements
