@@ -8,6 +8,11 @@ interface NavigationProps {
   runSpeed?: number
   jumpForce?: number
   lookSensitivity?: number
+  // Tuning
+  acceleration?: number
+  friction?: number
+  smoothTime?: number
+  toggleSprint?: boolean
 }
 
 export function Navigation({
@@ -15,7 +20,11 @@ export function Navigation({
   walkSpeed = 10.0,
   runSpeed = 18.0,
   jumpForce = 12.0,
-  lookSensitivity = 2.0
+  lookSensitivity = 2.0,
+  acceleration = 5.0,
+  friction = 8.0,
+  smoothTime = 12.0,
+  toggleSprint = false
 }: NavigationProps) {
   const { camera, gl } = useThree()
 
@@ -91,6 +100,7 @@ export function Navigation({
 
       if (document.pointerLockElement === gl.domElement) {
         // Locked mode
+        // Note: movementX is raw mouse counts (usually), so it's consistent regardless of screen resolution.
         const movementX = e.movementX || 0
         const movementY = e.movementY || 0
 
@@ -134,6 +144,8 @@ export function Navigation({
     // Keyboard
     const onKeyDown = (e: KeyboardEvent) => {
       if (!enabled) return
+      if (e.repeat) return
+
       switch (e.code) {
         case 'ArrowUp':
         case 'KeyW':
@@ -153,7 +165,11 @@ export function Navigation({
           break
         case 'ShiftLeft':
         case 'ShiftRight':
-          moveState.current.sprint = true
+          if (toggleSprint) {
+             moveState.current.sprint = !moveState.current.sprint
+          } else {
+             moveState.current.sprint = true
+          }
           break
         case 'Space':
           if (onGround.current) {
@@ -185,7 +201,9 @@ export function Navigation({
           break
         case 'ShiftLeft':
         case 'ShiftRight':
-          moveState.current.sprint = false
+          if (!toggleSprint) {
+             moveState.current.sprint = false
+          }
           break
       }
     }
@@ -240,6 +258,9 @@ export function Navigation({
              touchState.current.rightCurr = { x: t.clientX, y: t.clientY }
 
              // Apply to look target
+             // Note: Touch delta is in pixels. Mouse "movementX" is also roughly pixels but raw.
+             // We use a higher sensitivity (0.004) for touch to account for the smaller physical distance
+             // fingers move on screen compared to mice on a pad.
              targetRotation.current.theta -= dx * 0.004 * lookSensitivity
              targetRotation.current.phi -= dy * 0.004 * lookSensitivity
 
@@ -266,11 +287,25 @@ export function Navigation({
       }
     }
 
+    // Window Blur Handler - Reset state to prevent "run away"
+    const onBlur = () => {
+       moveState.current.forward = false
+       moveState.current.backward = false
+       moveState.current.left = false
+       moveState.current.right = false
+       moveState.current.sprint = false
+       moveState.current.jump = false
+       touchState.current.leftId = null
+       touchState.current.rightId = null
+       mouseState.current.dragging = false
+    }
+
     // Attach Listeners
     // For pointer lock, we attach to gl.domElement usually, but click is better on window or a UI overlay.
     // Here we attach generic listeners to window to catch everything.
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
+    window.addEventListener('blur', onBlur) // Reset on tab switch
 
     // For mouse/touch, attach to canvas to avoid UI interference?
     // Actually attaching to window ensures we don't lose drag if mouse goes off screen (though pointer lock fixes that).
@@ -288,6 +323,7 @@ export function Navigation({
     return () => {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('blur', onBlur)
       gl.domElement.removeEventListener('click', onClick)
       gl.domElement.removeEventListener('mousedown', onMouseDown)
       window.removeEventListener('mousemove', onMouseMove)
@@ -298,7 +334,7 @@ export function Navigation({
       gl.domElement.removeEventListener('touchend', onTouchEnd)
       gl.domElement.removeEventListener('touchcancel', onTouchEnd)
     }
-  }, [enabled, gl.domElement, lookSensitivity, jumpForce])
+  }, [enabled, gl.domElement, lookSensitivity, jumpForce, toggleSprint])
 
   // --- Physics Loop ---
 
@@ -308,7 +344,7 @@ export function Navigation({
     // 1. Rotation Smoothing
     // Damp towards target
     // Smooth factor (higher = faster)
-    const damp = 12.0
+    const damp = smoothTime
     rotation.current.theta += (targetRotation.current.theta - rotation.current.theta) * damp * delta
     rotation.current.phi += (targetRotation.current.phi - rotation.current.phi) * damp * delta
 
@@ -374,19 +410,20 @@ export function Navigation({
 
     // Acceleration / Deceleration
     // If input, accelerate towards target velocity. If no input, decelerate (friction).
-    const friction = 8.0 // Deceleration factor
+    const accel = acceleration // Acceleration factor
+    const fric = friction // Deceleration factor
 
     const targetVelX = inputVector.x * speed
     const targetVelZ = inputVector.z * speed
 
     if (inputVector.lengthSq() > 0.001) {
        // Accelerate
-       velocity.current.x = THREE.MathUtils.lerp(velocity.current.x, targetVelX, delta * 5)
-       velocity.current.z = THREE.MathUtils.lerp(velocity.current.z, targetVelZ, delta * 5)
+       velocity.current.x = THREE.MathUtils.lerp(velocity.current.x, targetVelX, delta * accel)
+       velocity.current.z = THREE.MathUtils.lerp(velocity.current.z, targetVelZ, delta * accel)
     } else {
        // Decelerate
-       velocity.current.x = THREE.MathUtils.lerp(velocity.current.x, 0, delta * friction)
-       velocity.current.z = THREE.MathUtils.lerp(velocity.current.z, 0, delta * friction)
+       velocity.current.x = THREE.MathUtils.lerp(velocity.current.x, 0, delta * fric)
+       velocity.current.z = THREE.MathUtils.lerp(velocity.current.z, 0, delta * fric)
     }
 
     // Gravity
