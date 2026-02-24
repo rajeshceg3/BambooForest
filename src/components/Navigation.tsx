@@ -1,5 +1,6 @@
 import { useFrame, useThree } from '@react-three/fiber'
 import { useRef, useEffect } from 'react'
+import { Html } from '@react-three/drei'
 import * as THREE from 'three'
 
 interface NavigationProps {
@@ -56,6 +57,10 @@ export function Navigation({
     theta: 0,
   })
 
+  // Visual Joystick Refs
+  const joystickBaseRef = useRef<HTMLDivElement>(null)
+  const joystickKnobRef = useRef<HTMLDivElement>(null)
+
   // Touch State
   // Left side screen (0-30%) for move joystick
   // Right side screen (30-100%) for look drag
@@ -66,6 +71,7 @@ export function Navigation({
     leftCurr: { x: number; y: number }
     rightStart: { x: number; y: number }
     rightCurr: { x: number; y: number }
+    maxDist: number
   }>({
     leftId: null,
     rightId: null,
@@ -73,6 +79,7 @@ export function Navigation({
     leftCurr: { x: 0, y: 0 },
     rightStart: { x: 0, y: 0 },
     rightCurr: { x: 0, y: 0 },
+    maxDist: 50
   })
 
   // Mouse State for fallback drag
@@ -221,13 +228,24 @@ export function Navigation({
         const x = t.clientX
         const y = t.clientY
         const width = window.innerWidth
+        const height = window.innerHeight
 
-        // Logic: Left 25% = Move Joystick, Right 75% = Look
-        if (x < width * 0.25) {
+        // Logic: Left 30% = Move Joystick, Right 70% = Look
+        if (x < width * 0.3) {
            if (touchState.current.leftId === null) {
               touchState.current.leftId = t.identifier
               touchState.current.leftStart = { x, y }
               touchState.current.leftCurr = { x, y }
+              // Dynamic maxDist based on screen size (min 50px, max 100px, roughly 10-15% of screen min dimension)
+              touchState.current.maxDist = Math.max(50, Math.min(width, height) * 0.15)
+
+              // Show Joystick Visuals
+              if (joystickBaseRef.current && joystickKnobRef.current) {
+                  joystickBaseRef.current.style.display = 'block'
+                  joystickKnobRef.current.style.display = 'block'
+                  joystickBaseRef.current.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`
+                  joystickKnobRef.current.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`
+              }
            }
         } else {
            if (touchState.current.rightId === null) {
@@ -249,6 +267,22 @@ export function Navigation({
 
         if (t.identifier === touchState.current.leftId) {
              touchState.current.leftCurr = { x: t.clientX, y: t.clientY }
+
+             // Update Joystick Visual Knob
+             const dx = t.clientX - touchState.current.leftStart.x
+             const dy = t.clientY - touchState.current.leftStart.y
+             const dist = Math.sqrt(dx * dx + dy * dy)
+             const maxDist = touchState.current.maxDist
+
+             // Clamp knob position visually
+             const clampedDist = Math.min(dist, maxDist)
+             const angle = Math.atan2(dy, dx)
+             const knobX = touchState.current.leftStart.x + Math.cos(angle) * clampedDist
+             const knobY = touchState.current.leftStart.y + Math.sin(angle) * clampedDist
+
+             if (joystickKnobRef.current) {
+                 joystickKnobRef.current.style.transform = `translate(${knobX}px, ${knobY}px) translate(-50%, -50%)`
+             }
         }
         if (t.identifier === touchState.current.rightId) {
              // Calculate delta for look immediately
@@ -279,7 +313,11 @@ export function Navigation({
         const t = e.changedTouches[i]
         if (t.identifier === touchState.current.leftId) {
             touchState.current.leftId = null
-            // Reset joystick visual/logic?
+            // Hide Joystick Visuals
+            if (joystickBaseRef.current && joystickKnobRef.current) {
+                joystickBaseRef.current.style.display = 'none'
+                joystickKnobRef.current.style.display = 'none'
+            }
         }
         if (t.identifier === touchState.current.rightId) {
             touchState.current.rightId = null
@@ -298,6 +336,12 @@ export function Navigation({
        touchState.current.leftId = null
        touchState.current.rightId = null
        mouseState.current.dragging = false
+
+       // Reset Visuals
+       if (joystickBaseRef.current && joystickKnobRef.current) {
+           joystickBaseRef.current.style.display = 'none'
+           joystickKnobRef.current.style.display = 'none'
+       }
     }
 
     // Attach Listeners
@@ -375,7 +419,7 @@ export function Navigation({
     if (touchState.current.leftId !== null) {
         const dx = touchState.current.leftCurr.x - touchState.current.leftStart.x
         const dy = touchState.current.leftCurr.y - touchState.current.leftStart.y
-        const maxDist = 50.0 // Joystick radius
+        const maxDist = touchState.current.maxDist // Dynamic maxDist
         const deadzone = 0.15 // 15% deadzone
 
         // Calculate distance and direction
@@ -458,5 +502,23 @@ export function Navigation({
      }
   }, [camera])
 
-  return null
+  return (
+    <Html fullscreen pointerEvents="none" style={{ pointerEvents: 'none', userSelect: 'none' }}>
+        {/* Joystick Overlay */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {/* Base */}
+            <div
+                ref={joystickBaseRef}
+                className="absolute w-24 h-24 border border-white/30 rounded-full bg-white/5 backdrop-blur-sm hidden"
+                style={{ top: 0, left: 0 }}
+            />
+            {/* Knob */}
+            <div
+                ref={joystickKnobRef}
+                className="absolute w-10 h-10 bg-white/50 rounded-full shadow-lg hidden backdrop-blur-md border border-white/20"
+                style={{ top: 0, left: 0 }}
+            />
+        </div>
+    </Html>
+  )
 }
