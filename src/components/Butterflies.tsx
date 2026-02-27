@@ -19,6 +19,7 @@ export function Butterflies({ count = 15 }) {
       const z = (Math.random() - 0.5) * 30
 
       tempObject.position.set(x, y, z)
+      tempObject.rotation.y = Math.random() * Math.PI * 2
       tempObject.updateMatrix()
       inst.push(tempObject.matrix.clone())
       off.push(Math.random() * 100) // Random time offset
@@ -42,8 +43,11 @@ export function Butterflies({ count = 15 }) {
         '#include <begin_vertex>',
         `
         #include <begin_vertex>
-        // Very fast flutter
-        float flap = sin(uTime * 25.0 + position.x * 10.0) * 0.4;
+        // Organic flutter with per-instance variation
+        float seed = instanceMatrix[3][0] * 0.17 + instanceMatrix[3][2] * 0.13;
+        float flapSpeed = mix(16.0, 30.0, fract(seed));
+        float flapAmp = mix(0.22, 0.45, fract(seed * 2.3));
+        float flap = sin(uTime * flapSpeed + seed * 10.0 + position.x * 12.0) * flapAmp;
         if (abs(position.x) > 0.01) {
             transformed.y += flap * abs(position.x);
         }
@@ -81,10 +85,10 @@ export function Butterflies({ count = 15 }) {
       const nY = simplex.noise(time * 0.5 + 100, i * 0.1)
       const nZ = simplex.noise(time * 0.5 + 200, i * 0.1)
 
-      const wanderRadius = 3.0
+      const wanderRadius = 1.8 + simplex.noise(i * 0.31, 42.0) * 1.0
 
       const x = home.x + nX * wanderRadius
-      const y = home.y + nY * 1.5 // Less vertical range
+      const y = THREE.MathUtils.clamp(home.y + nY * 1.1, 0.8, 5.8)
       const z = home.z + nZ * wanderRadius
 
       dummy.position.set(x, y, z)
