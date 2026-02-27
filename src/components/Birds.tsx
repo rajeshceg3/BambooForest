@@ -9,9 +9,10 @@ const MATCHING_FACTOR = 0.05
 const CENTERING_FACTOR = 0.0005
 const AVOID_FACTOR = 0.05
 const TURN_FACTOR = 0.2
-const MAX_SPEED = 0.3
-const MIN_SPEED = 0.15
+const MAX_SPEED = 0.28
+const MIN_SPEED = 0.12
 const BOUNDS = 80
+const DAMPING = 0.995
 
 export function Birds({ count = 30 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
@@ -170,10 +171,22 @@ export function Birds({ count = 30 }) {
             vy = (vy / speed) * MAX_SPEED
             vz = (vz / speed) * MAX_SPEED
         } else if (speed < MIN_SPEED) {
-             vx = (vx / speed) * MIN_SPEED
-             vy = (vy / speed) * MIN_SPEED
-             vz = (vz / speed) * MIN_SPEED
+             if (speed > 1e-5) {
+               const scale = MIN_SPEED / speed
+               vx *= scale
+               vy *= scale
+               vz *= scale
+             } else {
+               const angle = Math.random() * Math.PI * 2
+               vx = Math.cos(angle) * MIN_SPEED
+               vy = (Math.random() - 0.5) * MIN_SPEED * 0.2
+               vz = Math.sin(angle) * MIN_SPEED
+             }
         }
+
+        vx *= DAMPING
+        vy *= DAMPING
+        vz *= DAMPING
 
         velocities[i*3] = vx
         velocities[i*3+1] = vy
