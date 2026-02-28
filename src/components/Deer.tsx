@@ -29,6 +29,9 @@ export function Deer(props: any) {
   // Animation Phase
   const walkTime = useRef(0)
 
+  const dirVector = useRef(new THREE.Vector3())
+  const bodyDirVector = useRef(new THREE.Vector3())
+
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
       color: "#8b5a2b", // Russet Brown
@@ -256,15 +259,15 @@ export function Deer(props: any) {
              // Simplification: Look at world position
 
              // Get direction to player
-             const dir = new THREE.Vector3().subVectors(playerPos, groupRef.current.position).normalize()
+             dirVector.current.subVectors(playerPos, groupRef.current.position).normalize()
 
              // Convert to local angle relative to body forward (Z)
              // Body forward is (sin(rotY), 0, cos(rotY))
              // Actually, simplest is to use lookAt on a dummy and grab rotation, but let's approximate
 
              // Angle difference
-             const bodyDir = new THREE.Vector3(0, 0, 1).applyQuaternion(groupRef.current.quaternion).normalize()
-             const angleY = Math.atan2(dir.x, dir.z) - Math.atan2(bodyDir.x, bodyDir.z)
+             bodyDirVector.current.set(0, 0, 1).applyQuaternion(groupRef.current.quaternion).normalize()
+             const angleY = Math.atan2(dirVector.current.x, dirVector.current.z) - Math.atan2(bodyDirVector.current.x, bodyDirVector.current.z)
 
              let ay = angleY
              while (ay > Math.PI) ay -= Math.PI * 2

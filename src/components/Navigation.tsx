@@ -382,6 +382,12 @@ export function Navigation({
 
   // --- Physics Loop ---
 
+  const euler = useRef(new THREE.Euler(0, 0, 0, 'YXZ'))
+  const q = useRef(new THREE.Quaternion())
+  const forward = useRef(new THREE.Vector3())
+  const right = useRef(new THREE.Vector3())
+  const inputVector = useRef(new THREE.Vector3())
+
   useFrame((_state, delta) => {
     if (!enabled) return
 
@@ -394,26 +400,26 @@ export function Navigation({
 
     // Apply rotation to camera
     // Reset quaternion
-    const q = new THREE.Quaternion()
-    // Order YXZ (Yaw first, then Pitch)
-    q.setFromEuler(new THREE.Euler(rotation.current.phi, rotation.current.theta, 0, 'YXZ'))
-    camera.quaternion.copy(q)
+    euler.current.set(rotation.current.phi, rotation.current.theta, 0, 'YXZ')
+    q.current.setFromEuler(euler.current)
+    camera.quaternion.copy(q.current)
 
 
     // 2. Movement Calculation
     const speed = moveState.current.sprint ? runSpeed : walkSpeed
 
     // Get direction from inputs
-    const forward = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(0, rotation.current.theta, 0, 'YXZ'))
-    const right = new THREE.Vector3(1, 0, 0).applyEuler(new THREE.Euler(0, rotation.current.theta, 0, 'YXZ'))
+    euler.current.set(0, rotation.current.theta, 0, 'YXZ')
+    forward.current.set(0, 0, -1).applyEuler(euler.current)
+    right.current.set(1, 0, 0).applyEuler(euler.current)
 
-    const inputVector = new THREE.Vector3()
+    inputVector.current.set(0, 0, 0)
 
     // Keyboard Input
-    if (moveState.current.forward) inputVector.add(forward)
-    if (moveState.current.backward) inputVector.sub(forward)
-    if (moveState.current.left) inputVector.sub(right)
-    if (moveState.current.right) inputVector.add(right)
+    if (moveState.current.forward) inputVector.current.add(forward.current)
+    if (moveState.current.backward) inputVector.current.sub(forward.current)
+    if (moveState.current.left) inputVector.current.sub(right.current)
+    if (moveState.current.right) inputVector.current.add(right.current)
 
     // Touch Joystick Input
     if (touchState.current.leftId !== null) {
@@ -441,26 +447,23 @@ export function Navigation({
             // Right is +x
 
             // Add proportional movement
-            const touchForward = forward.clone().multiplyScalar(-ny) // Up(-y) -> Forward
-            const touchRight = right.clone().multiplyScalar(nx)
-
-            inputVector.add(touchForward)
-            inputVector.add(touchRight)
+            inputVector.current.addScaledVector(forward.current, -ny)
+            inputVector.current.addScaledVector(right.current, nx)
         }
     }
 
     // Normalize if length > 1 (so diagonal isn't faster)
-    if (inputVector.length() > 1) inputVector.normalize()
+    if (inputVector.current.length() > 1) inputVector.current.normalize()
 
     // Acceleration / Deceleration
     // If input, accelerate towards target velocity. If no input, decelerate (friction).
     const accel = acceleration // Acceleration factor
     const fric = friction // Deceleration factor
 
-    const targetVelX = inputVector.x * speed
-    const targetVelZ = inputVector.z * speed
+    const targetVelX = inputVector.current.x * speed
+    const targetVelZ = inputVector.current.z * speed
 
-    if (inputVector.lengthSq() > 0.001) {
+    if (inputVector.current.lengthSq() > 0.001) {
        // Accelerate
        velocity.current.x = THREE.MathUtils.lerp(velocity.current.x, targetVelX, delta * accel)
        velocity.current.z = THREE.MathUtils.lerp(velocity.current.z, targetVelZ, delta * accel)
