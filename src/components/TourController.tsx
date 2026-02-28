@@ -15,6 +15,7 @@ export function TourController({ onZoneChange }: TourControllerProps) {
 
   // We use a ref to track where the camera should be looking
   const lookAtTarget = useRef(new THREE.Vector3())
+  const currentTarget = useRef(new THREE.Vector3())
   const isFirstRun = useRef(true)
 
   // Sync isFirstRun
@@ -73,12 +74,12 @@ export function TourController({ onZoneChange }: TourControllerProps) {
     const driftX = Math.sin(time * 0.5) * 0.2
     const driftY = Math.cos(time * 0.3) * 0.2
 
-    // Clone target to avoid modifying the GSAP target ref permanently
-    const currentTarget = lookAtTarget.current.clone()
-    currentTarget.x += driftX
-    currentTarget.y += driftY
+    // Use pre-allocated target to avoid modifying the GSAP target ref permanently
+    currentTarget.current.copy(lookAtTarget.current)
+    currentTarget.current.x += driftX
+    currentTarget.current.y += driftY
 
-    camera.lookAt(currentTarget)
+    camera.lookAt(currentTarget.current)
   })
 
   return null
