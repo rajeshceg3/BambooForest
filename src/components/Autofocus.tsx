@@ -14,6 +14,7 @@ export function Autofocus({ dofRef, smoothTime = 0.2 }: AutofocusProps) {
     const center = useRef(new THREE.Vector2(0, 0))
     const target = useRef(new THREE.Vector3(0, 0, 0)) // Current focus target
     const aim = useRef(new THREE.Vector3(0, 0, 0))    // Where we want to focus
+    const farPoint = useRef(new THREE.Vector3(0, 0, 0))
 
     useEffect(() => {
         // Enable layer 1 on camera so we can see objects on this layer
@@ -49,8 +50,8 @@ export function Autofocus({ dofRef, smoothTime = 0.2 }: AutofocusProps) {
             // 20 units is "far" in this scale?
             // Bamboo forest is dense, 20 is okay.
             // Ray direction * 20 + position
-            const farPoint = raycaster.current.ray.direction.clone().multiplyScalar(20).add(camera.position)
-            aim.current.copy(farPoint)
+            farPoint.current.copy(raycaster.current.ray.direction).multiplyScalar(20).add(camera.position)
+            aim.current.copy(farPoint.current)
         }
 
         // 2. Smooth Interpolation
