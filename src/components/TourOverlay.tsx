@@ -75,13 +75,13 @@ export function TourOverlay() {
             ? 'opacity-100 translate-y-0 filter-none'
             : 'opacity-0 translate-y-8 blur-sm'
       }`}>
-        <div className="relative max-w-lg w-full bg-black/40 backdrop-blur-xl border border-white/10 p-8 md:p-10 rounded-2xl shadow-2xl pointer-events-auto overflow-hidden">
+        <div className="relative max-w-lg w-full bg-black/30 backdrop-blur-2xl border border-white/10 p-8 md:p-10 rounded-2xl shadow-2xl pointer-events-auto overflow-hidden">
 
             {/* Decorative gradient blob */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 blur-3xl rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
 
             {/* Title */}
-            <h2 className="font-serif text-2xl md:text-3xl text-white mb-2 italic tracking-wide">
+            <h2 className="font-serif text-2xl md:text-3xl text-white mb-2 italic tracking-widest">
                 {currentStep.title}
             </h2>
 
