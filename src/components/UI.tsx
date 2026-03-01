@@ -149,7 +149,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
       >
         <div className="text-center p-8 max-w-4xl flex flex-col items-center">
           <div ref={titleRef} className="opacity-0 mb-8 overflow-hidden perspective-[1000px]">
-             <h1 className="font-serif text-6xl md:text-9xl tracking-tighter text-white/90 leading-none drop-shadow-2xl">
+             <h1 className="font-serif text-6xl md:text-9xl tracking-widest text-white/90 leading-none drop-shadow-2xl">
                {splitText("BAMBOO FOREST")}
              </h1>
           </div>
@@ -183,6 +183,21 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
            <span className="font-serif text-xs md:text-sm tracking-widest uppercase text-white drop-shadow-sm">
              Bamboo Forest
            </span>
+        </div>
+
+        {/* Top Right: Award Badge */}
+        <div className="absolute top-0 right-10 md:right-16 pointer-events-auto group w-12 h-16 md:w-16 md:h-20 bg-black/60 backdrop-blur-md flex flex-col items-center justify-end pb-2 md:pb-3 rounded-b-lg border border-white/20 border-t-0 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-500 hover:bg-white hover:border-white cursor-pointer origin-top">
+          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 md:w-6 md:h-6 text-white group-hover:text-black mb-1 transition-colors duration-500">
+             <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <span className="font-sans text-[6px] md:text-[8px] font-bold uppercase tracking-widest text-white group-hover:text-black transition-colors duration-500">
+            SOTD
+          </span>
+          <div className="absolute top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none w-32 text-center right-1/2 translate-x-1/2">
+            <span className="text-[10px] uppercase tracking-widest font-mono text-white/70 bg-black/50 px-2 py-1 rounded backdrop-blur whitespace-nowrap">
+               Site of the Day
+            </span>
+          </div>
         </div>
 
         {/* Bottom Center: Controls Hint */}
