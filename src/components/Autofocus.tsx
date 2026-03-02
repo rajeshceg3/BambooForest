@@ -15,6 +15,7 @@ export function Autofocus({ dofRef, smoothTime = 0.2 }: AutofocusProps) {
     const target = useRef(new THREE.Vector3(0, 0, 0)) // Current focus target
     const aim = useRef(new THREE.Vector3(0, 0, 0))    // Where we want to focus
     const farPoint = useRef(new THREE.Vector3(0, 0, 0))
+    const lastRaycast = useRef(0)
 
     useEffect(() => {
         // Enable layer 1 on camera so we can see objects on this layer
@@ -26,32 +27,35 @@ export function Autofocus({ dofRef, smoothTime = 0.2 }: AutofocusProps) {
         raycaster.current.far = 50
     }, [camera])
 
-    useFrame((_state, delta) => {
+    useFrame((state, delta) => {
         if (!dofRef.current) return
 
-        // 1. Raycast
-        raycaster.current.setFromCamera(center.current, camera)
+        // 1. Raycast (Throttled to 10Hz to prevent array allocation spam)
+        if (state.clock.elapsedTime - lastRaycast.current > 0.1) {
+            lastRaycast.current = state.clock.elapsedTime
+            raycaster.current.setFromCamera(center.current, camera)
 
-        // Intersect with scene (recursive)
-        // Since we set layers, it will only check objects on Layer 1
-        const intersects = raycaster.current.intersectObjects(scene.children, true)
+            // Intersect with scene (recursive)
+            // Since we set layers, it will only check objects on Layer 1
+            const intersects = raycaster.current.intersectObjects(scene.children, true)
 
-        let hitPoint = null
+            let hitPoint = null
 
-        if (intersects.length > 0) {
-            hitPoint = intersects[0].point
-        }
+            if (intersects.length > 0) {
+                hitPoint = intersects[0].point
+            }
 
-        if (hitPoint) {
-            aim.current.copy(hitPoint)
-        } else {
-            // If no hit, focus far away (infinity/horizon)
-            // But smoothly. If we look at sky, focus distance should be large.
-            // 20 units is "far" in this scale?
-            // Bamboo forest is dense, 20 is okay.
-            // Ray direction * 20 + position
-            farPoint.current.copy(raycaster.current.ray.direction).multiplyScalar(20).add(camera.position)
-            aim.current.copy(farPoint.current)
+            if (hitPoint) {
+                aim.current.copy(hitPoint)
+            } else {
+                // If no hit, focus far away (infinity/horizon)
+                // But smoothly. If we look at sky, focus distance should be large.
+                // 20 units is "far" in this scale?
+                // Bamboo forest is dense, 20 is okay.
+                // Ray direction * 20 + position
+                farPoint.current.copy(raycaster.current.ray.direction).multiplyScalar(20).add(camera.position)
+                aim.current.copy(farPoint.current)
+            }
         }
 
         // 2. Smooth Interpolation

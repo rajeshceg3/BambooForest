@@ -1,10 +1,11 @@
 import { EffectComposer, Bloom, Noise, Vignette, ToneMapping, N8AO, DepthOfField, SMAA } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
-import { useRef } from 'react'
+import { useRef, useMemo } from 'react'
 import { Autofocus } from './Autofocus'
 
 export function Effects() {
   const dofRef = useRef(null)
+  const target = useMemo(() => [0, 0, 0] as [number, number, number], [])
 
   return (
     <EffectComposer enableNormalPass={false}>
@@ -22,7 +23,7 @@ export function Effects() {
       />
       <DepthOfField
         ref={dofRef}
-        target={[0, 0, 0]}
+        target={target}
         focusDistance={0.0} // Dynamic
         focalLength={0.02} // Realistic lens
         bokehScale={2}
