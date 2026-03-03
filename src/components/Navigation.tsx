@@ -234,8 +234,10 @@ export function Navigation({
         if (x < width * 0.3) {
            if (touchState.current.leftId === null) {
               touchState.current.leftId = t.identifier
-              touchState.current.leftStart = { x, y }
-              touchState.current.leftCurr = { x, y }
+              touchState.current.leftStart.x = x
+              touchState.current.leftStart.y = y
+              touchState.current.leftCurr.x = x
+              touchState.current.leftCurr.y = y
               // Dynamic maxDist based on screen size (min 50px, max 100px, roughly 10-15% of screen min dimension)
               touchState.current.maxDist = Math.max(50, Math.min(width, height) * 0.15)
 
@@ -250,8 +252,10 @@ export function Navigation({
         } else {
            if (touchState.current.rightId === null) {
               touchState.current.rightId = t.identifier
-              touchState.current.rightStart = { x, y }
-              touchState.current.rightCurr = { x, y }
+              touchState.current.rightStart.x = x
+              touchState.current.rightStart.y = y
+              touchState.current.rightCurr.x = x
+              touchState.current.rightCurr.y = y
            }
         }
       }
@@ -266,7 +270,8 @@ export function Navigation({
         const t = e.changedTouches[i]
 
         if (t.identifier === touchState.current.leftId) {
-             touchState.current.leftCurr = { x: t.clientX, y: t.clientY }
+             touchState.current.leftCurr.x = t.clientX
+             touchState.current.leftCurr.y = t.clientY
 
              // Update Joystick Visual Knob
              const dx = t.clientX - touchState.current.leftStart.x
@@ -289,7 +294,8 @@ export function Navigation({
              const dx = t.clientX - touchState.current.rightCurr.x
              const dy = t.clientY - touchState.current.rightCurr.y
 
-             touchState.current.rightCurr = { x: t.clientX, y: t.clientY }
+             touchState.current.rightCurr.x = t.clientX
+             touchState.current.rightCurr.y = t.clientY
 
              // Apply to look target
              // Note: Touch delta is in pixels. Mouse "movementX" is also roughly pixels but raw.
