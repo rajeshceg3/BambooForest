@@ -75,7 +75,8 @@ export function Butterflies({ count = 15 }) {
 
     const t = state.clock.getElapsedTime()
 
-    homes.forEach((home, i) => {
+    for (let i = 0; i < homes.length; i++) {
+      const home = homes[i]
       const off = offsets[i]
       const time = t + off
 
@@ -107,7 +108,7 @@ export function Butterflies({ count = 15 }) {
       dummy.scale.set(0.1, 0.1, 0.1)
       dummy.updateMatrix()
       meshRef.current!.setMatrixAt(i, dummy.matrix)
-    })
+    }
     meshRef.current.instanceMatrix.needsUpdate = true
   })
 

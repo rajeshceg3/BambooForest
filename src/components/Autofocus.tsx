@@ -16,6 +16,7 @@ export function Autofocus({ dofRef, smoothTime = 0.2 }: AutofocusProps) {
     const aim = useRef(new THREE.Vector3(0, 0, 0))    // Where we want to focus
     const farPoint = useRef(new THREE.Vector3(0, 0, 0))
     const lastRaycast = useRef(0)
+    const intersectsArray = useRef<THREE.Intersection[]>([])
 
     useEffect(() => {
         // Enable layer 1 on camera so we can see objects on this layer
@@ -37,7 +38,8 @@ export function Autofocus({ dofRef, smoothTime = 0.2 }: AutofocusProps) {
 
             // Intersect with scene (recursive)
             // Since we set layers, it will only check objects on Layer 1
-            const intersects = raycaster.current.intersectObjects(scene.children, true)
+            intersectsArray.current.length = 0
+            const intersects = raycaster.current.intersectObjects(scene.children, true, intersectsArray.current)
 
             let hitPoint = null
 

@@ -4,6 +4,41 @@ import * as THREE from 'three'
 
 type DeerState = 'IDLE' | 'GRAZE' | 'WALK' | 'ALERT';
 
+function animateLeg(leg: THREE.Group | null, offset: number, isWalking: boolean, walkTime: number, delta: number) {
+    if (!leg) return
+
+    const legAmp = 0.3
+
+    if (isWalking) {
+        const phase = (walkTime + offset) % 1.0
+
+        if (phase < 0.5) {
+            // Stance Phase (Plant)
+            // Leg rotates backward linearly to counteract body forward motion
+            // Map 0..0.5 to 0.5..-0.5 rotation?
+            // Actually, just rotation.x
+            const p = phase / 0.5 // 0..1
+            leg.rotation.x = THREE.MathUtils.lerp(legAmp, -legAmp, p)
+            leg.position.y = -0.15 // Grounded (relative height)
+
+            // Knee straightens slightly?
+            // Simplified: just rotate hip
+        } else {
+            // Swing Phase (Lift)
+            const p = (phase - 0.5) / 0.5 // 0..1
+            // Parabolic lift
+            const lift = Math.sin(p * Math.PI) * 0.15
+            // Move forward
+            leg.rotation.x = THREE.MathUtils.lerp(-legAmp, legAmp, p)
+            leg.position.y = -0.15 + lift
+        }
+    } else {
+        // Idle stance
+        leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, delta * 5)
+        leg.position.y = THREE.MathUtils.lerp(leg.position.y, -0.15, delta * 5)
+    }
+}
+
 export function Deer(props: any) {
   const groupRef = useRef<THREE.Group>(null)
   const neckRef = useRef<THREE.Group>(null)
@@ -202,48 +237,13 @@ export function Deer(props: any) {
     // Stance: 0.0-0.5 (Leg moves back)
     // Swing: 0.5-1.0 (Leg moves forward and up)
 
-    const legAmp = 0.3
-
-    const animateLeg = (leg: THREE.Group, offset: number) => {
-        if (!leg) return
-
-        if (isWalking) {
-            const phase = (walkTime.current + offset) % 1.0
-
-            if (phase < 0.5) {
-                // Stance Phase (Plant)
-                // Leg rotates backward linearly to counteract body forward motion
-                // Map 0..0.5 to 0.5..-0.5 rotation?
-                // Actually, just rotation.x
-                const p = phase / 0.5 // 0..1
-                leg.rotation.x = THREE.MathUtils.lerp(legAmp, -legAmp, p)
-                leg.position.y = -0.15 // Grounded (relative height)
-
-                // Knee straightens slightly?
-                // Simplified: just rotate hip
-            } else {
-                // Swing Phase (Lift)
-                const p = (phase - 0.5) / 0.5 // 0..1
-                // Parabolic lift
-                const lift = Math.sin(p * Math.PI) * 0.15
-                // Move forward
-                leg.rotation.x = THREE.MathUtils.lerp(-legAmp, legAmp, p)
-                leg.position.y = -0.15 + lift
-            }
-        } else {
-            // Idle stance
-            leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, delta * 5)
-            leg.position.y = THREE.MathUtils.lerp(leg.position.y, -0.15, delta * 5)
-        }
-    }
-
     // Trot gait: Diagonal pairs
     // FL (0.0), BR (0.0)
     // FR (0.5), BL (0.5)
-    animateLeg(legFLRef.current!, 0.0)
-    animateLeg(legBRRef.current!, 0.0)
-    animateLeg(legFRRef.current!, 0.5)
-    animateLeg(legBLRef.current!, 0.5)
+    animateLeg(legFLRef.current, 0.0, isWalking, walkTime.current, delta)
+    animateLeg(legBRRef.current, 0.0, isWalking, walkTime.current, delta)
+    animateLeg(legFRRef.current, 0.5, isWalking, walkTime.current, delta)
+    animateLeg(legBLRef.current, 0.5, isWalking, walkTime.current, delta)
 
 
     // 3. Head/Neck Animation
