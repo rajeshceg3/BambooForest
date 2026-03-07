@@ -23,16 +23,18 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
       {/* Centered Zone Description */}
       <div className="flex flex-col items-center justify-center flex-1 text-center px-8 pb-20 md:pb-0 relative">
         <div key={currentZone} className="animate-blur-in transform">
-           {/* Subtle backing for legibility against bright fog */}
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-32 bg-black/20 blur-3xl rounded-full -z-10 pointer-events-none"></div>
+          <div className="animate-breathe">
+             {/* Subtle backing for legibility against bright fog */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-black/40 via-black/10 to-transparent blur-2xl rounded-full -z-10 pointer-events-none"></div>
 
-           <h2 className="text-white/40 font-serif italic text-xl md:text-2xl tracking-widest mb-3 drop-shadow-md">
-             {zoneConfig[currentZone].name}
-           </h2>
-           <div className="w-8 h-[1px] bg-white/20 mx-auto mb-4 box-shadow-lg"></div>
-           <p className="text-white/90 font-light text-sm md:text-lg tracking-wide max-w-md mx-auto leading-relaxed [text-shadow:0_2px_12px_rgba(0,0,0,0.5)]">
-             {zoneConfig[currentZone].text}
-           </p>
+             <h2 className="text-white/40 font-serif italic text-xl md:text-2xl tracking-[0.2em] mb-3 drop-shadow-md">
+               {zoneConfig[currentZone].name}
+             </h2>
+             <div className="w-8 h-[1px] bg-white/20 mx-auto mb-4 box-shadow-lg"></div>
+             <p className="text-white/90 font-light text-sm md:text-lg tracking-wide max-w-md mx-auto leading-[2.5] [text-shadow:0_2px_12px_rgba(0,0,0,0.5)]">
+               {zoneConfig[currentZone].text}
+             </p>
+          </div>
         </div>
       </div>
 
@@ -40,7 +42,7 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
       <div className="flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto">
 
         {/* Mobile Navigation (Capsule) */}
-        <nav className="md:hidden flex bg-black/20 backdrop-blur-xl rounded-full border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.5)] p-1.5 gap-1 mx-4 max-w-full overflow-x-auto no-scrollbar">
+        <nav className="md:hidden flex bg-black/40 backdrop-blur-2xl rounded-full border border-white/5 px-6 py-2 gap-2 mx-4 max-w-full overflow-x-auto no-scrollbar">
           {zones.map((zone) => (
             <button
               key={zone}
@@ -49,7 +51,7 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
                 currentZone === zone ? 'bg-white/10 text-white shadow-inner' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
               }`}
             >
-              <span className="text-[10px] uppercase tracking-widest font-sans font-medium block text-center">
+              <span className="text-[9px] uppercase tracking-widest font-sans font-medium block text-center">
                 {zoneConfig[zone].name}
               </span>
             </button>
@@ -83,8 +85,8 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
                {/* Dot / Indicator */}
                <div className={`transition-all duration-500 cubic-bezier(0.25, 1, 0.5, 1) ${
                   currentZone === zone
-                    ? 'w-1.5 h-1.5 bg-white scale-150 ring-4 ring-white/10'
-                    : 'w-1 h-1 bg-white/20 group-hover:bg-white/60 group-hover:scale-125'
+                    ? 'w-2 h-2 bg-white ring-1 ring-white/50 ring-offset-2 ring-offset-black/20'
+                    : 'w-1 h-1 bg-white/30 group-hover:bg-white/60 group-hover:scale-125'
                } rounded-full`} />
             </button>
           ))}
