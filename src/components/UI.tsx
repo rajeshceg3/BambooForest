@@ -131,14 +131,14 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         className={`absolute inset-0 bg-black z-[60] flex items-center justify-center transition-opacity duration-1000 ease-in-out ${progress === 100 || !active ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
       >
         <div className="flex flex-col items-center gap-6">
-           <div className="w-32 h-[1px] bg-white/10 overflow-hidden relative">
+           <div className="w-32 h-px bg-white/10 overflow-hidden relative">
              <div
-               className="absolute inset-y-0 left-0 bg-white transition-all duration-300 ease-out"
+               className="absolute inset-y-0 left-0 bg-white/80 transition-all duration-300 ease-out"
                style={{ width: `${progress}%` }}
              />
            </div>
-           <p className="font-mono text-[10px] tracking-widest text-white/50 animate-pulse">
-            INITIALIZING
+           <p className="font-mono text-[10px] tracking-widest text-white/50 animate-pulse" style={{ animationDuration: '2s' }}>
+            AWAKENING FOREST
           </p>
         </div>
       </div>
@@ -160,9 +160,9 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
 
           <button
             onClick={() => setStarted(true)}
-            className={`group relative px-10 py-5 overflow-hidden transition-all duration-1000 delay-[1200ms] rounded-sm hover:bg-white/5 animate-pulse ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
+            className={`group relative px-12 py-4 overflow-hidden transition-all duration-1000 delay-[1200ms] rounded-full border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-sm animate-pulse ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
           >
-            <span className="relative z-10 font-sans text-xs md:text-sm tracking-[0.4em] uppercase text-white/70 group-hover:text-white transition-colors duration-500">
+            <span className="relative z-10 font-sans text-[10px] md:text-xs tracking-[0.5em] uppercase text-white/50 group-hover:text-white/90 transition-colors duration-700">
               Enter
             </span>
             <span className="absolute bottom-0 left-0 w-full h-[1px] bg-white/20 transform scale-x-50 group-hover:scale-x-100 transition-transform duration-700 ease-out"></span>
@@ -186,15 +186,12 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         </div>
 
         {/* Top Right: Award Badge */}
-        <div className="absolute top-0 right-10 md:right-16 pointer-events-auto group w-12 h-16 md:w-16 md:h-20 bg-black/60 backdrop-blur-md flex flex-col items-center justify-end pb-2 md:pb-3 rounded-b-lg border border-white/20 border-t-0 shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-500 hover:bg-white hover:border-white cursor-pointer origin-top">
-          <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 md:w-6 md:h-6 text-white group-hover:text-black mb-1 transition-colors duration-500">
-             <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        <div className="absolute top-6 right-6 md:top-8 md:right-8 pointer-events-auto group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-500 hover:bg-white/10 hover:border-white/30 cursor-pointer">
+          <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 md:w-5 md:h-5 text-white/70 group-hover:text-white transition-colors duration-500">
+             <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="font-sans text-[6px] md:text-[8px] font-bold uppercase tracking-widest text-white group-hover:text-black transition-colors duration-500">
-            SOTD
-          </span>
-          <div className="absolute top-full mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none w-32 text-center right-1/2 translate-x-1/2">
-            <span className="text-[10px] uppercase tracking-widest font-mono text-white/70 bg-black/50 px-2 py-1 rounded backdrop-blur whitespace-nowrap">
+          <div className="absolute top-full mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none text-center right-1/2 translate-x-1/2">
+            <span className="text-[10px] uppercase tracking-[0.3em] font-sans text-white/50 whitespace-nowrap">
                Site of the Day
             </span>
           </div>
@@ -204,20 +201,27 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-all duration-1000 ${hasInteracted ? 'opacity-0 translate-y-4' : 'opacity-60 translate-y-0'} text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10 flex flex-col items-center gap-3`}>
           {isTouch ? (
             <div className="flex flex-col items-center gap-2 animate-pulse">
-               <div className="flex gap-4 opacity-40 mb-1">
-                 <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px]">L</div>
-                 <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px]">R</div>
+               <div className="flex gap-4 mb-1">
+                 <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px] text-white/80">L</div>
+                 <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px] text-white/80">R</div>
                </div>
-               <span>Left: Move • Right: Look</span>
+               <span className="text-[8px] text-white/70">Explore • Look</span>
             </div>
           ) : (
              <div className="flex flex-col items-center gap-2">
-                 <div className="flex gap-3 opacity-40">
-                    <div className="border border-white/40 rounded px-2 py-1 text-[8px] leading-none">WASD</div>
-                    <div className="w-[1px] h-3 bg-white/20"></div>
-                    <div className="border border-white/40 rounded px-2 py-1 text-[8px] leading-none">MOUSE</div>
+                 <div className="flex gap-3">
+                    <div className="flex gap-1">
+                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">W</div>
+                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">A</div>
+                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">S</div>
+                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">D</div>
+                    </div>
+                    <div className="w-[1px] h-6 bg-white/40"></div>
+                    <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="3" width="10" height="18" rx="5"></rect><line x1="12" y1="7" x2="12" y2="11"></line></svg>
+                    </div>
                  </div>
-                 <span>WASD to Move • Click to Look</span>
+                 <span className="text-[8px] text-white/70">Explore • Look</span>
              </div>
           )}
         </div>
@@ -227,15 +231,15 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
           <MagneticButton
             onClick={onToggleAudio}
             ariaLabel={audioEnabled ? "Mute" : "Unmute"}
-            className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all duration-300 group"
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/10 hover:bg-white/10 hover:border-white/30 backdrop-blur-3xl transition-all duration-300 group"
           >
             {audioEnabled ? (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
               </svg>
             ) : (
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
                 <line x1="23" y1="9" x2="17" y2="15"></line>
                 <line x1="17" y1="9" x2="23" y2="15"></line>
@@ -249,9 +253,9 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
           <MagneticButton
             onClick={() => setAboutOpen(true)}
             ariaLabel="About"
-            className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/30 backdrop-blur-md transition-all duration-300 group"
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/10 hover:bg-white/10 hover:border-white/30 backdrop-blur-3xl transition-all duration-300 group"
           >
-            <span className="font-serif italic text-xl md:text-2xl text-white/70 group-hover:text-white transition-colors">i</span>
+            <span className="font-serif italic text-lg md:text-xl font-light text-white/70 group-hover:text-white transition-colors">i</span>
           </MagneticButton>
         </div>
       </div>
@@ -264,7 +268,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         }}
       >
         <div
-            className={`max-w-xl w-full bg-neutral-950/80 border border-white/10 p-8 md:p-12 shadow-2xl relative overflow-hidden transition-all duration-700 transform ${aboutOpen ? 'translate-y-0 scale-100' : 'translate-y-10 scale-95'}`}
+            className={`max-w-xl w-full bg-black/40 backdrop-blur-3xl border border-white/5 p-12 md:p-16 shadow-2xl relative overflow-hidden transition-all duration-700 transform ${aboutOpen ? 'translate-y-0 scale-100' : 'translate-y-10 scale-95'}`}
         >
           {/* Close Button */}
           <button
@@ -284,7 +288,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
                 <p className="font-serif italic text-white/50 text-lg">Digital Sanctuary</p>
             </div>
 
-            <div className="space-y-6 text-white/70 font-sans font-light leading-relaxed text-sm md:text-base tracking-wide">
+            <div className="space-y-6 text-white/80 font-sans font-light leading-relaxed text-sm md:text-base tracking-wide">
               <p>
                 Wander through a procedural grove where light, wind, and sound conspire to create a moment of stillness.
               </p>
@@ -293,7 +297,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
               </p>
             </div>
 
-            <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between text-[10px] text-white/30 uppercase tracking-[0.2em] gap-4 font-mono">
+            <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between text-[10px] text-white/40 uppercase tracking-[0.2em] gap-4 font-mono">
               <span>WebGL • React Three Fiber</span>
               <span>2024</span>
             </div>

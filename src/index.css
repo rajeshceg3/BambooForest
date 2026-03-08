@@ -53,3 +53,18 @@ canvas {
 .animate-blur-in {
   animation: blur-in 1.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
+
+  @keyframes breathe {
+    0%, 100% {
+      opacity: 0.8;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+  }
+
+  .animate-breathe {
+    animation: breathe 8s ease-in-out infinite;
+  }

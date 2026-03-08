@@ -23,14 +23,14 @@ export function TourOverlay() {
       <div className="fixed bottom-8 right-8 z-50 pointer-events-auto">
         <button
           onClick={startTour}
-          className="group relative px-6 py-3 bg-white/5 hover:bg-white/10 backdrop-blur-md border border-white/10 rounded-full transition-all duration-500 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:scale-105"
+          className="group relative px-5 py-4 rounded-full border border-white/20 flex items-center justify-center animate-pulse bg-black/10 backdrop-blur-md hover:bg-white/5 hover:border-white/40 transition-all duration-700 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:scale-105"
           data-cursor-text="Begin Journey"
         >
           <div className="flex items-center gap-3">
-            <span className="w-2 h-2 rounded-full bg-white/50 group-hover:bg-white transition-colors duration-500 animate-pulse"></span>
-            <span className="text-white/80 group-hover:text-white text-xs tracking-[0.2em] uppercase font-light">
-              Guided Tour
-            </span>
+             <span className="text-[10px] uppercase tracking-widest font-sans text-white/80 group-hover:text-white transition-colors duration-500 whitespace-nowrap">Guided Tour</span>
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/80 group-hover:text-white transition-colors">
+               <polygon points="5 3 19 12 5 21 5 3"></polygon>
+             </svg>
           </div>
         </button>
       </div>
@@ -75,7 +75,7 @@ export function TourOverlay() {
             ? 'opacity-100 translate-y-0 filter-none'
             : 'opacity-0 translate-y-8 blur-sm'
       }`}>
-        <div className="relative max-w-lg w-full bg-black/30 backdrop-blur-2xl border border-white/10 p-8 md:p-10 rounded-2xl shadow-2xl pointer-events-auto overflow-hidden">
+        <div className="relative max-w-lg w-full bg-black/20 backdrop-blur-3xl border border-white/5 p-8 md:p-10 rounded-3xl shadow-2xl pointer-events-auto overflow-hidden">
 
             {/* Decorative gradient blob */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
@@ -93,12 +93,12 @@ export function TourOverlay() {
             </p>
 
             {/* Navigation Controls */}
-            <div className="flex justify-between items-center w-full pt-4 border-t border-white/5">
+            <div className="flex justify-between items-center w-full pt-6 border-t border-white/5">
                 <button
                     onClick={prevStep}
                     disabled={currentStepIndex === 0}
-                    className={`text-[10px] uppercase tracking-widest transition-colors ${
-                        currentStepIndex === 0 ? 'text-white/10 cursor-not-allowed' : 'text-white/40 hover:text-white'
+                    className={`text-[10px] uppercase tracking-widest transition-all duration-300 font-thin hover:underline underline-offset-4 decoration-1 decoration-white/30 ${
+                        currentStepIndex === 0 ? 'text-white/10 cursor-not-allowed hover:no-underline' : 'text-white/50 hover:text-white'
                     }`}
                 >
                     Previous
@@ -106,14 +106,14 @@ export function TourOverlay() {
 
                 <button
                     onClick={nextStep}
-                    className="group flex items-center gap-3 px-5 py-2 bg-white/10 hover:bg-white/20 rounded-full transition-all duration-300"
+                    className="group flex items-center gap-2 transition-all duration-300 font-thin hover:underline underline-offset-4 decoration-1 decoration-white/30"
                     data-cursor-text={currentStepIndex === TOUR_STEPS.length - 1 ? "Finish" : "Next"}
                 >
-                    <span className="text-[10px] uppercase tracking-widest text-white font-medium">
+                    <span className="text-[10px] uppercase tracking-widest text-white/90 group-hover:text-white">
                         {currentStepIndex === TOUR_STEPS.length - 1 ? 'Finish Tour' : 'Next Step'}
                     </span>
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" className="group-hover:translate-x-1 transition-transform">
-                        <path d="M1 6H11M11 6L7 2M11 6L7 10" stroke="white" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M1 6H11M11 6L7 2M11 6L7 10" stroke="white" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                 </button>
             </div>
