@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import gsap from 'gsap'
 
-export const Cursor = () => {
+export const Cursor = ({ isIdle = false }: { isIdle?: boolean }) => {
   const cursorRef = useRef<HTMLDivElement>(null)
   const textRef = useRef<HTMLSpanElement>(null)
   const [isVisible, setIsVisible] = useState(false)
@@ -106,7 +106,7 @@ export const Cursor = () => {
   return (
     <div
       ref={cursorRef}
-      className="fixed top-0 left-0 flex items-center justify-center rounded-full border border-white pointer-events-none z-[100] mix-blend-difference overflow-hidden"
+      className={`fixed top-0 left-0 flex items-center justify-center rounded-full border border-white pointer-events-none z-[100] mix-blend-difference overflow-hidden transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}
       style={{ willChange: 'transform, width, height, background-color', width: '16px', height: '16px' }}
     >
         <span

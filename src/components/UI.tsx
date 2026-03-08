@@ -63,9 +63,10 @@ const MagneticButton = ({ children, onClick, className = '', ariaLabel }: Magnet
 interface UIProps {
   audioEnabled: boolean
   onToggleAudio: () => void
+  isIdle?: boolean
 }
 
-export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
+export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => {
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
@@ -145,22 +146,22 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
 
       {/* Intro Screen */}
       <div
-        className={`absolute inset-0 z-[40] flex items-center justify-center bg-black/20 backdrop-blur-sm transition-opacity duration-1000 ease-in-out ${started ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
+        className={`absolute inset-0 z-[40] flex items-center justify-center bg-black/20 backdrop-blur-sm transition-opacity duration-[3000ms] ease-in-out ${started ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
       >
         <div className="text-center p-8 max-w-4xl flex flex-col items-center">
-          <div ref={titleRef} className="opacity-0 mb-8 overflow-hidden perspective-[1000px]">
-             <h1 className="font-serif text-6xl md:text-9xl tracking-widest text-white/90 leading-none drop-shadow-2xl">
+          <div ref={titleRef} className="opacity-0 mb-8 overflow-hidden perspective-[1000px] transition-all duration-[3000ms] ease-out">
+             <h1 className={`font-serif text-6xl md:text-9xl text-white/90 leading-none drop-shadow-2xl transition-all duration-[4000ms] ease-out ${progress === 100 ? 'tracking-[0.2em] blur-0' : 'tracking-normal blur-sm'}`}>
                {splitText("BAMBOO FOREST")}
              </h1>
           </div>
 
-          <p className={`font-serif italic text-white/60 text-lg md:text-2xl mb-12 tracking-wide font-light transition-all duration-1000 delay-1000 ${progress === 100 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <p className={`font-serif italic text-white/60 text-lg md:text-2xl mb-12 font-light transition-all duration-[2000ms] delay-1000 ease-out ${progress === 100 ? 'opacity-100 translate-y-0 tracking-[0.3em]' : 'opacity-0 translate-y-4 tracking-normal'}`}>
             A digital sanctuary.
           </p>
 
           <button
             onClick={() => setStarted(true)}
-            className={`group relative px-12 py-4 overflow-hidden transition-all duration-1000 delay-[1200ms] rounded-full border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-sm animate-pulse ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
+            className={`group relative px-12 py-4 overflow-hidden transition-all duration-[2000ms] delay-[1500ms] rounded-full border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-sm animate-breathe ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
           >
             <span className="relative z-10 font-sans text-[10px] md:text-xs tracking-[0.5em] uppercase text-white/50 group-hover:text-white/90 transition-colors duration-700">
               Enter
@@ -172,21 +173,21 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
 
       {/* HUD - Visible only when started */}
       <div
-        className={`absolute inset-0 pointer-events-none transition-all duration-1000 delay-500 ${started ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 pointer-events-none transition-all duration-1000 ${started && !isIdle ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Vignette Gradients for Text Legibility */}
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/40 to-transparent" />
 
         {/* Top Left: Title (Subtle) */}
-        <div className="absolute top-6 left-6 md:top-8 md:left-8 opacity-60 hover:opacity-100 transition-opacity duration-500 pointer-events-auto">
+        <div className={`absolute top-6 left-6 md:top-8 md:left-8 transition-opacity duration-1000 pointer-events-auto ${isIdle ? 'opacity-0' : 'opacity-60 hover:opacity-100'}`}>
            <span className="font-serif text-xs md:text-sm tracking-widest uppercase text-white drop-shadow-sm">
              Bamboo Forest
            </span>
         </div>
 
         {/* Top Right: Award Badge */}
-        <div className="absolute top-6 right-6 md:top-8 md:right-8 pointer-events-auto group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-500 hover:bg-white/10 hover:border-white/30 cursor-pointer">
+        <div className={`absolute top-6 right-6 md:top-8 md:right-8 pointer-events-auto group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-1000 hover:bg-white/10 hover:border-white/30 cursor-pointer ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
           <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 md:w-5 md:h-5 text-white/70 group-hover:text-white transition-colors duration-500">
              <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -198,7 +199,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         </div>
 
         {/* Bottom Center: Controls Hint */}
-        <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-all duration-1000 ${hasInteracted ? 'opacity-0 translate-y-4' : 'opacity-60 translate-y-0'} text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10 flex flex-col items-center gap-3`}>
+        <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-all duration-[2000ms] ${hasInteracted ? 'opacity-0 translate-y-8' : 'opacity-60 translate-y-0'} text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10 flex flex-col items-center gap-3`}>
           {isTouch ? (
             <div className="flex flex-col items-center gap-2 animate-pulse">
                <div className="flex gap-4 mb-1">
@@ -227,7 +228,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         </div>
 
         {/* Bottom Left: Audio Toggle */}
-        <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto" data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
+        <div className={`absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
           <MagneticButton
             onClick={onToggleAudio}
             ariaLabel={audioEnabled ? "Mute" : "Unmute"}
@@ -249,7 +250,7 @@ export const UI = ({ audioEnabled, onToggleAudio }: UIProps) => {
         </div>
 
         {/* Bottom Right: Info Button */}
-        <div className="absolute bottom-6 right-6 md:bottom-10 md:right-10 pointer-events-auto" data-cursor-text="About">
+        <div className={`absolute bottom-6 right-6 md:bottom-10 md:right-10 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="About">
           <MagneticButton
             onClick={() => setAboutOpen(true)}
             ariaLabel="About"
