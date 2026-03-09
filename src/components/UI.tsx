@@ -101,14 +101,14 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
 
         const chars = titleRef.current.querySelectorAll('.char')
         gsap.fromTo(chars,
-            { y: 40, opacity: 0, rotateX: -90 },
+            { y: 60, opacity: 0, rotateX: -90 },
             {
               y: 0,
               opacity: 1,
               rotateX: 0,
-              stagger: 0.05,
+              stagger: 0.1,
               duration: 1.2,
-              ease: "power4.out",
+              ease: "power3.inOut",
               delay: 0.5
             }
         )
@@ -138,7 +138,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
                style={{ width: `${progress}%` }}
              />
            </div>
-           <p className="font-mono text-[10px] tracking-widest text-white/50 animate-pulse" style={{ animationDuration: '2s' }}>
+           <p className="font-mono text-[12px] tracking-[0.5em] text-white/70 animate-pulse" style={{ animationDuration: '2s' }}>
             AWAKENING FOREST
           </p>
         </div>
@@ -161,9 +161,9 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
 
           <button
             onClick={() => setStarted(true)}
-            className={`group relative px-12 py-4 overflow-hidden transition-all duration-[2000ms] delay-[1500ms] rounded-full border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-sm animate-breathe ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
+            className={`group relative px-12 py-4 overflow-hidden transition-all duration-[2000ms] delay-[1500ms] rounded-full border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-3xl animate-breathe ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
           >
-            <span className="relative z-10 font-sans text-[10px] md:text-xs tracking-[0.5em] uppercase text-white/50 group-hover:text-white/90 transition-colors duration-700">
+            <span className="relative z-10 font-sans text-[10px] md:text-xs tracking-[0.8em] uppercase text-white/50 group-hover:text-white/90 transition-colors duration-700">
               Enter
             </span>
             <span className="absolute bottom-0 left-0 w-full h-[1px] bg-white/20 transform scale-x-50 group-hover:scale-x-100 transition-transform duration-700 ease-out"></span>
@@ -232,7 +232,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
           <MagneticButton
             onClick={onToggleAudio}
             ariaLabel={audioEnabled ? "Mute" : "Unmute"}
-            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/10 hover:bg-white/10 hover:border-white/30 backdrop-blur-3xl transition-all duration-300 group"
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/5 hover:bg-white/10 hover:border-white/20 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 group"
           >
             {audioEnabled ? (
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
@@ -254,7 +254,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
           <MagneticButton
             onClick={() => setAboutOpen(true)}
             ariaLabel="About"
-            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/10 hover:bg-white/10 hover:border-white/30 backdrop-blur-3xl transition-all duration-300 group"
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/5 hover:bg-white/10 hover:border-white/20 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 group"
           >
             <span className="font-serif italic text-lg md:text-xl font-light text-white/70 group-hover:text-white transition-colors">i</span>
           </MagneticButton>

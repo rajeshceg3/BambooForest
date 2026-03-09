@@ -23,7 +23,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
 
       {/* Centered Zone Description */}
       <div className="flex flex-col items-center justify-center flex-1 text-center px-8 pb-20 md:pb-0 relative">
-        <div key={currentZone} className="animate-blur-in transform">
+        <div key={currentZone} className="animate-blur-in transform delay-500">
           <div className="animate-breathe">
              {/* Subtle backing for legibility against bright fog */}
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-black/40 via-black/10 to-transparent blur-2xl rounded-full -z-10 pointer-events-none"></div>
@@ -43,7 +43,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
       <div className={`flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
 
         {/* Mobile Navigation (Capsule) */}
-        <nav className="md:hidden flex bg-black/40 backdrop-blur-2xl rounded-full border border-white/5 px-6 py-2 gap-2 mx-4 max-w-full overflow-x-auto no-scrollbar">
+        <nav className="md:hidden flex bg-black/40 backdrop-blur-3xl rounded-full border border-white/5 px-6 py-2 gap-2 mx-4 max-w-full overflow-x-auto no-scrollbar">
           {zones.map((zone) => (
             <button
               key={zone}
@@ -86,8 +86,8 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
                {/* Dot / Indicator */}
                <div className={`transition-all duration-[800ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
                   currentZone === zone
-                    ? 'w-2 h-2 bg-white ring-2 ring-white/30 ring-offset-4 ring-offset-black/20 shadow-[0_0_15px_rgba(255,255,255,0.8)]'
-                    : 'w-1.5 h-1.5 bg-white/40 group-hover:bg-white/80 group-hover:scale-150 group-hover:shadow-[0_0_10px_rgba(255,255,255,0.5)]'
+                    ? 'w-3 h-3 bg-white ring-2 ring-white/30 ring-offset-4 ring-offset-black/20 shadow-[0_0_20px_rgba(255,255,255,1)]'
+                    : 'w-1.5 h-1.5 bg-white/40 group-hover:bg-white/80 group-hover:w-2 group-hover:h-2 group-hover:shadow-[0_0_15px_rgba(255,255,255,0.8)]'
                } rounded-full`} />
             </button>
           ))}
