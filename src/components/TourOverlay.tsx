@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useTour, TOUR_STEPS } from './TourContext'
 
-export function TourOverlay() {
+interface TourOverlayProps {
+  isIdle?: boolean
+}
+
+export function TourOverlay({ isIdle = false }: TourOverlayProps) {
   const { isActive, currentStep, currentStepIndex, isTransitioning, nextStep, prevStep, startTour, endTour } = useTour()
   const [showContent, setShowContent] = useState(false)
 
@@ -20,7 +24,7 @@ export function TourOverlay() {
 
   if (!isActive) {
     return (
-      <div className="fixed bottom-8 right-8 z-50 pointer-events-auto">
+      <div className={`fixed bottom-8 right-8 z-50 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
         <button
           onClick={startTour}
           className="group relative px-5 py-4 rounded-full border border-white/20 flex items-center justify-center animate-pulse bg-black/10 backdrop-blur-md hover:bg-white/5 hover:border-white/40 transition-all duration-700 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:scale-105"
@@ -39,7 +43,7 @@ export function TourOverlay() {
 
   // Active Tour UI
   return (
-    <div className="fixed inset-0 z-50 pointer-events-none flex flex-col justify-between p-8 md:p-12">
+    <div className={`fixed inset-0 z-50 pointer-events-none flex flex-col justify-between p-8 md:p-12 transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
 
       {/* Top Bar: Progress & Exit */}
       <div className="flex justify-between items-start w-full pointer-events-auto">

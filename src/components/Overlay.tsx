@@ -3,9 +3,10 @@ import { Zone } from '../types'
 interface OverlayProps {
   currentZone: Zone
   onZoneChange: (zone: Zone) => void
+  isIdle?: boolean
 }
 
-export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
+export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayProps) {
   const zones: Zone[] = ['GROVE', 'CLEARING', 'STREAM', 'DEEP_FOREST']
 
   const zoneConfig = {
@@ -39,7 +40,7 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
       </div>
 
       {/* Navigation Area */}
-      <div className="flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto">
+      <div className={`flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
 
         {/* Mobile Navigation (Capsule) */}
         <nav className="md:hidden flex bg-black/40 backdrop-blur-2xl rounded-full border border-white/5 px-6 py-2 gap-2 mx-4 max-w-full overflow-x-auto no-scrollbar">
@@ -78,15 +79,15 @@ export function Overlay({ currentZone, onZoneChange }: OverlayProps) {
                </span>
 
                {/* Connector Line (Subtle) */}
-               <div className={`absolute bottom-4 w-[1px] h-4 bg-gradient-to-t from-white/0 to-white/20 transition-all duration-500 ${
+               <div className={`absolute bottom-4 w-[1px] h-4 bg-gradient-to-t from-white/0 to-white/20 transition-all duration-[800ms] ${
                    currentZone === zone ? 'h-8 opacity-100' : 'h-0 opacity-0 group-hover:h-6 group-hover:opacity-50'
                }`}></div>
 
                {/* Dot / Indicator */}
-               <div className={`transition-all duration-500 cubic-bezier(0.25, 1, 0.5, 1) ${
+               <div className={`transition-all duration-[800ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
                   currentZone === zone
-                    ? 'w-2 h-2 bg-white ring-1 ring-white/50 ring-offset-2 ring-offset-black/20'
-                    : 'w-1 h-1 bg-white/30 group-hover:bg-white/60 group-hover:scale-125'
+                    ? 'w-2 h-2 bg-white ring-2 ring-white/30 ring-offset-4 ring-offset-black/20 shadow-[0_0_15px_rgba(255,255,255,0.8)]'
+                    : 'w-1.5 h-1.5 bg-white/40 group-hover:bg-white/80 group-hover:scale-150 group-hover:shadow-[0_0_10px_rgba(255,255,255,0.5)]'
                } rounded-full`} />
             </button>
           ))}

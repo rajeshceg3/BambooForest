@@ -8,11 +8,13 @@ import { Cursor } from './components/Cursor'
 import { TourProvider } from './components/TourContext'
 import { TourOverlay } from './components/TourOverlay'
 import { Zone } from './types'
+import { useIdle } from './components/useIdle'
 import './App.css'
 
 function App() {
   const [currentZone, setCurrentZone] = useState<Zone>('GROVE')
   const [audioEnabled, setAudioEnabled] = useState(false)
+  const isIdle = useIdle(5000)
 
   return (
     <TourProvider>
@@ -27,11 +29,11 @@ function App() {
           {/* We pass onZoneChange to Experience so the TourController can update the environment */}
           <Experience currentZone={currentZone} onZoneChange={setCurrentZone} />
         </Canvas>
-        <UI audioEnabled={audioEnabled} onToggleAudio={() => setAudioEnabled(!audioEnabled)} />
-        <Overlay currentZone={currentZone} onZoneChange={setCurrentZone} />
-        <TourOverlay />
+        <UI audioEnabled={audioEnabled} onToggleAudio={() => setAudioEnabled(!audioEnabled)} isIdle={isIdle} />
+        <Overlay currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} />
+        <TourOverlay isIdle={isIdle} />
         <AudioPlayer enabled={audioEnabled} />
-        <Cursor />
+        <Cursor isIdle={isIdle} />
       </div>
     </TourProvider>
   )
