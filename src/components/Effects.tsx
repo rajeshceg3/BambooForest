@@ -14,11 +14,11 @@ export function Effects() {
           Usually ToneMapping is very last. Let's put SMAA before Noise/Vignette/ToneMapping.
       */}
       <SMAA />
-      <N8AO aoRadius={2.0} intensity={0.8} distanceFalloff={3.0} />
+      <N8AO aoRadius={1.0} intensity={0.8} distanceFalloff={1.0} halfRes />
       <Bloom
         luminanceThreshold={1}
-        mipmapBlur
-        intensity={1.0} // Reduced from 1.5 for subtlety
+        mipmapBlur={false}
+        intensity={0.8} // Reduced for subtlety and performance
         radius={0.4}
       />
       <DepthOfField

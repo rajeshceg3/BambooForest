@@ -39,12 +39,12 @@ export function Autofocus({ dofRef, smoothTime = 0.2 }: AutofocusProps) {
             // Intersect with scene (recursive)
             // Since we set layers, it will only check objects on Layer 1
             intersectsArray.current.length = 0
-            const intersects = raycaster.current.intersectObjects(scene.children, true, intersectsArray.current)
+            raycaster.current.intersectObjects(scene.children, true, intersectsArray.current)
 
             let hitPoint = null
 
-            if (intersects.length > 0) {
-                hitPoint = intersects[0].point
+            if (intersectsArray.current.length > 0) {
+                hitPoint = intersectsArray.current[0].point
             }
 
             if (hitPoint) {

@@ -207,7 +207,7 @@ export function GroundCover({ count = 100000 }) {
   const geometry = useMemo(() => {
       const width = 0.1; // Slightly wider
       const height = 0.8; // Slightly taller
-      const geo = new THREE.PlaneGeometry(width, height, 4, 8)
+      const geo = new THREE.PlaneGeometry(width, height, 1, 2)
       geo.translate(0, height / 2, 0)
 
       const pos = geo.attributes.position
@@ -234,10 +234,11 @@ export function GroundCover({ count = 100000 }) {
       return geo
   }, [])
 
-  const instances = useMemo(() => {
-    const temp = []
+  const { instanceMatrixArray, actualCount } = useMemo(() => {
+    const array = new Float32Array(count * 16)
     const tempObject = new THREE.Object3D()
     const simplex = new SimplexNoise()
+    let validCount = 0
 
     for (let i = 0; i < count; i++) {
         let x = 0, z = 0
@@ -290,25 +291,23 @@ export function GroundCover({ count = 100000 }) {
 
         tempObject.scale.set(scale, scale, scale)
         tempObject.updateMatrix()
-        temp.push(tempObject.matrix.clone())
+        tempObject.matrix.toArray(array, validCount * 16)
+        validCount++
     }
-    return temp
+
+    // Create a correctly sized sub-array based on valid grass placements
+    const validArray = new Float32Array(array.buffer, 0, validCount * 16)
+
+    return { instanceMatrixArray: validArray, actualCount: validCount }
   }, [count])
 
   useEffect(() => {
     if (!meshRef.current) return
-    // Note: instances.length might be less than count due to skipping
-    // But we initialized InstancedMesh with `count`.
-    // We should update the count or just set unused matrices to 0 scale.
-    // However, usually we just set the count to the actual number of instances.
-
-    // Resize logic:
-    // instancedMesh.count is writable.
-    meshRef.current.count = instances.length;
-
-    instances.forEach((matrix, i) => meshRef.current!.setMatrixAt(i, matrix))
+    meshRef.current.count = actualCount;
+    // We can directly update the instanceMatrix buffer to avoid iterating and calling setMatrixAt
+    meshRef.current.instanceMatrix.array.set(instanceMatrixArray);
     meshRef.current.instanceMatrix.needsUpdate = true
-  }, [instances])
+  }, [instanceMatrixArray, actualCount])
 
   useFrame((state) => {
     if (material.userData.shader) {

@@ -494,9 +494,15 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
   }, [])
 
   const { stalkInstances, branchInstances, leafInstances } = useMemo(() => {
-    const stalks: THREE.Matrix4[] = []
-    const branches: THREE.Matrix4[] = []
-    const leaves: THREE.Matrix4[] = []
+    // Upper bounds for array allocation
+    const stalkArray = new Float32Array(count * 16)
+    // Assume average 5 branches per stalk, 3 leaves per branch
+    const branchArray = new Float32Array(count * 5 * 16)
+    const leafArray = new Float32Array(count * 5 * 3 * 16)
+
+    let stalkCount = 0
+    let branchCount = 0
+    let leafCount = 0
 
     const tempStalk = new THREE.Object3D()
     const tempBranch = new THREE.Object3D()
@@ -536,7 +542,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
       tempStalk.rotation.set(0, rotationY, 0)
       tempStalk.scale.set(scale, scale, scale)
       tempStalk.updateMatrix()
-      stalks.push(tempStalk.matrix.clone())
+      tempStalk.matrix.toArray(stalkArray, stalkCount * 16)
+      stalkCount++
 
       const numNodes = 5;
       for (let h = 0; h < numNodes; h++) {
@@ -554,7 +561,11 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
               tempBranch.scale.set(scale * 0.5, branchLen, scale * 0.5);
 
               tempBranch.updateMatrix();
-              branches.push(tempBranch.matrix.clone());
+
+              if (branchCount * 16 < branchArray.length) {
+                  tempBranch.matrix.toArray(branchArray, branchCount * 16)
+                  branchCount++
+              }
 
               const tilt = Math.PI / 4 + 0.1;
               const dy = Math.sin(tilt) * branchLen * scale;
@@ -585,25 +596,38 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
                    const leafScale = (0.5 + Math.random() * 0.5) * scale;
                    tempLeaf.scale.set(leafScale, leafScale, leafScale);
                    tempLeaf.updateMatrix();
-                   leaves.push(tempLeaf.matrix.clone());
+
+                   if (leafCount * 16 < leafArray.length) {
+                       tempLeaf.matrix.toArray(leafArray, leafCount * 16)
+                       leafCount++
+                   }
               }
           }
       }
     }
-    return { stalkInstances: stalks, branchInstances: branches, leafInstances: leaves }
+
+    // Trim arrays
+    const validStalks = new Float32Array(stalkArray.buffer, 0, stalkCount * 16)
+    const validBranches = new Float32Array(branchArray.buffer, 0, branchCount * 16)
+    const validLeaves = new Float32Array(leafArray.buffer, 0, leafCount * 16)
+
+    return { stalkInstances: validStalks, branchInstances: validBranches, leafInstances: validLeaves, stalkCount, branchCount, leafCount }
   }, [count])
 
   useEffect(() => {
     if (meshRef.current) {
-        stalkInstances.forEach((m, i) => meshRef.current!.setMatrixAt(i, m))
+        meshRef.current.count = stalkInstances.length / 16
+        meshRef.current.instanceMatrix.array.set(stalkInstances)
         meshRef.current.instanceMatrix.needsUpdate = true
     }
     if (branchMeshRef.current) {
-        branchInstances.forEach((m, i) => branchMeshRef.current!.setMatrixAt(i, m))
+        branchMeshRef.current.count = branchInstances.length / 16
+        branchMeshRef.current.instanceMatrix.array.set(branchInstances)
         branchMeshRef.current.instanceMatrix.needsUpdate = true
     }
     if (leafMeshRef.current) {
-        leafInstances.forEach((m, i) => leafMeshRef.current!.setMatrixAt(i, m))
+        leafMeshRef.current.count = leafInstances.length / 16
+        leafMeshRef.current.instanceMatrix.array.set(leafInstances)
         leafMeshRef.current.instanceMatrix.needsUpdate = true
     }
   }, [stalkInstances, branchInstances, leafInstances])
@@ -639,17 +663,17 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
                 if (meshRef) meshRef.current = node;
                 if (node) node.layers.enable(1);
             }}
-            args={[undefined, undefined, stalkInstances.length]}
+            args={[undefined, undefined, stalkInstances.length / 16]}
             castShadow
             receiveShadow
         >
-            <cylinderGeometry args={[0.08, 0.15, 32, 32]} />
+            <cylinderGeometry args={[0.08, 0.15, 8, 1]} />
             <primitive object={material} attach="material" />
         </instancedMesh>
 
         <instancedMesh
             ref={branchMeshRef}
-            args={[undefined, undefined, branchInstances.length]}
+            args={[undefined, undefined, branchInstances.length / 16]}
             castShadow
             receiveShadow
             geometry={branchGeometry}
@@ -659,7 +683,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
         <instancedMesh
             ref={leafMeshRef}
-            args={[undefined, undefined, leafInstances.length]}
+            args={[undefined, undefined, leafInstances.length / 16]}
             castShadow
             receiveShadow
             geometry={leafGeometry}
