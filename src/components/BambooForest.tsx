@@ -488,7 +488,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
   const leafGeometry = useMemo(() => {
     // Increased segments for midrib
-    const geo = new THREE.PlaneGeometry(0.2, 0.6, 6, 8)
+    const geo = new THREE.PlaneGeometry(0.2, 0.6, 1, 2)
     geo.translate(0, 0.3, 0)
     return geo
   }, [])

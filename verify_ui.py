@@ -7,7 +7,7 @@ def run():
             args=["--use-gl=swiftshader", "--enable-unsafe-swiftshader"]
         )
         page = browser.new_page()
-        page.goto('http://localhost:5173')
+        page.goto('http://localhost:4173')
 
         # Wait for loading to complete (it's 100% when started button appears)
         page.wait_for_selector('button:has-text("Enter")', state="visible", timeout=60000)
