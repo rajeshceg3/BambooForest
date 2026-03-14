@@ -213,7 +213,7 @@ export function Stream() {
   // Generate instances
   const rockInstances = useMemo(() => {
       const rand = mulberry32(12345);
-      const instances = [];
+      const array = new Float32Array(300 * 16);
       const dummy = new THREE.Object3D();
 
       for(let i=0; i<300; i++) {
@@ -236,28 +236,18 @@ export function Stream() {
           );
 
           dummy.updateMatrix();
-          instances.push(dummy.matrix.clone());
+          dummy.matrix.toArray(array, i * 16);
       }
-      return instances;
+      return array;
   }, []);
 
   const instancedMeshRef = useRef<THREE.InstancedMesh | null>(null);
-
-  // Set instances
-  useMemo(() => {
-      if (instancedMeshRef.current) {
-          rockInstances.forEach((matrix, i) => {
-              instancedMeshRef.current!.setMatrixAt(i, matrix);
-          });
-          instancedMeshRef.current.instanceMatrix.needsUpdate = true;
-      }
-  }, [rockInstances]);
 
   return (
     <group position={[-15, 0.05, 0]} rotation={[0, Math.PI / 4, 0]}>
       {/* Water Surface */}
       <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 2000, 32, 512]} />
+        <planeGeometry args={[20, 2000, 4, 64]} />
         <MeshTransmissionMaterial
             resolution={512}
             samples={6}
@@ -279,7 +269,7 @@ export function Stream() {
               if (mesh) {
                   mesh.layers.enable(1); // Enable focus
                   instancedMeshRef.current = mesh;
-                  rockInstances.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
+                  mesh.instanceMatrix.array.set(rockInstances);
                   mesh.instanceMatrix.needsUpdate = true;
               }
           }}
