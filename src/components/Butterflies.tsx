@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { SimplexNoise } from 'three-stdlib'
@@ -7,9 +7,9 @@ export function Butterflies({ count = 15 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const simplex = useMemo(() => new SimplexNoise(), [])
 
-  const [instances, offsets] = useMemo(() => {
-    const inst = []
-    const off = []
+  const { instanceMatrixArray, offsets } = useMemo(() => {
+    const instArray = new Float32Array(count * 16)
+    const offArray = new Float32Array(count)
     const tempObject = new THREE.Object3D()
 
     for (let i = 0; i < count; i++) {
@@ -21,10 +21,10 @@ export function Butterflies({ count = 15 }) {
       tempObject.position.set(x, y, z)
       tempObject.rotation.y = Math.random() * Math.PI * 2
       tempObject.updateMatrix()
-      inst.push(tempObject.matrix.clone())
-      off.push(Math.random() * 100) // Random time offset
+      tempObject.matrix.toArray(instArray, i * 16)
+      offArray[i] = Math.random() * 100 // Random time offset
     }
-    return [inst, off]
+    return { instanceMatrixArray: instArray, offsets: offArray }
   }, [count])
 
   const material = useMemo(() => {
@@ -61,11 +61,24 @@ export function Butterflies({ count = 15 }) {
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
   // Store original home positions
-  const homes = useMemo(() => instances.map(m => {
+  const homes = useMemo(() => {
+    const arr = []
+    const tempMat = new THREE.Matrix4()
+    for (let i = 0; i < count; i++) {
+      tempMat.fromArray(instanceMatrixArray, i * 16)
       const p = new THREE.Vector3()
-      p.setFromMatrixPosition(m)
-      return p
-  }), [instances])
+      p.setFromMatrixPosition(tempMat)
+      arr.push(p)
+    }
+    return arr
+  }, [instanceMatrixArray, count])
+
+  useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.instanceMatrix.array.set(instanceMatrixArray)
+      meshRef.current.instanceMatrix.needsUpdate = true
+    }
+  }, [instanceMatrixArray])
 
   useFrame((state) => {
     if (!meshRef.current) return
@@ -107,7 +120,7 @@ export function Butterflies({ count = 15 }) {
 
       dummy.scale.set(0.1, 0.1, 0.1)
       dummy.updateMatrix()
-      meshRef.current!.setMatrixAt(i, dummy.matrix)
+      dummy.matrix.toArray(meshRef.current.instanceMatrix.array, i * 16)
     }
     meshRef.current.instanceMatrix.needsUpdate = true
   })
