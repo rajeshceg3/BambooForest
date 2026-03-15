@@ -3,6 +3,65 @@ import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { SimplexNoise } from 'three-stdlib'
 
+function generateGroundCoverInstances(count: number) {
+  const array = new Float32Array(count * 16)
+  const tempObject = new THREE.Object3D()
+  const simplex = new SimplexNoise()
+  let validCount = 0
+
+  for (let i = 0; i < count; i++) {
+      let x = 0, z = 0
+      let valid = false
+
+      // Try to place grass
+      for(let attempt = 0; attempt < 5; attempt++) {
+          x = (Math.random() - 0.5) * 2000
+          z = (Math.random() - 0.5) * 2000
+
+          // Noise Clustering
+          const noiseVal = simplex.noise(x * 0.015, z * 0.015);
+          const n = noiseVal * 0.5 + 0.5;
+
+          let probability = 1.0;
+          if (n > 0.45) {
+              probability = 0.3;
+          } else {
+              probability = 0.9;
+          }
+
+          if (Math.random() > probability) continue;
+
+          const distToStream = Math.abs(x + z) / Math.sqrt(2)
+          const distToCenter = Math.sqrt(x * x + z * z)
+
+          if (distToStream < 2) continue
+          if (distToCenter < 2) continue
+
+          valid = true;
+          break;
+      }
+
+      if (!valid) continue;
+
+      const scale = 0.6 + Math.random() * 0.8
+      tempObject.position.set(x, 0, z)
+
+      tempObject.rotation.y = Math.random() * Math.PI * 2
+      tempObject.rotation.x = (Math.random() - 0.5) * 0.3
+      tempObject.rotation.z = (Math.random() - 0.5) * 0.3
+
+      tempObject.scale.set(scale, scale, scale)
+      tempObject.updateMatrix()
+      tempObject.matrix.toArray(array, validCount * 16)
+      validCount++
+  }
+
+  // Create a correctly sized sub-array based on valid grass placements
+  const validArray = new Float32Array(array.buffer, 0, validCount * 16)
+
+  return { instanceMatrixArray: validArray, actualCount: validCount }
+}
+
 export function GroundCover({ count = 100000 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const { camera } = useThree()
@@ -234,72 +293,7 @@ export function GroundCover({ count = 100000 }) {
       return geo
   }, [])
 
-  const { instanceMatrixArray, actualCount } = useMemo(() => {
-    const array = new Float32Array(count * 16)
-    const tempObject = new THREE.Object3D()
-    const simplex = new SimplexNoise()
-    let validCount = 0
-
-    for (let i = 0; i < count; i++) {
-        let x = 0, z = 0
-        let valid = false
-
-        // Try to place grass
-        for(let attempt = 0; attempt < 5; attempt++) {
-            x = (Math.random() - 0.5) * 2000
-            z = (Math.random() - 0.5) * 2000
-
-            // Noise Clustering
-            // Match bamboo noise scale
-            const noiseVal = simplex.noise(x * 0.015, z * 0.015);
-            const n = noiseVal * 0.5 + 0.5;
-
-            // Bamboo is > 0.45.
-            // We want grass EVERYWHERE, but denser in clearings (< 0.45)
-            // and sparser in groves (> 0.45).
-
-            let probability = 1.0;
-            if (n > 0.45) {
-                // In bamboo grove -> Sparse grass
-                probability = 0.3;
-            } else {
-                // In clearing -> Dense grass
-                probability = 0.9;
-            }
-
-            // Random check against probability
-            if (Math.random() > probability) continue;
-
-            const distToStream = Math.abs(x + z) / Math.sqrt(2)
-            const distToCenter = Math.sqrt(x * x + z * z)
-
-            if (distToStream < 2) continue // Too close to water
-            if (distToCenter < 2) continue
-
-            valid = true;
-            break;
-        }
-
-        if (!valid) continue; // Skip this instance slot if couldn't place
-
-        const scale = 0.6 + Math.random() * 0.8 // Varied scale
-        tempObject.position.set(x, 0, z)
-
-        tempObject.rotation.y = Math.random() * Math.PI * 2
-        tempObject.rotation.x = (Math.random() - 0.5) * 0.3
-        tempObject.rotation.z = (Math.random() - 0.5) * 0.3
-
-        tempObject.scale.set(scale, scale, scale)
-        tempObject.updateMatrix()
-        tempObject.matrix.toArray(array, validCount * 16)
-        validCount++
-    }
-
-    // Create a correctly sized sub-array based on valid grass placements
-    const validArray = new Float32Array(array.buffer, 0, validCount * 16)
-
-    return { instanceMatrixArray: validArray, actualCount: validCount }
-  }, [count])
+  const { instanceMatrixArray, actualCount } = useMemo(() => generateGroundCoverInstances(count), [count])
 
   useEffect(() => {
     if (!meshRef.current) return

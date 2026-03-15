@@ -40,8 +40,8 @@ export function Autofocus({ dofRef, smoothTime = 0.2 }: AutofocusProps) {
             // Since we set layers, it will only check objects on Layer 1
             intersectsArray.current.length = 0
 
-            // To prevent the Raycaster Array Allocation Leak mentioned in the report, we ensure we don't
-            // re-assign the return value, and we just use intersectsArray.current
+            // PERFORMANCE_FIX: Prevent Raycaster Array Allocation Leak by NOT assigning the return
+            // value to a variable, and just iterating over the pre-allocated intersectsArray.current
             raycaster.current.intersectObjects(scene.children, true, intersectsArray.current)
 
             let hitPoint = null
