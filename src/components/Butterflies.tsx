@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { SimplexNoise } from 'three-stdlib'
@@ -7,9 +7,9 @@ export function Butterflies({ count = 15 }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const simplex = useMemo(() => new SimplexNoise(), [])
 
-  const [instances, offsets] = useMemo(() => {
+  const { instanceMatrixArray, offsets } = useMemo(() => {
     const instArray = new Float32Array(count * 16)
-    const off = new Float32Array(count)
+    const offArray = new Float32Array(count)
     const tempObject = new THREE.Object3D()
 
     for (let i = 0; i < count; i++) {
@@ -22,9 +22,9 @@ export function Butterflies({ count = 15 }) {
       tempObject.rotation.y = Math.random() * Math.PI * 2
       tempObject.updateMatrix()
       tempObject.matrix.toArray(instArray, i * 16)
-      off[i] = Math.random() * 100 // Random time offset
+      offArray[i] = Math.random() * 100 // Random time offset
     }
-    return [instArray, off]
+    return { instanceMatrixArray: instArray, offsets: offArray }
   }, [count])
 
   const material = useMemo(() => {
@@ -63,15 +63,22 @@ export function Butterflies({ count = 15 }) {
   // Store original home positions
   const homes = useMemo(() => {
     const arr = []
-    const m = new THREE.Matrix4()
+    const tempMat = new THREE.Matrix4()
     for (let i = 0; i < count; i++) {
-      m.fromArray(instances, i * 16)
+      tempMat.fromArray(instanceMatrixArray, i * 16)
       const p = new THREE.Vector3()
-      p.setFromMatrixPosition(m)
+      p.setFromMatrixPosition(tempMat)
       arr.push(p)
     }
     return arr
-  }, [instances, count])
+  }, [instanceMatrixArray, count])
+
+  useEffect(() => {
+    if (meshRef.current) {
+      meshRef.current.instanceMatrix.array.set(instanceMatrixArray)
+      meshRef.current.instanceMatrix.needsUpdate = true
+    }
+  }, [instanceMatrixArray])
 
   useFrame((state) => {
     if (!meshRef.current) return

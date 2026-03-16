@@ -233,7 +233,7 @@ export function Birds({ count = 30 }) {
         dummy.rotateZ(bankAngle)
 
         dummy.updateMatrix()
-        meshRef.current.setMatrixAt(i, dummy.matrix)
+        dummy.matrix.toArray(meshRef.current.instanceMatrix.array, i * 16)
     }
     meshRef.current.instanceMatrix.needsUpdate = true
   })
