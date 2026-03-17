@@ -1,7 +1,6 @@
-import { useRef, useMemo, useEffect } from 'react'
+import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { SimplexNoise } from 'three-stdlib'
 import { Zone } from '../types'
 
 interface BambooForestProps {
@@ -47,6 +46,23 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
   const branchMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const { camera } = useThree()
+
+  const [matrices, setMatrices] = useState<{ stalkInstances: Float32Array; branchInstances: Float32Array; leafInstances: Float32Array } | null>(null)
+
+  useEffect(() => {
+    // Initialize Web Worker
+    const worker = new Worker(new URL('../workers/bambooWorker.ts', import.meta.url), { type: 'module' })
+
+    worker.onmessage = (e) => {
+      setMatrices(e.data)
+    }
+
+    worker.postMessage({ count })
+
+    return () => {
+      worker.terminate()
+    }
+  }, [count])
 
   // Custom material setup for Bamboo Stalks
   const material = useMemo(() => {
@@ -493,144 +509,24 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
     return geo
   }, [])
 
-  const { stalkInstances, branchInstances, leafInstances } = useMemo(() => {
-    // Upper bounds for array allocation
-    const stalkArray = new Float32Array(count * 16)
-    // Assume average 5 branches per stalk, 3 leaves per branch
-    const branchArray = new Float32Array(count * 5 * 16)
-    const leafArray = new Float32Array(count * 5 * 3 * 16)
-
-    let stalkCount = 0
-    let branchCount = 0
-    let leafCount = 0
-
-    const tempStalk = new THREE.Object3D()
-    const tempBranch = new THREE.Object3D()
-    const tempLeaf = new THREE.Object3D()
-
-    const simplex = new SimplexNoise()
-
-    for (let i = 0; i < count; i++) {
-      let x = 0, z = 0
-      let valid = false
-
-      for (let attempt = 0; attempt < 10; attempt++) {
-        x = (Math.random() - 0.5) * 2000
-        z = (Math.random() - 0.5) * 2000
-
-        const noiseVal = simplex.noise(x * 0.015, z * 0.015);
-        const n = noiseVal * 0.5 + 0.5;
-
-        if (n < 0.45) continue;
-
-        const distToCenter = Math.sqrt(x * x + z * z)
-        const distToStream = Math.abs(x + z) / Math.sqrt(2)
-
-        if (distToStream < 6) continue
-        if (distToCenter < 5) continue
-
-        valid = true
-        break;
-      }
-
-      if (!valid) continue;
-
-      const rotationY = Math.random() * Math.PI * 2
-      const scale = 0.7 + Math.random() * 0.8
-
-      tempStalk.position.set(x, 2.5, z)
-      tempStalk.rotation.set(0, rotationY, 0)
-      tempStalk.scale.set(scale, scale, scale)
-      tempStalk.updateMatrix()
-      tempStalk.matrix.toArray(stalkArray, stalkCount * 16)
-      stalkCount++
-
-      const numNodes = 5;
-      for (let h = 0; h < numNodes; h++) {
-          const localY = -1.5 + h * 1.0 + (Math.random() * 0.2 - 0.1);
-          if (localY > 2.0) continue;
-
-          if (Math.random() > 0.3) {
-              const branchAngle = Math.random() * Math.PI * 2;
-
-              tempBranch.position.set(x, 2.5 + localY * scale, z);
-              tempBranch.rotation.set(0, branchAngle, 0);
-              tempBranch.rotateX(-Math.PI / 4 - Math.random() * 0.2);
-
-              const branchLen = 0.8 + Math.random() * 0.5;
-              tempBranch.scale.set(scale * 0.5, branchLen, scale * 0.5);
-
-              tempBranch.updateMatrix();
-
-              if (branchCount * 16 < branchArray.length) {
-                  tempBranch.matrix.toArray(branchArray, branchCount * 16)
-                  branchCount++
-              }
-
-              const tilt = Math.PI / 4 + 0.1;
-              const dy = Math.sin(tilt) * branchLen * scale;
-              const dr = Math.cos(tilt) * branchLen * scale;
-              const dx = Math.sin(branchAngle) * dr;
-              const dz = Math.cos(branchAngle) * dr;
-
-              const tipX = x + dx;
-              const tipY = (2.5 + localY * scale) + dy;
-              const tipZ = z + dz;
-
-              const numLeaves = 3 + Math.floor(Math.random() * 3);
-              for (let L = 0; L < numLeaves; L++) {
-                   const leafAngle = Math.random() * Math.PI * 2;
-
-                   tempLeaf.position.set(
-                       tipX + (Math.random() - 0.5) * 0.2,
-                       tipY + (Math.random() - 0.5) * 0.2,
-                       tipZ + (Math.random() - 0.5) * 0.2
-                   );
-
-                   tempLeaf.rotation.set(
-                       Math.random() * 0.5,
-                       leafAngle,
-                       Math.random() * 0.5
-                   );
-
-                   const leafScale = (0.5 + Math.random() * 0.5) * scale;
-                   tempLeaf.scale.set(leafScale, leafScale, leafScale);
-                   tempLeaf.updateMatrix();
-
-                   if (leafCount * 16 < leafArray.length) {
-                       tempLeaf.matrix.toArray(leafArray, leafCount * 16)
-                       leafCount++
-                   }
-              }
-          }
-      }
-    }
-
-    // Trim arrays
-    const validStalks = new Float32Array(stalkArray.buffer, 0, stalkCount * 16)
-    const validBranches = new Float32Array(branchArray.buffer, 0, branchCount * 16)
-    const validLeaves = new Float32Array(leafArray.buffer, 0, leafCount * 16)
-
-    return { stalkInstances: validStalks, branchInstances: validBranches, leafInstances: validLeaves, stalkCount, branchCount, leafCount }
-  }, [count])
-
   useEffect(() => {
+    if (!matrices) return
     if (meshRef.current) {
-        meshRef.current.count = stalkInstances.length / 16
-        meshRef.current.instanceMatrix.array.set(stalkInstances)
+        meshRef.current.count = matrices.stalkInstances.length / 16
+        meshRef.current.instanceMatrix.array.set(matrices.stalkInstances)
         meshRef.current.instanceMatrix.needsUpdate = true
     }
     if (branchMeshRef.current) {
-        branchMeshRef.current.count = branchInstances.length / 16
-        branchMeshRef.current.instanceMatrix.array.set(branchInstances)
+        branchMeshRef.current.count = matrices.branchInstances.length / 16
+        branchMeshRef.current.instanceMatrix.array.set(matrices.branchInstances)
         branchMeshRef.current.instanceMatrix.needsUpdate = true
     }
     if (leafMeshRef.current) {
-        leafMeshRef.current.count = leafInstances.length / 16
-        leafMeshRef.current.instanceMatrix.array.set(leafInstances)
+        leafMeshRef.current.count = matrices.leafInstances.length / 16
+        leafMeshRef.current.instanceMatrix.array.set(matrices.leafInstances)
         leafMeshRef.current.instanceMatrix.needsUpdate = true
     }
-  }, [stalkInstances, branchInstances, leafInstances])
+  }, [matrices])
 
   useFrame((state) => {
       const time = state.clock.getElapsedTime()
@@ -663,7 +559,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
                 if (meshRef) meshRef.current = node;
                 if (node) node.layers.enable(1);
             }}
-            args={[undefined, undefined, stalkInstances.length / 16]}
+            args={[undefined, undefined, count]}
             castShadow
             receiveShadow
         >
@@ -673,7 +569,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
         <instancedMesh
             ref={branchMeshRef}
-            args={[undefined, undefined, branchInstances.length / 16]}
+            args={[undefined, undefined, count * 5]}
             castShadow
             receiveShadow
             geometry={branchGeometry}
@@ -683,7 +579,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
 
         <instancedMesh
             ref={leafMeshRef}
-            args={[undefined, undefined, leafInstances.length / 16]}
+            args={[undefined, undefined, count * 5 * 3]}
             castShadow
             receiveShadow
             geometry={leafGeometry}
