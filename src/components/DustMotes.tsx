@@ -2,81 +2,90 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
-interface FirefliesProps {
+interface DustMotesProps {
   count?: number
-  isIdle?: boolean
 }
 
-export function Fireflies({ count = 100, isIdle = false }: FirefliesProps) {
+export function DustMotes({ count = 2000 }: DustMotesProps) {
   const shaderRef = useRef<THREE.ShaderMaterial>(null)
 
-  const [positions, sizes] = useMemo(() => {
+  const [positions, sizes, phases] = useMemo(() => {
     const pos = new Float32Array(count * 3)
     const sz = new Float32Array(count)
+    const ph = new Float32Array(count)
+
     for (let i = 0; i < count; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 80
-      pos[i * 3 + 1] = 0.5 + Math.random() * 5 // Height 0.5-5.5
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 80
+      // Spread across the environment
+      pos[i * 3] = (Math.random() - 0.5) * 100
+      pos[i * 3 + 1] = Math.random() * 20 // Height 0 to 20
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 100
+
       sz[i] = Math.random()
+      ph[i] = Math.random() * Math.PI * 2 // Random starting phase
     }
-    return [pos, sz]
+    return [pos, sz, ph]
   }, [count])
 
   const uniforms = useMemo(() => ({
     uTime: { value: 0 },
-    uColor: { value: new THREE.Color('#fffae0') }, // Pale warm yellow
-    uIdleMultiplier: { value: 1.0 }
+    uColor: { value: new THREE.Color('#ffffff') }
   }), [])
 
   useFrame((state) => {
     if (shaderRef.current) {
       shaderRef.current.uniforms.uTime.value = state.clock.getElapsedTime()
-      // Smoothly transition the idle multiplier
-      const targetMultiplier = isIdle ? 1.5 : 1.0
-      shaderRef.current.uniforms.uIdleMultiplier.value += (targetMultiplier - shaderRef.current.uniforms.uIdleMultiplier.value) * 0.05
     }
   })
 
   const vertexShader = `
     uniform float uTime;
     attribute float aSize;
+    attribute float aPhase;
     varying float vAlpha;
 
     void main() {
       vec3 pos = position;
 
-      // Gentle floating motion
-      float time = uTime * 0.5;
-      pos.x += sin(time + pos.z * 0.05) * 1.5;
-      pos.y += sin(time * 1.2 + pos.x * 0.05) * 0.5;
-      pos.z += cos(time * 0.8 + pos.y * 0.05) * 1.5;
+      // Extremely slow, drifting motion
+      float time = uTime * 0.1;
+
+      // Swirl math
+      pos.x += sin(time + aPhase + pos.y * 0.1) * 2.0;
+      pos.z += cos(time + aPhase + pos.x * 0.1) * 2.0;
+      // Very slow falling, wrapping around
+      pos.y -= uTime * 0.2 * aSize;
+      pos.y = mod(pos.y, 20.0);
 
       vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
       gl_Position = projectionMatrix * mvPosition;
 
-      // Size attenuation
-      gl_PointSize = (80.0 * aSize + 20.0) * (1.0 / -mvPosition.z);
+      // Tiny particles
+      gl_PointSize = (10.0 * aSize + 5.0) * (1.0 / -mvPosition.z);
 
-      // Twinkle
-      vAlpha = 0.4 + 0.6 * sin(time * 3.0 + pos.x * 10.0);
+      // Random opacity based on phase and time
+      vAlpha = 0.1 + 0.3 * sin(time * 5.0 + aPhase);
+
+      // Fade out near ground and top
+      // GLSL requires edge0 < edge1 for smoothstep.
+      // So instead of smoothstep(20.0, 15.0, pos.y), we use (1.0 - smoothstep(15.0, 20.0, pos.y))
+      float heightAlpha = smoothstep(0.0, 2.0, pos.y) * (1.0 - smoothstep(15.0, 20.0, pos.y));
+      vAlpha *= heightAlpha;
     }
   `
 
   const fragmentShader = `
     uniform vec3 uColor;
-    uniform float uIdleMultiplier;
     varying float vAlpha;
 
     void main() {
-      // Soft glow circle
+      // Soft circle
       float r = distance(gl_PointCoord, vec2(0.5));
       if (r > 0.5) discard;
 
-      float glow = 1.0 - (r * 2.0);
-      glow = pow(glow, 2.0);
+      // Extra soft edges
+      float alpha = vAlpha * (1.0 - (r * 2.0));
 
-      // Increase opacity slightly and brightness when idle
-      gl_FragColor = vec4(uColor, min(1.0, vAlpha * glow * 0.8 * uIdleMultiplier));
+      gl_FragColor = vec4(uColor, alpha);
     }
   `
 
@@ -93,6 +102,12 @@ export function Fireflies({ count = 100, isIdle = false }: FirefliesProps) {
            attach="attributes-aSize"
            count={sizes.length}
            array={sizes}
+           itemSize={1}
+        />
+        <bufferAttribute
+           attach="attributes-aPhase"
+           count={phases.length}
+           array={phases}
            itemSize={1}
         />
       </bufferGeometry>

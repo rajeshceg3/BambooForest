@@ -12,13 +12,15 @@ import { Effects } from './Effects'
 import { TourController } from './TourController'
 import { useTour } from './TourContext'
 import { Zone } from '../types'
+import { DustMotes } from './DustMotes'
 
 interface ExperienceProps {
   currentZone: Zone
   onZoneChange: (zone: Zone) => void
+  isIdle?: boolean
 }
 
-export function Experience({ currentZone, onZoneChange }: ExperienceProps) {
+export function Experience({ currentZone, onZoneChange, isIdle = false }: ExperienceProps) {
   const { isActive } = useTour()
 
   return (
@@ -26,7 +28,8 @@ export function Experience({ currentZone, onZoneChange }: ExperienceProps) {
       <Navigation enabled={!isActive} />
       <Environment currentZone={currentZone} />
       <BambooForest currentZone={currentZone} />
-      <Fireflies count={currentZone === 'DEEP_FOREST' ? 250 : 150} />
+      <Fireflies count={currentZone === 'DEEP_FOREST' ? 250 : 150} isIdle={isIdle} />
+      <DustMotes count={isIdle ? 4000 : 2000} />
       <Birds count={15} />
       <Stream />
       <StoneLantern position={[10, 0, 10]} rotation={[0, Math.PI / 4, 0]} />

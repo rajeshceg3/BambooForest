@@ -27,12 +27,12 @@ function App() {
           gl={{ antialias: true, toneMappingExposure: 1.2 }}
         >
           {/* We pass onZoneChange to Experience so the TourController can update the environment */}
-          <Experience currentZone={currentZone} onZoneChange={setCurrentZone} />
+          <Experience currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} />
         </Canvas>
         <UI audioEnabled={audioEnabled} onToggleAudio={() => setAudioEnabled(!audioEnabled)} isIdle={isIdle} />
         <Overlay currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} />
         <TourOverlay isIdle={isIdle} />
-        <AudioPlayer enabled={audioEnabled} />
+        <AudioPlayer enabled={audioEnabled} currentZone={currentZone} isIdle={isIdle} />
         <Cursor isIdle={isIdle} />
       </div>
     </TourProvider>
