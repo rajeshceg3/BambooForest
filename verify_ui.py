@@ -6,32 +6,42 @@ def run():
             headless=True,
             args=["--use-gl=swiftshader", "--enable-unsafe-swiftshader"]
         )
-        page = browser.new_page()
+        context = browser.new_context(record_video_dir="/home/jules/verification/video", viewport={"width": 1280, "height": 720})
+        page = context.new_page()
         page.goto('http://localhost:4173')
 
-        # Wait for loading to complete (it's 100% when started button appears)
+        # Wait for loading to complete
         page.wait_for_selector('button:has-text("Enter")', state="visible", timeout=60000)
 
-        # Take a screenshot of the intro screen
-        page.screenshot(path="intro_screen.png")
-
-        # Click enter using Playwright locator, but do evaluating to click just the button tag
+        # Click enter
         page.evaluate('''
             Array.from(document.querySelectorAll('button')).find(el => el.textContent.includes("Enter")).click()
         ''')
 
         # Wait a bit for the transition
-        page.wait_for_timeout(3000)
+        page.wait_for_timeout(4000)
 
-        # Take a screenshot of the UI active
-        page.screenshot(path="ui_active.png")
+        # Hover over clearing
+        page.evaluate('''
+            const btn = document.querySelector('button[aria-label="Go to Clearing"]');
+            if (btn) {
+                btn.dispatchEvent(new MouseEvent('mouseover', { 'bubbles': true, 'cancelable': true }));
+            }
+        ''')
+        page.wait_for_timeout(1000)
 
-        # Wait for 5 seconds for idle state to kick in
-        page.wait_for_timeout(5500)
+        # CDP Screenshot fallback
+        try:
+           client = page.context.new_cdp_session(page)
+           result = client.send("Page.captureScreenshot")
+           import base64
+           image_data = base64.b64decode(result["data"])
+           with open("/home/jules/verification/verification.png", "wb") as f:
+               f.write(image_data)
+        except Exception as e:
+           print("Failed to save via CDP", e)
 
-        # Take a screenshot of the UI idle
-        page.screenshot(path="ui_idle.png")
-
+        context.close()
         browser.close()
 
 if __name__ == '__main__':
