@@ -14,18 +14,20 @@ interface NavigationProps {
   friction?: number
   smoothTime?: number
   toggleSprint?: boolean
+  advancedControls?: boolean
 }
 
 export function Navigation({
   enabled = true,
-  walkSpeed = 10.0,
-  runSpeed = 18.0,
+  walkSpeed = 6.0,
+  runSpeed = 10.0,
   jumpForce = 12.0,
-  lookSensitivity = 2.0,
-  acceleration = 5.0,
+  lookSensitivity = 1.4,
+  acceleration = 2.6,
   friction = 8.0,
-  smoothTime = 12.0,
-  toggleSprint = false
+  smoothTime = 6.0,
+  toggleSprint = false,
+  advancedControls = false
 }: NavigationProps) {
   const { camera, gl } = useThree()
 
@@ -172,6 +174,7 @@ export function Navigation({
           break
         case 'ShiftLeft':
         case 'ShiftRight':
+          if (!advancedControls) break
           if (toggleSprint) {
              moveState.current.sprint = !moveState.current.sprint
           } else {
@@ -179,6 +182,7 @@ export function Navigation({
           }
           break
         case 'Space':
+          if (!advancedControls) break
           if (onGround.current) {
              velocity.current.y = jumpForce
              onGround.current = false
@@ -208,6 +212,7 @@ export function Navigation({
           break
         case 'ShiftLeft':
         case 'ShiftRight':
+          if (!advancedControls) break
           if (!toggleSprint) {
              moveState.current.sprint = false
           }
@@ -384,7 +389,7 @@ export function Navigation({
       gl.domElement.removeEventListener('touchend', onTouchEnd)
       gl.domElement.removeEventListener('touchcancel', onTouchEnd)
     }
-  }, [enabled, gl.domElement, lookSensitivity, jumpForce, toggleSprint])
+  }, [enabled, gl.domElement, lookSensitivity, jumpForce, toggleSprint, advancedControls])
 
   // --- Physics Loop ---
 
