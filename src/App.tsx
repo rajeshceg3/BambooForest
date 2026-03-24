@@ -9,12 +9,22 @@ import { TourProvider } from './components/TourContext'
 import { TourOverlay } from './components/TourOverlay'
 import { Zone } from './types'
 import { useIdle } from './components/useIdle'
+import { QualityProvider, useQuality } from './components/QualityContext'
 import './App.css'
 
 function App() {
+  return (
+    <QualityProvider>
+      <AppScene />
+    </QualityProvider>
+  )
+}
+
+function AppScene() {
   const [currentZone, setCurrentZone] = useState<Zone>('GROVE')
   const [audioEnabled, setAudioEnabled] = useState(false)
   const isIdle = useIdle(5000)
+  const { dprRange } = useQuality()
 
   return (
     <TourProvider>
@@ -23,7 +33,7 @@ function App() {
         <Canvas
           shadows
           camera={{ position: [0, 5, 25], fov: 45 }}
-          dpr={[1, 2]}
+          dpr={dprRange}
           gl={{ antialias: true, toneMappingExposure: 1.2 }}
         >
           {/* We pass onZoneChange to Experience so the TourController can update the environment */}
