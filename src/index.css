@@ -19,12 +19,12 @@ body {
   color: black;
 }
 
-/* Hide cursor on fine pointer devices */
+/* Hide native cursor only after custom cursor JS initializes successfully. */
 @media (pointer: fine) {
-  body {
-    cursor: none;
-  }
-  a, button, [role="button"] {
+  body.cursor-enhanced,
+  body.cursor-enhanced a,
+  body.cursor-enhanced button,
+  body.cursor-enhanced [role="button"] {
     cursor: none;
   }
 }
@@ -68,3 +68,17 @@ canvas {
   .animate-breathe {
     animation: breathe 8s ease-in-out infinite;
   }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-blur-in,
+  .animate-breathe {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .animate-blur-in {
+    transition: none !important;
+  }
+}

@@ -19,7 +19,9 @@ const MagneticButton = ({ children, onClick, className = '', ariaLabel }: Magnet
     if (!btn) return
 
     // Only enable magnetic effect on fine pointers
-    if (window.matchMedia('(pointer: coarse)').matches) return
+    const isCoarsePointer = window.matchMedia('(pointer: coarse)').matches
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (isCoarsePointer || prefersReducedMotion) return
 
     const xTo = gsap.quickTo(btn, "x", { duration: 0.4, ease: "power3.out" })
     const yTo = gsap.quickTo(btn, "y", { duration: 0.4, ease: "power3.out" })
@@ -51,7 +53,7 @@ const MagneticButton = ({ children, onClick, className = '', ariaLabel }: Magnet
       ref={btnRef}
       onClick={onClick}
       aria-label={ariaLabel}
-      className={`relative ${className}`}
+      className={`relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${className}`}
     >
       {children}
     </button>
@@ -161,7 +163,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
 
           <button
             onClick={() => setStarted(true)}
-            className={`group relative px-12 py-4 overflow-hidden transition-all duration-[2000ms] delay-[1500ms] rounded-full border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-3xl animate-breathe ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
+            className={`group relative px-12 py-4 overflow-hidden transition-all duration-[2000ms] delay-[1500ms] rounded-full border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-3xl animate-breathe focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
           >
             <span className="relative z-10 font-sans text-[10px] md:text-xs tracking-[0.8em] uppercase text-white/50 group-hover:text-white/90 transition-colors duration-700">
               Enter

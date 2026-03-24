@@ -50,7 +50,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
               onClick={() => onZoneChange(zone)}
               className={`relative px-4 py-3 rounded-full transition-all duration-500 whitespace-nowrap ${
                 currentZone === zone ? 'bg-white/10 text-white shadow-inner' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
-              }`}
+              } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
             >
               <span className="text-[9px] uppercase tracking-widest font-sans font-medium block text-center">
                 {zoneConfig[zone].name}
@@ -65,7 +65,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
             <button
               key={zone}
               onClick={() => onZoneChange(zone)}
-              className="group relative flex flex-col items-center justify-center w-4 h-16"
+              className="group relative flex flex-col items-center justify-center w-4 h-16 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-md"
               aria-label={`Go to ${zoneConfig[zone].name}`}
               data-cursor-text={zoneConfig[zone].name}
             >
