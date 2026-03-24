@@ -27,7 +27,7 @@ export function TourOverlay({ isIdle = false }: TourOverlayProps) {
       <div className={`fixed bottom-8 right-8 z-50 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
         <button
           onClick={startTour}
-          className="group relative px-5 py-4 rounded-full border border-white/20 flex items-center justify-center animate-pulse bg-black/10 backdrop-blur-md hover:bg-white/5 hover:border-white/40 transition-all duration-700 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:scale-105"
+          className="group relative px-5 py-4 rounded-full border border-white/20 flex items-center justify-center animate-pulse bg-black/10 backdrop-blur-md hover:bg-white/5 hover:border-white/40 transition-all duration-700 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           data-cursor-text="Begin Journey"
         >
           <div className="flex items-center gap-3">
@@ -62,7 +62,7 @@ export function TourOverlay({ isIdle = false }: TourOverlayProps) {
         {/* Exit Button */}
         <button
             onClick={endTour}
-            className="group p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur border border-white/5 hover:border-white/20 transition-all duration-300"
+            className="group p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur border border-white/5 hover:border-white/20 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             aria-label="Exit Tour"
             data-cursor-text="Exit"
         >
@@ -101,7 +101,7 @@ export function TourOverlay({ isIdle = false }: TourOverlayProps) {
                 <button
                     onClick={prevStep}
                     disabled={currentStepIndex === 0}
-                    className={`text-[10px] uppercase tracking-widest transition-all duration-300 font-thin hover:underline underline-offset-4 decoration-1 decoration-white/30 ${
+                    className={`text-[10px] uppercase tracking-widest transition-all duration-300 font-thin hover:underline underline-offset-4 decoration-1 decoration-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm ${
                         currentStepIndex === 0 ? 'text-white/10 cursor-not-allowed hover:no-underline' : 'text-white/50 hover:text-white'
                     }`}
                 >
@@ -110,7 +110,7 @@ export function TourOverlay({ isIdle = false }: TourOverlayProps) {
 
                 <button
                     onClick={nextStep}
-                    className="group flex items-center gap-2 transition-all duration-300 font-thin hover:underline underline-offset-4 decoration-1 decoration-white/30"
+                    className="group flex items-center gap-2 transition-all duration-300 font-thin hover:underline underline-offset-4 decoration-1 decoration-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
                     data-cursor-text={currentStepIndex === TOUR_STEPS.length - 1 ? "Finish" : "Next"}
                 >
                     <span className="text-[10px] uppercase tracking-widest text-white/90 group-hover:text-white">

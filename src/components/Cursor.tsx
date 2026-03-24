@@ -10,7 +10,9 @@ export const Cursor = ({ isIdle = false }: { isIdle?: boolean }) => {
   useEffect(() => {
     // Only enable custom cursor on devices with fine pointers (mouse)
     const isFinePointer = window.matchMedia('(pointer: fine)').matches
-    if (isFinePointer) {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    if (isFinePointer && !prefersReducedMotion) {
         setIsVisible(true)
     }
   }, [])
@@ -22,6 +24,8 @@ export const Cursor = ({ isIdle = false }: { isIdle?: boolean }) => {
     const textSpan = textRef.current
 
     if (!cursor) return
+
+    document.body.classList.add('cursor-enhanced')
 
     // Initial state
     gsap.set(cursor, { xPercent: -50, yPercent: -50 })
@@ -94,6 +98,7 @@ export const Cursor = ({ isIdle = false }: { isIdle?: boolean }) => {
     window.addEventListener('mouseup', onMouseUp)
 
     return () => {
+      document.body.classList.remove('cursor-enhanced')
       window.removeEventListener('mousemove', onMouseMove)
       window.removeEventListener('mouseover', onMouseOver)
       window.removeEventListener('mousedown', onMouseDown)
