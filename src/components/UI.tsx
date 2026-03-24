@@ -206,7 +206,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
                  <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px] text-white/80">L</div>
                  <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px] text-white/80">R</div>
                </div>
-               <span className="text-[8px] text-white/70">Explore • Look</span>
+               <span className="text-[8px] text-white/70">Wander • Observe</span>
             </div>
           ) : (
              <div className="flex flex-col items-center gap-2">
@@ -222,7 +222,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="3" width="10" height="18" rx="5"></rect><line x1="12" y1="7" x2="12" y2="11"></line></svg>
                     </div>
                  </div>
-                 <span className="text-[8px] text-white/70">Explore • Look</span>
+                 <span className="text-[8px] text-white/70">Wander • Observe</span>
              </div>
           )}
         </div>
