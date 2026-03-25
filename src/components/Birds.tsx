@@ -81,13 +81,13 @@ export function Birds({ count = 30 }) {
 
     // Boids Update Loop
     for (let i = 0; i < count; i++) {
-        let x = positions[i*3]
-        let y = positions[i*3+1]
-        let z = positions[i*3+2]
+        const x = positions[i*3]
+        const y = positions[i*3+1]
+        const z = positions[i*3+2]
 
-        let oldVx = velocities[i*3]
-        let oldVy = velocities[i*3+1]
-        let oldVz = velocities[i*3+2]
+        const oldVx = velocities[i*3]
+        const oldVy = velocities[i*3+1]
+        const oldVz = velocities[i*3+2]
 
         let vx = oldVx
         let vy = oldVy

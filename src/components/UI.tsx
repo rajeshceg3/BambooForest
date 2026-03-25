@@ -140,7 +140,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
                style={{ width: `${progress}%` }}
              />
            </div>
-           <p className="font-mono text-[12px] tracking-[0.5em] text-white/70 animate-pulse" style={{ animationDuration: '2s' }}>
+           <p className="font-mono text-[12px] tracking-[0.8em] text-white/70 animate-pulse" style={{ animationDuration: '2s' }}>
             AWAKENING FOREST
           </p>
         </div>
