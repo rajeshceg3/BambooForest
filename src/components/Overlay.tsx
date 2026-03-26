@@ -86,7 +86,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
                {/* Dot / Indicator */}
                <div className={`transition-all duration-[800ms] ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
                   currentZone === zone
-                    ? 'w-3 h-3 bg-white ring-2 ring-white/30 ring-offset-4 ring-offset-black/20 shadow-[0_0_20px_rgba(255,255,255,1)]'
+                    ? 'w-3 h-3 bg-white shadow-[0_0_20px_rgba(255,255,255,1)]'
                     : 'w-1.5 h-1.5 bg-white/40 group-hover:bg-white/80 group-hover:w-2 group-hover:h-2 group-hover:shadow-[0_0_15px_rgba(255,255,255,0.8)]'
                } rounded-full`} />
             </button>
