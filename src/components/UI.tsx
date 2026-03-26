@@ -71,6 +71,7 @@ interface UIProps {
 export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => {
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [meditationMode, setMeditationMode] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [isTouch, setIsTouch] = useState(false)
   const { progress, active } = useProgress()
@@ -140,7 +141,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
                style={{ width: `${progress}%` }}
              />
            </div>
-           <p className="font-mono text-[12px] tracking-[0.8em] text-white/70 animate-pulse" style={{ animationDuration: '2s' }}>
+           <p className="font-mono text-[12px] tracking-[0.5em] text-white/70 animate-pulse" style={{ animationDuration: '2s' }}>
             AWAKENING FOREST
           </p>
         </div>
@@ -229,8 +230,19 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
           )}
         </div>
 
+        {/* Bottom Left: Meditate Toggle */}
+        <div className={`absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="Breathe">
+          <MagneticButton
+            onClick={() => setMeditationMode(!meditationMode)}
+            ariaLabel="Meditate"
+            className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full border border-white/5 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-500 group ${meditationMode ? 'bg-white/20 shadow-[0_0_30px_rgba(255,255,255,0.3)]' : 'bg-black/10 hover:bg-white/10 hover:border-white/20'}`}
+          >
+             <div className={`w-3 h-3 rounded-full border border-white transition-all duration-[4s] ease-in-out ${meditationMode ? 'animate-deep-breathe border-white/80' : 'opacity-50 group-hover:opacity-100'}`}></div>
+          </MagneticButton>
+        </div>
+
         {/* Bottom Left: Audio Toggle */}
-        <div className={`absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
+        <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
           <MagneticButton
             onClick={onToggleAudio}
             ariaLabel={audioEnabled ? "Mute" : "Unmute"}
@@ -263,6 +275,21 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
         </div>
       </div>
 
+        {/* Breathing Guide Overlay (Meditate Mode) */}
+        <div className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-opacity duration-[3000ms] ${meditationMode && started ? 'opacity-100' : 'opacity-0'}`}>
+            <div className="relative flex items-center justify-center">
+                {/* The expanding circle */}
+                <div className="absolute w-64 h-64 rounded-full border-[0.5px] border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.1)] backdrop-blur-sm animate-deep-breathe"></div>
+                {/* Center dot */}
+                <div className="w-2 h-2 rounded-full bg-white/30 backdrop-blur-md"></div>
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-48 text-center">
+                    <span className="font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase opacity-50 transition-opacity duration-[4s]">
+                        Breathe
+                    </span>
+                </div>
+            </div>
+        </div>
+
       {/* About Modal */}
       <div
         className={`absolute inset-0 z-[100] flex items-center justify-center p-4 transition-all duration-700 ${aboutOpen ? 'opacity-100 pointer-events-auto backdrop-blur-2xl bg-black/60' : 'opacity-0 pointer-events-none backdrop-blur-none bg-black/0'}`}
@@ -271,33 +298,58 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
         }}
       >
         <div
-            className={`max-w-xl w-full bg-black/40 backdrop-blur-3xl border border-white/5 p-12 md:p-16 shadow-2xl relative overflow-hidden transition-all duration-700 transform ${aboutOpen ? 'translate-y-0 scale-100' : 'translate-y-10 scale-95'}`}
+            className={`max-w-2xl w-full bg-black/40 backdrop-blur-3xl border border-white/5 p-12 md:p-16 shadow-2xl relative overflow-hidden transition-all duration-700 transform ${aboutOpen ? 'translate-y-0 scale-100' : 'translate-y-10 scale-95'} max-h-[90vh] overflow-y-auto no-scrollbar`}
         >
           {/* Close Button */}
           <button
             onClick={() => setAboutOpen(false)}
-            className="absolute top-6 right-6 text-white/30 hover:text-white transition-colors p-2"
+            className="absolute top-6 right-6 text-white/30 hover:text-white transition-colors p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="6" x2="6" y2="18"></line>
               <line x1="6" y1="6" x2="18" y2="18"></line>
             </svg>
           </button>
 
-          <div className="space-y-8">
-            <div className="space-y-2">
-                <h2 className="font-serif text-3xl md:text-4xl text-white tracking-tight">Bamboo Forest</h2>
-                <div className="h-[1px] w-12 bg-white/50"></div>
-                <p className="font-serif italic text-white/50 text-lg">Digital Sanctuary</p>
+          <div className="space-y-12">
+            <div className="space-y-4">
+                <h2 className="font-serif text-3xl md:text-5xl text-white tracking-widest">Bamboo Forest</h2>
+                <div className="h-[1px] w-12 bg-white/30"></div>
+                <p className="font-serif italic text-white/50 text-lg md:text-xl tracking-[0.2em]">Digital Sanctuary</p>
             </div>
 
-            <div className="space-y-6 text-white/80 font-sans font-light leading-relaxed text-sm md:text-base tracking-wide">
-              <p>
-                Wander through a procedural grove where light, wind, and sound conspire to create a moment of stillness.
-              </p>
-              <p>
-                There is no objective. Observe the sway. Listen to the wind.
-              </p>
+            <div className="space-y-8 text-white/80 font-sans font-light leading-relaxed text-sm md:text-base tracking-wide">
+
+              <section className="space-y-3">
+                <h3 className="font-sans text-[10px] uppercase tracking-[0.4em] text-white/40 mb-4">The Philosophy</h3>
+                <p>
+                  This space is designed as an antidote to digital velocity. There is no score to achieve, no objective to complete, and no end state to reach. It is an exploration of presence through stillness.
+                </p>
+                <p>
+                  As you move, the forest reacts subtly. As you remain still, the environment rewards you—ambient noise settles, hidden life emerges, and the rhythm of the space slows down.
+                </p>
+              </section>
+
+              <div className="w-full h-[1px] bg-gradient-to-r from-white/10 via-white/5 to-transparent"></div>
+
+              <section className="space-y-3">
+                <h3 className="font-sans text-[10px] uppercase tracking-[0.4em] text-white/40 mb-4">Forest Elements</h3>
+
+                <div className="space-y-4">
+                  <div>
+                    <span className="font-serif italic text-white/70 block mb-1">The Stone Lantern (Ishi-dōrō)</span>
+                    <p className="text-sm text-white/50">Representing light dispelling the darkness of ignorance. In the garden, it is placed not to illuminate the entire path, but to offer a singular point of focus and calm.</p>
+                  </div>
+                  <div>
+                    <span className="font-serif italic text-white/70 block mb-1">The Water Feature (Shishi-odoshi)</span>
+                    <p className="text-sm text-white/50">The slow, rhythmic sound of water against bamboo serves to contrast the silence, making the quietness of the forest feel even deeper.</p>
+                  </div>
+                  <div>
+                    <span className="font-serif italic text-white/70 block mb-1">The Red-Crowned Crane (Tanchō)</span>
+                    <p className="text-sm text-white/50">A symbol of luck, longevity, and fidelity. Their deliberate, graceful movements embody the pacing intended for the visitor.</p>
+                  </div>
+                </div>
+              </section>
             </div>
 
             <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between text-[10px] text-white/40 uppercase tracking-[0.2em] gap-4 font-mono">
