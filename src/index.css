@@ -81,6 +81,43 @@ canvas {
     animation: deep-breathe 12s ease-in-out infinite;
   }
 
+  @keyframes breathe-text-inhale {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    30% { opacity: 1; }
+    40% { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes breathe-text-hold {
+    0% { opacity: 0; }
+    40% { opacity: 0; }
+    45% { opacity: 1; }
+    55% { opacity: 1; }
+    60% { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes breathe-text-exhale {
+    0% { opacity: 0; }
+    60% { opacity: 0; }
+    70% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .animate-breathe-text-inhale {
+    animation: breathe-text-inhale 12s ease-in-out infinite;
+  }
+
+  .animate-breathe-text-hold {
+    animation: breathe-text-hold 12s ease-in-out infinite;
+  }
+
+  .animate-breathe-text-exhale {
+    animation: breathe-text-exhale 12s ease-in-out infinite;
+  }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-blur-in,
   .animate-breathe {
