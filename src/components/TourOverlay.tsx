@@ -27,12 +27,12 @@ export function TourOverlay({ isIdle = false }: TourOverlayProps) {
       <div className={`fixed bottom-8 right-8 z-50 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
         <button
           onClick={startTour}
-          className="group relative px-5 py-4 rounded-full border border-white/20 flex items-center justify-center animate-pulse bg-black/10 backdrop-blur-md hover:bg-white/5 hover:border-white/40 transition-all duration-700 shadow-[0_4px_16px_rgba(0,0,0,0.3)] hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          className="group relative px-5 py-4 rounded-full border border-white/5 flex items-center justify-center animate-pulse bg-black/10 backdrop-blur-3xl hover:bg-white/5 hover:border-white/20 transition-all duration-700 shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           data-cursor-text="Begin Journey"
         >
           <div className="flex items-center gap-3">
              <span className="text-[10px] uppercase tracking-widest font-sans text-white/80 group-hover:text-white transition-colors duration-500 whitespace-nowrap">Guided Tour</span>
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="text-white/80 group-hover:text-white transition-colors">
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/80 group-hover:text-white transition-colors">
                <polygon points="5 3 19 12 5 21 5 3"></polygon>
              </svg>
           </div>
@@ -62,7 +62,7 @@ export function TourOverlay({ isIdle = false }: TourOverlayProps) {
         {/* Exit Button */}
         <button
             onClick={endTour}
-            className="group p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur border border-white/5 hover:border-white/20 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            className="group p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-3xl border border-white/5 hover:border-white/20 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             aria-label="Exit Tour"
             data-cursor-text="Exit"
         >

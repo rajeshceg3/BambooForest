@@ -10,10 +10,26 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
   const zones: Zone[] = ['GROVE', 'CLEARING', 'STREAM', 'DEEP_FOREST']
 
   const zoneConfig = {
-    GROVE: { name: 'Grove', text: 'The vertical rhythm of life.' },
-    CLEARING: { name: 'Clearing', text: 'Where light finds the floor.' },
-    STREAM: { name: 'Stream', text: 'The slow dialogue of water and stone.' },
-    DEEP_FOREST: { name: 'Deep Forest', text: 'Silence, amplified.' },
+    GROVE: {
+      name: 'Grove',
+      text: 'The vertical rhythm of life.',
+      poem: 'Tall stalks catch the light,\nA million leaves in the wind,\nStillness softly falls.'
+    },
+    CLEARING: {
+      name: 'Clearing',
+      text: 'Where light finds the floor.',
+      poem: 'Sunbeams pierce the mist,\nDust motes dance upon the air,\nTime forgets its pace.'
+    },
+    STREAM: {
+      name: 'Stream',
+      text: 'The slow dialogue of water and stone.',
+      poem: 'Cold water shaping stone,\nAn ancient, quiet murmur,\nFlowing without end.'
+    },
+    DEEP_FOREST: {
+      name: 'Deep Forest',
+      text: 'Silence, amplified.',
+      poem: 'Shadows grow longer,\nFireflies wake in the dark,\nThe world breathes as one.'
+    },
   }
 
   return (
@@ -21,8 +37,8 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
       {/* Header Spacer - keeps text visual center appropriate */}
       <div className="flex-none h-32 md:h-0"></div>
 
-      {/* Centered Zone Description */}
-      <div className="flex flex-col items-center justify-center flex-1 text-center px-8 pb-20 md:pb-0 relative">
+      {/* Centered Zone Description (Fades out when Idle) */}
+      <div className={`flex flex-col items-center justify-center flex-1 text-center px-8 pb-20 md:pb-0 relative transition-opacity duration-[2000ms] ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
         <div key={currentZone} className="animate-blur-in transform delay-500">
           <div className="animate-breathe">
              {/* Subtle backing for legibility against bright fog */}
@@ -36,6 +52,15 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
                {zoneConfig[currentZone].text}
              </p>
           </div>
+        </div>
+      </div>
+
+      {/* Idle Reward Poetry (Fades in when Idle) */}
+      <div className={`absolute inset-0 flex flex-col items-center justify-end pb-32 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <div key={`poem-${currentZone}`} className="text-center px-8">
+            <p className="font-serif italic font-light text-white/50 text-sm md:text-base leading-[2.5] md:leading-[3] tracking-[0.2em] md:tracking-[0.3em] whitespace-pre-line drop-shadow-sm">
+                {zoneConfig[currentZone].poem}
+            </p>
         </div>
       </div>
 
