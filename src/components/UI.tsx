@@ -282,9 +282,15 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
                 <div className="absolute w-64 h-64 rounded-full border-[0.5px] border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.1)] backdrop-blur-sm animate-deep-breathe"></div>
                 {/* Center dot */}
                 <div className="w-2 h-2 rounded-full bg-white/30 backdrop-blur-md"></div>
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-48 text-center">
-                    <span className="font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase opacity-50 transition-opacity duration-[4s]">
-                        Breathe
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-48 text-center flex flex-col items-center">
+                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-inhale">
+                        Inhale
+                    </span>
+                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-hold">
+                        Hold
+                    </span>
+                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-exhale">
+                        Exhale
                     </span>
                 </div>
             </div>
@@ -335,18 +341,18 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
               <section className="space-y-3">
                 <h3 className="font-sans text-[10px] uppercase tracking-[0.4em] text-white/40 mb-4">Forest Elements</h3>
 
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
                     <span className="font-serif italic text-white/70 block mb-1">The Stone Lantern (Ishi-dōrō)</span>
-                    <p className="text-sm text-white/50">Representing light dispelling the darkness of ignorance. In the garden, it is placed not to illuminate the entire path, but to offer a singular point of focus and calm.</p>
+                    <p className="text-sm text-white/50 leading-relaxed">Representing light dispelling the darkness of ignorance. Historically used to illuminate temple precincts, in the context of a Zen garden it is placed not to illuminate the entire path, but to offer a singular point of focus and calm. Its weathered texture signifies wabi-sabi—finding beauty in age and imperfection.</p>
                   </div>
                   <div>
                     <span className="font-serif italic text-white/70 block mb-1">The Water Feature (Shishi-odoshi)</span>
-                    <p className="text-sm text-white/50">The slow, rhythmic sound of water against bamboo serves to contrast the silence, making the quietness of the forest feel even deeper.</p>
+                    <p className="text-sm text-white/50 leading-relaxed">Originally designed to scare away deer and wildlife from agriculture, the "deer-scarer" evolved into a staple of acoustic landscape design. The slow, rhythmic sound of the bamboo pivoting and striking the stone serves to contrast the silence, making the ambient quietness of the forest feel profoundly deeper by giving the mind a temporal anchor.</p>
                   </div>
                   <div>
                     <span className="font-serif italic text-white/70 block mb-1">The Red-Crowned Crane (Tanchō)</span>
-                    <p className="text-sm text-white/50">A symbol of luck, longevity, and fidelity. Their deliberate, graceful movements embody the pacing intended for the visitor.</p>
+                    <p className="text-sm text-white/50 leading-relaxed">A powerful symbol of luck, longevity, and fidelity in Japanese mythology, said to live for a thousand years. Their deliberate, graceful movements and still postures embody the physical pacing intended for the visitor. Observing the crane is a meditation in itself.</p>
                   </div>
                 </div>
               </section>

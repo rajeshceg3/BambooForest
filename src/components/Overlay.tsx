@@ -58,7 +58,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
       {/* Idle Reward Poetry (Fades in when Idle) */}
       <div className={`absolute inset-0 flex flex-col items-center justify-end pb-32 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div key={`poem-${currentZone}`} className="text-center px-8">
-            <p className="font-serif italic font-light text-white/50 text-sm md:text-base leading-[2.5] md:leading-[3] tracking-[0.2em] md:tracking-[0.3em] whitespace-pre-line drop-shadow-sm">
+            <p className="font-serif italic font-light text-white/30 text-sm md:text-base leading-[2.5] md:leading-[3] tracking-[0.3em] md:tracking-[0.4em] whitespace-pre-line drop-shadow-sm">
                 {zoneConfig[currentZone].poem}
             </p>
         </div>
