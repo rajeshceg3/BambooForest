@@ -71,6 +71,7 @@ interface UIProps {
 export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => {
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<'philosophy' | 'lore'>('philosophy')
   const [meditationMode, setMeditationMode] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [isTouch, setIsTouch] = useState(false)
@@ -324,38 +325,68 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
                 <p className="font-serif italic text-white/50 text-lg md:text-xl tracking-[0.2em]">Digital Sanctuary</p>
             </div>
 
-            <div className="space-y-8 text-white/80 font-sans font-light leading-relaxed text-sm md:text-base tracking-wide">
+            {/* Tabs Navigation */}
+            <div className="flex space-x-8 border-b border-white/10 pb-2">
+              <button
+                onClick={() => setActiveTab('philosophy')}
+                className={`font-sans text-[10px] uppercase tracking-[0.4em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${
+                  activeTab === 'philosophy' ? 'text-white' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                Philosophy
+              </button>
+              <button
+                onClick={() => setActiveTab('lore')}
+                className={`font-sans text-[10px] uppercase tracking-[0.4em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${
+                  activeTab === 'lore' ? 'text-white' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                Lore
+              </button>
+            </div>
 
-              <section className="space-y-3">
-                <h3 className="font-sans text-[10px] uppercase tracking-[0.4em] text-white/40 mb-4">The Philosophy</h3>
-                <p>
-                  This space is designed as an antidote to digital velocity. There is no score to achieve, no objective to complete, and no end state to reach. It is an exploration of presence through stillness.
-                </p>
-                <p>
-                  As you move, the forest reacts subtly. As you remain still, the environment rewards you—ambient noise settles, hidden life emerges, and the rhythm of the space slows down.
-                </p>
-              </section>
+            <div className="text-white/80 font-sans font-light leading-relaxed text-sm md:text-base tracking-wide min-h-[300px]">
 
-              <div className="w-full h-[1px] bg-gradient-to-r from-white/10 via-white/5 to-transparent"></div>
+              <div className={`transition-opacity duration-500 ${activeTab === 'philosophy' ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
+                <section className="space-y-4">
+                  <p>
+                    This space is designed as an antidote to digital velocity. There is no score to achieve, no objective to complete, and no end state to reach. It is an exploration of presence through stillness.
+                  </p>
+                  <p>
+                    In an era defined by endless scrolling, notifications, and instant gratification, we often lose touch with the simple act of being. Bamboo Forest invites you to step back and reclaim that lost time. Here, progress is measured not in milestones, but in moments of quiet clarity.
+                  </p>
+                  <p>
+                    As you move, the forest reacts subtly. As you remain still, the environment rewards you—ambient noise settles, hidden life emerges, and the rhythm of the space slows down. It asks nothing of you, except to breathe.
+                  </p>
+                  <p>
+                    The overarching principle relies on the concept of 'Ma' (間), the Japanese interpretation of negative space. It's not emptiness, but a space full of possibilities—the pause between notes that makes the music.
+                  </p>
+                </section>
+              </div>
 
-              <section className="space-y-3">
-                <h3 className="font-sans text-[10px] uppercase tracking-[0.4em] text-white/40 mb-4">Forest Elements</h3>
-
-                <div className="space-y-6">
-                  <div>
-                    <span className="font-serif italic text-white/70 block mb-1">The Stone Lantern (Ishi-dōrō)</span>
-                    <p className="text-sm text-white/50 leading-relaxed">Representing light dispelling the darkness of ignorance. Historically used to illuminate temple precincts, in the context of a Zen garden it is placed not to illuminate the entire path, but to offer a singular point of focus and calm. Its weathered texture signifies wabi-sabi—finding beauty in age and imperfection.</p>
+              <div className={`transition-opacity duration-500 ${activeTab === 'lore' ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
+                <section className="space-y-3">
+                  <div className="space-y-6">
+                    <div>
+                      <span className="font-serif italic text-white/70 block mb-1">The Stone Lantern (Ishi-dōrō)</span>
+                      <p className="text-sm text-white/50 leading-relaxed">Representing light dispelling the darkness of ignorance. Historically used to illuminate temple precincts, in the context of a Zen garden it is placed not to illuminate the entire path, but to offer a singular point of focus and calm. Its weathered texture signifies wabi-sabi—finding beauty in age and imperfection.</p>
+                    </div>
+                    <div>
+                      <span className="font-serif italic text-white/70 block mb-1">The Water Feature (Shishi-odoshi)</span>
+                      <p className="text-sm text-white/50 leading-relaxed">Originally designed to scare away deer and wildlife from agriculture, the "deer-scarer" evolved into a staple of acoustic landscape design. The slow, rhythmic sound of the bamboo pivoting and striking the stone serves to contrast the silence, making the ambient quietness of the forest feel profoundly deeper by giving the mind a temporal anchor.</p>
+                    </div>
+                    <div>
+                      <span className="font-serif italic text-white/70 block mb-1">The Red-Crowned Crane (Tanchō)</span>
+                      <p className="text-sm text-white/50 leading-relaxed">A powerful symbol of luck, longevity, and fidelity in Japanese mythology, said to live for a thousand years. Their deliberate, graceful movements and still postures embody the physical pacing intended for the visitor. Observing the crane is a meditation in itself.</p>
+                    </div>
+                    <div>
+                      <span className="font-serif italic text-white/70 block mb-1">The Fireflies (Hotaru)</span>
+                      <p className="text-sm text-white/50 leading-relaxed">Fireflies in Japanese folklore are often seen as the souls of soldiers or poets, flickering briefly before fading. Here, they respond to your movement. Walk too fast, and they scatter; remain perfectly still, and they emerge to illuminate the deep forest, rewarding patience with delicate light.</p>
+                    </div>
                   </div>
-                  <div>
-                    <span className="font-serif italic text-white/70 block mb-1">The Water Feature (Shishi-odoshi)</span>
-                    <p className="text-sm text-white/50 leading-relaxed">Originally designed to scare away deer and wildlife from agriculture, the "deer-scarer" evolved into a staple of acoustic landscape design. The slow, rhythmic sound of the bamboo pivoting and striking the stone serves to contrast the silence, making the ambient quietness of the forest feel profoundly deeper by giving the mind a temporal anchor.</p>
-                  </div>
-                  <div>
-                    <span className="font-serif italic text-white/70 block mb-1">The Red-Crowned Crane (Tanchō)</span>
-                    <p className="text-sm text-white/50 leading-relaxed">A powerful symbol of luck, longevity, and fidelity in Japanese mythology, said to live for a thousand years. Their deliberate, graceful movements and still postures embody the physical pacing intended for the visitor. Observing the crane is a meditation in itself.</p>
-                  </div>
-                </div>
-              </section>
+                </section>
+              </div>
+
             </div>
 
             <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between text-[10px] text-white/40 uppercase tracking-[0.2em] gap-4 font-mono">
