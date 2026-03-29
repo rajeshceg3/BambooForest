@@ -66,9 +66,11 @@ interface UIProps {
   audioEnabled: boolean
   onToggleAudio: () => void
   isIdle?: boolean
+  zenMode: boolean
+  onToggleZenMode: () => void
 }
 
-export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => {
+export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode, onToggleZenMode }: UIProps) => {
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'philosophy' | 'lore'>('philosophy')
@@ -179,105 +181,128 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
       <div
         className={`absolute inset-0 pointer-events-none transition-all duration-1000 ${started && !isIdle ? 'opacity-100' : 'opacity-0'}`}
       >
-        {/* Vignette Gradients for Text Legibility */}
-        <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/40 to-transparent" />
+        {/* Elements Hidden in Zen Mode */}
+        <div className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          {/* Vignette Gradients for Text Legibility */}
+          <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/40 to-transparent" />
 
-        {/* Top Left: Title (Subtle) */}
-        <div className={`absolute top-6 left-6 md:top-8 md:left-8 transition-opacity duration-1000 pointer-events-auto ${isIdle ? 'opacity-0' : 'opacity-60 hover:opacity-100'}`}>
-           <span className="font-serif text-xs md:text-sm tracking-widest uppercase text-white drop-shadow-sm">
-             Bamboo Forest
-           </span>
-        </div>
+          {/* Top Left: Title (Subtle) */}
+          <div className={`absolute top-6 left-6 md:top-8 md:left-8 transition-opacity duration-1000 ${zenMode ? 'pointer-events-none' : 'pointer-events-auto'} ${isIdle ? 'opacity-0' : 'opacity-60 hover:opacity-100'}`}>
+             <span className="font-serif text-xs md:text-sm tracking-widest uppercase text-white drop-shadow-sm">
+               Bamboo Forest
+             </span>
+          </div>
 
-        {/* Top Right: Award Badge */}
-        <div className={`absolute top-6 right-6 md:top-8 md:right-8 pointer-events-auto group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-1000 hover:bg-white/10 hover:border-white/30 cursor-pointer ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
-          <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 md:w-5 md:h-5 text-white/70 group-hover:text-white transition-colors duration-500">
-             <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <div className="absolute top-full mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none text-center right-1/2 translate-x-1/2">
-            <span className="text-[10px] uppercase tracking-[0.3em] font-sans text-white/50 whitespace-nowrap">
-               Site of the Day
-            </span>
+          {/* Top Right: Award Badge */}
+          <div className={`absolute top-6 right-6 md:top-8 md:right-8 group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-1000 hover:bg-white/10 hover:border-white/30 cursor-pointer ${zenMode ? 'pointer-events-none' : 'pointer-events-auto'} ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
+            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 md:w-5 md:h-5 text-white/70 group-hover:text-white transition-colors duration-500">
+               <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <div className="absolute top-full mt-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none text-center right-1/2 translate-x-1/2">
+              <span className="text-[10px] uppercase tracking-[0.3em] font-sans text-white/50 whitespace-nowrap">
+                 Site of the Day
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Center: Controls Hint */}
-        <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-all duration-[2000ms] ${hasInteracted ? 'opacity-0 translate-y-8' : 'opacity-60 translate-y-0'} text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10 flex flex-col items-center gap-3`}>
-          {isTouch ? (
-            <div className="flex flex-col items-center gap-2 animate-pulse">
-               <div className="flex gap-4 mb-1">
-                 <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px] text-white/80">L</div>
-                 <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px] text-white/80">R</div>
-               </div>
-               <span className="text-[8px] text-white/70">Wander • Observe</span>
-            </div>
-          ) : (
-             <div className="flex flex-col items-center gap-2">
-                 <div className="flex gap-3">
-                    <div className="flex gap-1">
-                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">W</div>
-                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">A</div>
-                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">S</div>
-                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">D</div>
-                    </div>
-                    <div className="w-[1px] h-6 bg-white/40"></div>
-                    <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="3" width="10" height="18" rx="5"></rect><line x1="12" y1="7" x2="12" y2="11"></line></svg>
-                    </div>
+        {/* Elements Hidden in Zen Mode */}
+        <div className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          {/* Bottom Center: Controls Hint */}
+          <div className={`absolute bottom-6 left-1/2 -translate-x-1/2 text-center pointer-events-none transition-all duration-[2000ms] ${hasInteracted ? 'opacity-0 translate-y-8' : 'opacity-60 translate-y-0'} text-white/70 font-sans text-[10px] md:text-xs tracking-[0.2em] uppercase md:bottom-10 flex flex-col items-center gap-3`}>
+            {isTouch ? (
+              <div className="flex flex-col items-center gap-2 animate-pulse">
+                 <div className="flex gap-4 mb-1">
+                   <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px] text-white/80">L</div>
+                   <div className="w-8 h-8 rounded-full border border-white/40 flex items-center justify-center text-[8px] text-white/80">R</div>
                  </div>
                  <span className="text-[8px] text-white/70">Wander • Observe</span>
-             </div>
-          )}
-        </div>
-
-        {/* Bottom Left: Meditate Toggle */}
-        <div className={`absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="Breathe">
-          <MagneticButton
-            onClick={() => setMeditationMode(!meditationMode)}
-            ariaLabel="Meditate"
-            className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full border border-white/5 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-500 group ${meditationMode ? 'bg-white/20 shadow-[0_0_30px_rgba(255,255,255,0.3)]' : 'bg-black/10 hover:bg-white/10 hover:border-white/20'}`}
-          >
-             <div className={`w-3 h-3 rounded-full border border-white transition-all duration-[4s] ease-in-out ${meditationMode ? 'animate-deep-breathe border-white/80' : 'opacity-50 group-hover:opacity-100'}`}></div>
-          </MagneticButton>
-        </div>
-
-        {/* Bottom Left: Audio Toggle */}
-        <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
-          <MagneticButton
-            onClick={onToggleAudio}
-            ariaLabel={audioEnabled ? "Mute" : "Unmute"}
-            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/5 hover:bg-white/10 hover:border-white/20 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 group"
-          >
-            {audioEnabled ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
-              </svg>
+              </div>
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                <line x1="23" y1="9" x2="17" y2="15"></line>
-                <line x1="17" y1="9" x2="23" y2="15"></line>
-              </svg>
+               <div className="flex flex-col items-center gap-2">
+                   <div className="flex gap-3">
+                      <div className="flex gap-1">
+                        <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">W</div>
+                        <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">A</div>
+                        <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">S</div>
+                        <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">D</div>
+                      </div>
+                      <div className="w-[1px] h-6 bg-white/40"></div>
+                      <div className="border border-white/40 w-6 h-6 rounded flex items-center justify-center text-[8px] leading-none text-white/80">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="7" y="3" width="10" height="18" rx="5"></rect><line x1="12" y1="7" x2="12" y2="11"></line></svg>
+                      </div>
+                   </div>
+                   <span className="text-[8px] text-white/70">Wander • Observe</span>
+               </div>
             )}
-          </MagneticButton>
+          </div>
+
+          {/* Bottom Left: Meditate Toggle */}
+          <div className={`absolute bottom-6 left-6 md:bottom-10 md:left-10 transition-opacity duration-1000 ${zenMode ? 'pointer-events-none' : 'pointer-events-auto'} ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="Breathe">
+            <MagneticButton
+              onClick={() => setMeditationMode(!meditationMode)}
+              ariaLabel="Meditate"
+              className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full border border-white/5 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-500 group ${meditationMode ? 'bg-white/20 shadow-[0_0_30px_rgba(255,255,255,0.3)]' : 'bg-black/10 hover:bg-white/10 hover:border-white/20'}`}
+            >
+               <div className={`w-3 h-3 rounded-full border border-white transition-all duration-[4s] ease-in-out ${meditationMode ? 'animate-deep-breathe border-white/80' : 'opacity-50 group-hover:opacity-100'}`}></div>
+            </MagneticButton>
+          </div>
         </div>
 
-        {/* Bottom Right: Info Button */}
-        <div className={`absolute bottom-6 right-6 md:bottom-10 md:right-10 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="About">
+        {/* Elements Hidden in Zen Mode */}
+        <div className={`absolute inset-0 transition-opacity duration-1000 pointer-events-none ${zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          {/* Bottom Left: Audio Toggle */}
+          <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 transition-opacity duration-1000 ${zenMode ? 'pointer-events-none' : 'pointer-events-auto'} ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
+            <MagneticButton
+              onClick={onToggleAudio}
+              ariaLabel={audioEnabled ? "Mute" : "Unmute"}
+              className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/5 hover:bg-white/10 hover:border-white/20 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 group"
+            >
+              {audioEnabled ? (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+              ) : (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+              )}
+            </MagneticButton>
+          </div>
+
+          {/* Bottom Right: Info Button */}
+          <div className={`absolute bottom-6 right-6 md:bottom-10 md:right-10 transition-opacity duration-1000 ${zenMode ? 'pointer-events-none' : 'pointer-events-auto'} ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="About">
+            <MagneticButton
+              onClick={() => setAboutOpen(true)}
+              ariaLabel="About"
+              className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/5 hover:bg-white/10 hover:border-white/20 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 group"
+            >
+              <span className="font-serif italic text-lg md:text-xl font-light text-white/70 group-hover:text-white transition-colors">i</span>
+            </MagneticButton>
+          </div>
+        </div>
+
+        {/* Zen Mode Toggle - Always accessible */}
+        <div className={`absolute bottom-6 right-20 md:bottom-10 md:right-28 pointer-events-auto transition-opacity duration-1000 ${isIdle && !zenMode ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={zenMode ? "Exit Zen" : "Zen Mode"}>
           <MagneticButton
-            onClick={() => setAboutOpen(true)}
-            ariaLabel="About"
-            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full bg-black/10 border border-white/5 hover:bg-white/10 hover:border-white/20 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 group"
+            onClick={onToggleZenMode}
+            ariaLabel="Zen Mode"
+            className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full border border-white/5 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 group ${zenMode ? 'bg-white/20 shadow-[0_0_30px_rgba(255,255,255,0.3)]' : 'bg-black/10 hover:bg-white/10 hover:border-white/20'}`}
           >
-            <span className="font-serif italic text-lg md:text-xl font-light text-white/70 group-hover:text-white transition-colors">i</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+              <circle cx="12" cy="12" r="10"></circle>
+              {zenMode ? null : <circle cx="12" cy="12" r="2"></circle>}
+            </svg>
           </MagneticButton>
         </div>
       </div>
 
         {/* Breathing Guide Overlay (Meditate Mode) */}
-        <div className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-opacity duration-[3000ms] ${meditationMode && started ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-opacity duration-[3000ms] ${meditationMode && started && !zenMode ? 'opacity-100' : 'opacity-0'}`}>
             <div className="relative flex items-center justify-center">
                 {/* The expanding circle */}
                 <div className="absolute w-64 h-64 rounded-full border-[0.5px] border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.1)] backdrop-blur-sm animate-deep-breathe"></div>
