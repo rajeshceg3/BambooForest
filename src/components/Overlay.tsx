@@ -1,44 +1,72 @@
+import { useState, useEffect } from 'react'
 import { Zone } from '../types'
 
 interface OverlayProps {
   currentZone: Zone
   onZoneChange: (zone: Zone) => void
   isIdle?: boolean
+  zenMode?: boolean
 }
 
-export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayProps) {
+export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = false }: OverlayProps) {
   const zones: Zone[] = ['GROVE', 'CLEARING', 'STREAM', 'DEEP_FOREST']
+  const [poemIndex, setPoemIndex] = useState(0)
+
+  // Reset poem index when zone changes
+  useEffect(() => {
+    setPoemIndex(0)
+  }, [currentZone])
 
   const zoneConfig = {
     GROVE: {
       name: 'Grove',
       text: 'The vertical rhythm of life.',
-      poem: 'Tall stalks catch the light,\nA million leaves in the wind,\nStillness softly falls.'
+      poems: [
+        'Tall stalks catch the light,\nA million leaves in the wind,\nStillness softly falls.',
+        'Green stems reaching high,\nA quiet rustle above,\nThe earth standing still.',
+        'Swaying back and forth,\nEmpty centers, bending low,\nUnbroken they rise.'
+      ]
     },
     CLEARING: {
       name: 'Clearing',
       text: 'Where light finds the floor.',
-      poem: 'Sunbeams pierce the mist,\nDust motes dance upon the air,\nTime forgets its pace.'
+      poems: [
+        'Sunbeams pierce the mist,\nDust motes dance upon the air,\nTime forgets its pace.',
+        'Open sky above,\nThe thick canopy parts here,\nBreathing room for all.',
+        'A warm spot of sun,\nResting on the soft green moss,\nWaiting for the dawn.'
+      ]
     },
     STREAM: {
       name: 'Stream',
       text: 'The slow dialogue of water and stone.',
-      poem: 'Cold water shaping stone,\nAn ancient, quiet murmur,\nFlowing without end.'
+      poems: [
+        'Cold water shaping stone,\nAn ancient, quiet murmur,\nFlowing without end.',
+        'A mirror reflecting,\nLeaves traveling on the surface,\nThe ocean is far.',
+        'Polished rocks below,\nWorn smooth by the rushing cold,\nYielding to the soft.'
+      ]
     },
     DEEP_FOREST: {
       name: 'Deep Forest',
       text: 'Silence, amplified.',
-      poem: 'Shadows grow longer,\nFireflies wake in the dark,\nThe world breathes as one.'
+      poems: [
+        'Shadows grow longer,\nFireflies wake in the dark,\nThe world breathes as one.',
+        'No light touches here,\nYet life moves within the damp,\nA hidden slow pulse.',
+        'The deep ancient root,\nHolding everything tightly,\nQuietly asleep.'
+      ]
     },
   }
 
+  const handlePoemClick = () => {
+    setPoemIndex((prev) => (prev + 1) % zoneConfig[currentZone].poems.length)
+  }
+
   return (
-    <div className="fixed inset-0 pointer-events-none flex flex-col justify-between z-10">
+    <div className={`fixed inset-0 pointer-events-none flex flex-col justify-between z-10 transition-opacity duration-1000 ${zenMode ? 'opacity-0' : 'opacity-100'}`}>
       {/* Header Spacer - keeps text visual center appropriate */}
       <div className="flex-none h-32 md:h-0"></div>
 
       {/* Centered Zone Description (Fades out when Idle) */}
-      <div className={`flex flex-col items-center justify-center flex-1 text-center px-8 pb-20 md:pb-0 relative transition-opacity duration-[2000ms] ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`flex flex-col items-center justify-center flex-1 text-center px-8 pb-20 md:pb-0 relative transition-opacity duration-[2000ms] ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`}>
         <div key={currentZone} className="animate-blur-in transform delay-500">
           <div className="animate-breathe">
              {/* Subtle backing for legibility against bright fog */}
@@ -56,16 +84,16 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false }: OverlayPr
       </div>
 
       {/* Idle Reward Poetry (Fades in when Idle) */}
-      <div className={`absolute inset-0 flex flex-col items-center justify-end pb-32 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <div key={`poem-${currentZone}`} className="text-center px-8">
-            <p className="font-serif italic font-light text-white/30 text-sm md:text-base leading-[2.5] md:leading-[3] tracking-[0.3em] md:tracking-[0.4em] whitespace-pre-line drop-shadow-sm">
-                {zoneConfig[currentZone].poem}
+      <div className={`absolute inset-0 flex flex-col items-center justify-end pb-32 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle && !zenMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+        <div key={`poem-${currentZone}-${poemIndex}`} className="text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
+            <p className="font-serif italic font-light text-white/30 text-sm md:text-base leading-[2.5] md:leading-[3] tracking-[0.3em] md:tracking-[0.4em] whitespace-pre-line drop-shadow-sm hover:text-white/60 transition-colors duration-1000 animate-blur-in">
+                {zoneConfig[currentZone].poems[poemIndex]}
             </p>
         </div>
       </div>
 
       {/* Navigation Area */}
-      <div className={`flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`}>
 
         {/* Mobile Navigation (Capsule) */}
         <nav className="md:hidden flex bg-black/40 backdrop-blur-3xl rounded-full border border-white/5 px-6 py-2 gap-2 mx-4 max-w-full overflow-x-auto no-scrollbar">

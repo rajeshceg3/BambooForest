@@ -3,9 +3,10 @@ import { useTour, TOUR_STEPS } from './TourContext'
 
 interface TourOverlayProps {
   isIdle?: boolean
+  zenMode?: boolean
 }
 
-export function TourOverlay({ isIdle = false }: TourOverlayProps) {
+export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProps) {
   const { isActive, currentStep, currentStepIndex, isTransitioning, nextStep, prevStep, startTour, endTour } = useTour()
   const [showContent, setShowContent] = useState(false)
 
@@ -24,7 +25,7 @@ export function TourOverlay({ isIdle = false }: TourOverlayProps) {
 
   if (!isActive) {
     return (
-      <div className={`fixed bottom-8 right-8 z-50 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`fixed bottom-8 right-8 z-50 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`}>
         <button
           onClick={startTour}
           className="group relative px-5 py-4 rounded-full border border-white/5 flex items-center justify-center animate-pulse bg-black/10 backdrop-blur-3xl hover:bg-white/5 hover:border-white/20 transition-all duration-700 shadow-[0_4px_24px_rgba(0,0,0,0.4)] hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
@@ -43,7 +44,7 @@ export function TourOverlay({ isIdle = false }: TourOverlayProps) {
 
   // Active Tour UI
   return (
-    <div className={`fixed inset-0 z-50 pointer-events-none flex flex-col justify-between p-8 md:p-12 transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 z-50 pointer-events-none flex flex-col justify-between p-8 md:p-12 transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`}>
 
       {/* Top Bar: Progress & Exit */}
       <div className="flex justify-between items-start w-full pointer-events-auto">

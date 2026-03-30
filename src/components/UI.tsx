@@ -66,9 +66,11 @@ interface UIProps {
   audioEnabled: boolean
   onToggleAudio: () => void
   isIdle?: boolean
+  zenMode?: boolean
+  onToggleZenMode?: () => void
 }
 
-export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => {
+export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = false, onToggleZenMode }: UIProps) => {
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'philosophy' | 'lore'>('philosophy')
@@ -177,7 +179,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
 
       {/* HUD - Visible only when started */}
       <div
-        className={`absolute inset-0 pointer-events-none transition-all duration-1000 ${started && !isIdle ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 pointer-events-none transition-all duration-1000 ${started && !isIdle && !zenMode ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Vignette Gradients for Text Legibility */}
         <div className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-black/40 to-transparent" />
@@ -243,7 +245,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
         </div>
 
         {/* Bottom Left: Audio Toggle */}
-        <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
+        <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
           <MagneticButton
             onClick={onToggleAudio}
             ariaLabel={audioEnabled ? "Mute" : "Unmute"}
@@ -265,7 +267,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
         </div>
 
         {/* Bottom Right: Info Button */}
-        <div className={`absolute bottom-6 right-6 md:bottom-10 md:right-10 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="About">
+        <div className={`absolute bottom-6 right-6 md:bottom-10 md:right-10 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="About">
           <MagneticButton
             onClick={() => setAboutOpen(true)}
             ariaLabel="About"
@@ -276,8 +278,27 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false }: UIProps) => 
         </div>
       </div>
 
+      {/* Persistent Zen Mode Toggle - Always visible except when hiding UI */}
+      <div className={`absolute bottom-6 right-20 md:bottom-10 md:right-28 pointer-events-auto transition-opacity duration-1000 ${started && !isIdle ? 'opacity-100' : 'opacity-0'}`} data-cursor-text={zenMode ? "Exit Zen Mode" : "Zen Mode"}>
+        <MagneticButton
+          onClick={onToggleZenMode}
+          ariaLabel={zenMode ? "Exit Zen Mode" : "Zen Mode"}
+          className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full border border-white/5 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-500 group ${zenMode ? 'bg-white/20 shadow-[0_0_30px_rgba(255,255,255,0.3)]' : 'bg-black/10 hover:bg-white/10 hover:border-white/20'}`}
+        >
+          {zenMode ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+              <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+              <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+            </svg>
+          )}
+        </MagneticButton>
+      </div>
+
         {/* Breathing Guide Overlay (Meditate Mode) */}
-        <div className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-opacity duration-[3000ms] ${meditationMode && started ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-opacity duration-[3000ms] ${meditationMode && started && !zenMode ? 'opacity-100' : 'opacity-0'}`}>
             <div className="relative flex items-center justify-center">
                 {/* The expanding circle */}
                 <div className="absolute w-64 h-64 rounded-full border-[0.5px] border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.1)] backdrop-blur-sm animate-deep-breathe"></div>

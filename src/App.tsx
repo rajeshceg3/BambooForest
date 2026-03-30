@@ -23,6 +23,7 @@ function App() {
 function AppScene() {
   const [currentZone, setCurrentZone] = useState<Zone>('GROVE')
   const [audioEnabled, setAudioEnabled] = useState(false)
+  const [zenMode, setZenMode] = useState(false)
   const isIdle = useIdle(5000)
   const { dprRange } = useQuality()
 
@@ -39,9 +40,9 @@ function AppScene() {
           {/* We pass onZoneChange to Experience so the TourController can update the environment */}
           <Experience currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} />
         </Canvas>
-        <UI audioEnabled={audioEnabled} onToggleAudio={() => setAudioEnabled(!audioEnabled)} isIdle={isIdle} />
-        <Overlay currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} />
-        <TourOverlay isIdle={isIdle} />
+        <UI audioEnabled={audioEnabled} onToggleAudio={() => setAudioEnabled(!audioEnabled)} isIdle={isIdle} zenMode={zenMode} onToggleZenMode={() => setZenMode(!zenMode)} />
+        <Overlay currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} zenMode={zenMode} />
+        <TourOverlay isIdle={isIdle} zenMode={zenMode} />
         <AudioPlayer enabled={audioEnabled} currentZone={currentZone} isIdle={isIdle} />
         <Cursor isIdle={isIdle} />
       </div>
