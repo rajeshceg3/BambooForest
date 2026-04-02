@@ -118,6 +118,65 @@ canvas {
     animation: breathe-text-exhale 12s ease-in-out infinite;
   }
 
+  /* Box Breathing (16s cycle: 4s inhale, 4s hold, 4s exhale, 4s hold) */
+  @keyframes deep-breathe-box {
+    0% { transform: scale(1); opacity: 0.1; }
+    25% { transform: scale(1.5); opacity: 0.8; }
+    50% { transform: scale(1.5); opacity: 0.8; }
+    75% { transform: scale(1); opacity: 0.1; }
+    100% { transform: scale(1); opacity: 0.1; }
+  }
+
+  .animate-deep-breathe-box {
+    animation: deep-breathe-box 16s ease-in-out infinite;
+  }
+
+  @keyframes breathe-text-inhale-box {
+    0% { opacity: 0; }
+    12.5% { opacity: 1; }
+    25% { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes breathe-text-hold1-box {
+    0% { opacity: 0; }
+    25% { opacity: 0; }
+    37.5% { opacity: 1; }
+    50% { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes breathe-text-exhale-box {
+    0% { opacity: 0; }
+    50% { opacity: 0; }
+    62.5% { opacity: 1; }
+    75% { opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes breathe-text-hold2-box {
+    0% { opacity: 0; }
+    75% { opacity: 0; }
+    87.5% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  .animate-breathe-text-inhale-box {
+    animation: breathe-text-inhale-box 16s ease-in-out infinite;
+  }
+
+  .animate-breathe-text-hold1-box {
+    animation: breathe-text-hold1-box 16s ease-in-out infinite;
+  }
+
+  .animate-breathe-text-exhale-box {
+    animation: breathe-text-exhale-box 16s ease-in-out infinite;
+  }
+
+  .animate-breathe-text-hold2-box {
+    animation: breathe-text-hold2-box 16s ease-in-out infinite;
+  }
+
 @media (prefers-reduced-motion: reduce) {
   .animate-blur-in,
   .animate-breathe {
