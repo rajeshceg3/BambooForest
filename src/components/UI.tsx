@@ -75,10 +75,49 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
   const [aboutOpen, setAboutOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'philosophy' | 'lore'>('philosophy')
   const [meditationMode, setMeditationMode] = useState(false)
+  const [breathingPattern, setBreathingPattern] = useState<'default' | 'box'>('default')
+  const [timerMenuOpen, setTimerMenuOpen] = useState(false)
+  const [sessionTimer, setSessionTimer] = useState<number>(0) // in minutes, 0 means off
+  const [timeLeft, setTimeLeft] = useState<number>(0) // in seconds
   const [hasInteracted, setHasInteracted] = useState(false)
   const [isTouch, setIsTouch] = useState(false)
   const { progress, active } = useProgress()
   const titleRef = useRef<HTMLDivElement>(null)
+
+  // Timer Countdown Logic
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null
+
+    if (sessionTimer > 0 && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            // Timer finished
+            setSessionTimer(0)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+
+    return () => {
+      if (interval) clearInterval(interval)
+    }
+  }, [sessionTimer, timeLeft])
+
+  // Helper to format time left
+  const formatTimeLeft = (seconds: number) => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}:${s < 10 ? '0' : ''}${s}`
+  }
+
+  const handleSetTimer = (minutes: number) => {
+    setSessionTimer(minutes)
+    setTimeLeft(minutes * 60)
+    setTimerMenuOpen(false)
+  }
 
   // Interaction Detection
   useEffect(() => {
@@ -244,8 +283,48 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
           </MagneticButton>
         </div>
 
+        {/* Timer Button */}
+        <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="Timer">
+          <div className="relative">
+            <MagneticButton
+              onClick={() => setTimerMenuOpen(!timerMenuOpen)}
+              ariaLabel="Timer"
+              className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full border border-white/5 backdrop-blur-3xl shadow-[0_4px_24px_rgba(0,0,0,0.4)] transition-all duration-300 group ${timerMenuOpen || sessionTimer > 0 ? 'bg-white/20' : 'bg-black/10 hover:bg-white/10 hover:border-white/20'}`}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70 group-hover:text-white transition-colors">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </MagneticButton>
+
+            {/* Timer Menu Popup */}
+            {timerMenuOpen && (
+              <div className="absolute bottom-full left-0 mb-4 bg-black/40 backdrop-blur-3xl border border-white/5 rounded-2xl p-4 shadow-2xl flex flex-col gap-2 min-w-[120px] animate-blur-in">
+                <span className="font-sans text-[10px] uppercase tracking-widest text-white/50 mb-2 text-center">Session</span>
+                {[5, 10, 15].map((mins) => (
+                  <button
+                    key={mins}
+                    onClick={() => handleSetTimer(mins)}
+                    className={`text-xs font-sans tracking-widest py-2 px-4 rounded-full border border-white/5 transition-all duration-300 ${sessionTimer === mins ? 'bg-white/20 text-white' : 'hover:bg-white/10 text-white/70'}`}
+                  >
+                    {mins} min
+                  </button>
+                ))}
+                {sessionTimer > 0 && (
+                  <button
+                    onClick={() => handleSetTimer(0)}
+                    className="text-[10px] font-sans tracking-widest py-2 px-4 rounded-full border border-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all duration-300 mt-2"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Bottom Left: Audio Toggle */}
-        <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
+        <div className={`absolute bottom-6 left-[136px] md:bottom-10 md:left-[184px] pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
           <MagneticButton
             onClick={onToggleAudio}
             ariaLabel={audioEnabled ? "Mute" : "Unmute"}
@@ -299,24 +378,72 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
 
         {/* Breathing Guide Overlay (Meditate Mode) */}
         <div className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-opacity duration-[3000ms] ${meditationMode && started && !zenMode ? 'opacity-100' : 'opacity-0'}`}>
+
+            {/* Breathing Pattern Selector */}
+            <div className={`absolute top-24 left-1/2 -translate-x-1/2 pointer-events-auto flex gap-4 transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
+               <button
+                  onClick={() => setBreathingPattern('default')}
+                  className={`text-[10px] uppercase tracking-[0.3em] font-sans px-4 py-2 rounded-full border transition-all duration-500 ${breathingPattern === 'default' ? 'border-white/40 text-white bg-white/10' : 'border-transparent text-white/40 hover:text-white/80'}`}
+               >
+                 Default
+               </button>
+               <button
+                  onClick={() => setBreathingPattern('box')}
+                  className={`text-[10px] uppercase tracking-[0.3em] font-sans px-4 py-2 rounded-full border transition-all duration-500 ${breathingPattern === 'box' ? 'border-white/40 text-white bg-white/10' : 'border-transparent text-white/40 hover:text-white/80'}`}
+               >
+                 Box
+               </button>
+            </div>
+
             <div className="relative flex items-center justify-center">
                 {/* The expanding circle */}
-                <div className="absolute w-64 h-64 rounded-full border-[0.5px] border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.1)] backdrop-blur-sm animate-deep-breathe"></div>
+                <div className={`absolute w-64 h-64 rounded-full border-[0.5px] border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.1)] backdrop-blur-sm ${breathingPattern === 'box' ? 'animate-deep-breathe-box' : 'animate-deep-breathe'}`}></div>
                 {/* Center dot */}
                 <div className="w-2 h-2 rounded-full bg-white/30 backdrop-blur-md"></div>
+
+                {/* Text prompts */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-48 text-center flex flex-col items-center">
-                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-inhale">
-                        Inhale
-                    </span>
-                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-hold">
-                        Hold
-                    </span>
-                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-exhale">
-                        Exhale
-                    </span>
+                    {breathingPattern === 'default' ? (
+                        <>
+                          <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-inhale">
+                              Inhale
+                          </span>
+                          <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-hold">
+                              Hold
+                          </span>
+                          <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-exhale">
+                              Exhale
+                          </span>
+                        </>
+                    ) : (
+                        <>
+                          <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-inhale-box">
+                              Inhale
+                          </span>
+                          <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-hold1-box">
+                              Hold
+                          </span>
+                          <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-exhale-box">
+                              Exhale
+                          </span>
+                          <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-hold2-box">
+                              Hold
+                          </span>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
+
+        {/* Minimalist Active Timer Display */}
+        {sessionTimer > 0 && started && (
+          <div className={`absolute top-6 left-1/2 -translate-x-1/2 transition-opacity duration-1000 pointer-events-none flex items-center gap-3 ${zenMode ? 'opacity-0' : (isIdle ? 'opacity-20' : 'opacity-100')}`}>
+            <div className="w-1.5 h-1.5 rounded-full bg-white/50 animate-pulse"></div>
+            <span className="font-mono text-xs tracking-widest text-white/70">
+              {formatTimeLeft(timeLeft)}
+            </span>
+          </div>
+        )}
 
       {/* About Modal */}
       <div
