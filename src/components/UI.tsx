@@ -73,7 +73,7 @@ interface UIProps {
 export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = false, onToggleZenMode }: UIProps) => {
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'philosophy' | 'lore'>('philosophy')
+  const [activeTab, setActiveTab] = useState<'philosophy' | 'lore' | 'soundscape'>('philosophy')
   const [meditationMode, setMeditationMode] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [isTouch, setIsTouch] = useState(false)
@@ -97,6 +97,17 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
       window.removeEventListener('mousedown', handleInteraction)
       window.removeEventListener('touchstart', handleInteraction)
     }
+  }, [])
+
+  const [greeting, setGreeting] = useState('A digital sanctuary.')
+
+  // Contextual Greeting based on time
+  useEffect(() => {
+    const hour = new Date().getHours()
+    if (hour >= 5 && hour < 12) setGreeting('A morning refuge.')
+    else if (hour >= 12 && hour < 17) setGreeting('An afternoon pause.')
+    else if (hour >= 17 && hour < 21) setGreeting('An evening sanctuary.')
+    else setGreeting('A midnight stillness.')
   }, [])
 
   // Intro Animation on Mount
@@ -162,7 +173,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
           </div>
 
           <p className={`font-serif italic text-white/60 text-lg md:text-2xl mb-12 font-light transition-all duration-[2000ms] delay-1000 ease-out ${progress === 100 ? 'opacity-100 translate-y-0 tracking-[0.3em]' : 'opacity-0 translate-y-4 tracking-normal'}`}>
-            A digital sanctuary.
+            {greeting}
           </p>
 
           <button
@@ -298,7 +309,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
       </div>
 
         {/* Breathing Guide Overlay (Meditate Mode) */}
-        <div className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-opacity duration-[3000ms] ${meditationMode && started && !zenMode ? 'opacity-100' : 'opacity-0'}`}>
+        <div className={`absolute inset-0 pointer-events-none flex items-center justify-center transition-all duration-[3000ms] ${meditationMode && started && !zenMode ? 'opacity-100 bg-black/40 backdrop-blur-md' : 'opacity-0 bg-black/0 backdrop-blur-none'}`}>
             <div className="relative flex items-center justify-center">
                 {/* The expanding circle */}
                 <div className="absolute w-64 h-64 rounded-full border-[0.5px] border-white/20 shadow-[0_0_50px_rgba(255,255,255,0.1)] backdrop-blur-sm animate-deep-breathe"></div>
@@ -364,6 +375,14 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
               >
                 Lore
               </button>
+              <button
+                onClick={() => setActiveTab('soundscape')}
+                className={`font-sans text-[10px] uppercase tracking-[0.4em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${
+                  activeTab === 'soundscape' ? 'text-white' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                Soundscape
+              </button>
             </div>
 
             <div className="text-white/80 font-sans font-light leading-relaxed text-sm md:text-base tracking-wide min-h-[300px]">
@@ -405,6 +424,23 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
                       <p className="text-sm text-white/50 leading-relaxed">Fireflies in Japanese folklore are often seen as the souls of soldiers or poets, flickering briefly before fading. Here, they respond to your movement. Walk too fast, and they scatter; remain perfectly still, and they emerge to illuminate the deep forest, rewarding patience with delicate light.</p>
                     </div>
                   </div>
+                </section>
+              </div>
+
+              <div className={`transition-opacity duration-500 ${activeTab === 'soundscape' ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
+                <section className="space-y-4">
+                  <p>
+                    The ambient audio you hear is not a pre-recorded track, but a living, generative soundscape synthesized entirely in real-time using the Web Audio API. It adapts dynamically to both your location within the forest and your state of stillness.
+                  </p>
+                  <p>
+                    <strong>Procedural Wind:</strong> Synthesized by shaping white noise with a low-pass filter driven by low-frequency oscillators, creating natural-sounding gusts that physically map to the movement of the bamboo stalks around you.
+                  </p>
+                  <p>
+                    <strong>Reactive Ambience:</strong> The mix of wildlife, insects, and flowing water shifts as you explore different zones. When you remain perfectly still, the system enters a 'detail bloom' state—distant bird calls gently rise, the insect chorus deepens, and subtle randomized one-shot elements (like a distant snapping twig or tonal chime) occasionally break the silence, rewarding your patience.
+                  </p>
+                  <p>
+                    <strong>Spatial Audio:</strong> Elements like the stream are spatially panned. As you drift closer to the water, the low-frequency rumble and high-frequency sparkle of the current pull into focus, grounding you in the virtual space.
+                  </p>
                 </section>
               </div>
 
