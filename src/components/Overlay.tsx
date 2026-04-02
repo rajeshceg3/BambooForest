@@ -11,10 +11,12 @@ interface OverlayProps {
 export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = false }: OverlayProps) {
   const zones: Zone[] = ['GROVE', 'CLEARING', 'STREAM', 'DEEP_FOREST']
   const [poemIndex, setPoemIndex] = useState(0)
+  const [isFading, setIsFading] = useState(false)
 
   // Reset poem index when zone changes
   useEffect(() => {
     setPoemIndex(0)
+    setIsFading(false)
   }, [currentZone])
 
   const zoneConfig = {
@@ -57,7 +59,12 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
   }
 
   const handlePoemClick = () => {
-    setPoemIndex((prev) => (prev + 1) % zoneConfig[currentZone].poems.length)
+    if (isFading) return
+    setIsFading(true)
+    setTimeout(() => {
+      setPoemIndex((prev) => (prev + 1) % zoneConfig[currentZone].poems.length)
+      setIsFading(false)
+    }, 500)
   }
 
   return (
@@ -85,8 +92,8 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
 
       {/* Idle Reward Poetry (Fades in when Idle) */}
       <div className={`absolute inset-0 flex flex-col items-center justify-end pb-32 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle && !zenMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <div key={`poem-${currentZone}-${poemIndex}`} className="text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
-            <p className="font-serif italic font-light text-white/30 text-sm md:text-base leading-[2.5] md:leading-[3] tracking-[0.3em] md:tracking-[0.4em] whitespace-pre-line drop-shadow-sm hover:text-white/60 transition-colors duration-1000 animate-blur-in">
+        <div key={`poem-container-${currentZone}`} className="text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
+            <p className={`font-serif italic font-light text-white/30 text-sm md:text-base leading-[2.5] md:leading-[3] tracking-[0.3em] md:tracking-[0.4em] whitespace-pre-line drop-shadow-sm hover:text-white/60 transition-all duration-500 ${isFading ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'} animate-blur-in`}>
                 {zoneConfig[currentZone].poems[poemIndex]}
             </p>
         </div>
