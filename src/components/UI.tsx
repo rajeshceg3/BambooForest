@@ -77,8 +77,22 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
   const [meditationMode, setMeditationMode] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
   const [isTouch, setIsTouch] = useState(false)
+  const [showZenToast, setShowZenToast] = useState(false)
   const { progress, active } = useProgress()
   const titleRef = useRef<HTMLDivElement>(null)
+
+  // Handle Zen Mode Toast
+  useEffect(() => {
+    if (zenMode) {
+      setShowZenToast(true)
+      const timer = setTimeout(() => {
+        setShowZenToast(false)
+      }, 4000)
+      return () => clearTimeout(timer)
+    } else {
+      setShowZenToast(false)
+    }
+  }, [zenMode])
 
   // Interaction Detection
   useEffect(() => {
@@ -280,6 +294,16 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
 
       {/* Persistent Zen Mode Toggle - Always visible except when hiding UI */}
       <div className={`absolute bottom-6 right-20 md:bottom-10 md:right-28 pointer-events-auto transition-opacity duration-1000 ${started && !isIdle ? 'opacity-100' : 'opacity-0'}`} data-cursor-text={zenMode ? "Exit Zen Mode" : "Zen Mode"}>
+        {/* Zen Mode Toast */}
+        <div className={`absolute bottom-full mb-4 right-0 pointer-events-none transition-all duration-1000 transform ${showZenToast ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+          <div className="bg-black/40 backdrop-blur-3xl border border-white/10 rounded-full px-6 py-2 shadow-2xl flex items-center gap-3">
+             <div className="w-1.5 h-1.5 rounded-full bg-white/80 animate-pulse"></div>
+             <span className="text-[10px] uppercase tracking-[0.3em] font-sans text-white/80 whitespace-nowrap">
+                Zen Mode Active
+             </span>
+          </div>
+        </div>
+
         <MagneticButton
           onClick={onToggleZenMode}
           ariaLabel={zenMode ? "Exit Zen Mode" : "Zen Mode"}
@@ -403,6 +427,14 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
                     <div>
                       <span className="font-serif italic text-white/70 block mb-1">The Fireflies (Hotaru)</span>
                       <p className="text-sm text-white/50 leading-relaxed">Fireflies in Japanese folklore are often seen as the souls of soldiers or poets, flickering briefly before fading. Here, they respond to your movement. Walk too fast, and they scatter; remain perfectly still, and they emerge to illuminate the deep forest, rewarding patience with delicate light.</p>
+                    </div>
+                    <div>
+                      <span className="font-serif italic text-white/70 block mb-1">The Bamboo (Take)</span>
+                      <p className="text-sm text-white/50 leading-relaxed">A symbol of strength and flexibility. It bends under the weight of snow or the force of the wind, yet springs back without breaking. Its hollow center represents the "empty heart" (mushin)—a state of mind free from ego and preconceived notions, open to receiving the present moment.</p>
+                    </div>
+                    <div>
+                      <span className="font-serif italic text-white/70 block mb-1">The Moss (Koke)</span>
+                      <p className="text-sm text-white/50 leading-relaxed">Moss is revered for its ability to soften the hard edges of stone and wood over time. It grows slowly, requiring specific conditions of moisture and shade, acting as a visual indicator of long-term stability and undisturbed peace. It asks us to appreciate the beauty of gradual, quiet growth.</p>
                     </div>
                   </div>
                 </section>
