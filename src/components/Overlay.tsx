@@ -26,7 +26,10 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
       poems: [
         'Tall stalks catch the light,\nA million leaves in the wind,\nStillness softly falls.',
         'Green stems reaching high,\nA quiet rustle above,\nThe earth standing still.',
-        'Swaying back and forth,\nEmpty centers, bending low,\nUnbroken they rise.'
+        'Swaying back and forth,\nEmpty centers, bending low,\nUnbroken they rise.',
+        'Rooted deep below,\nReaching endlessly upward,\nThe space in between.',
+        'Hollow but unbroken,\nYielding to the sudden storm,\nStanding tall again.',
+        'A single sharp leaf,\nDrifting gently to the earth,\nThe forest watches.'
       ]
     },
     CLEARING: {
@@ -35,7 +38,10 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
       poems: [
         'Sunbeams pierce the mist,\nDust motes dance upon the air,\nTime forgets its pace.',
         'Open sky above,\nThe thick canopy parts here,\nBreathing room for all.',
-        'A warm spot of sun,\nResting on the soft green moss,\nWaiting for the dawn.'
+        'A warm spot of sun,\nResting on the soft green moss,\nWaiting for the dawn.',
+        'A circle of light,\nFramed by the towering green,\nThe mind finds its space.',
+        'Nothing gathers here,\nOnly the soft falling dew,\nAnd the open sky.',
+        'Footsteps leave no mark,\nUpon the illuminated ground,\nOnly shadows pass.'
       ]
     },
     STREAM: {
@@ -44,7 +50,10 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
       poems: [
         'Cold water shaping stone,\nAn ancient, quiet murmur,\nFlowing without end.',
         'A mirror reflecting,\nLeaves traveling on the surface,\nThe ocean is far.',
-        'Polished rocks below,\nWorn smooth by the rushing cold,\nYielding to the soft.'
+        'Polished rocks below,\nWorn smooth by the rushing cold,\nYielding to the soft.',
+        'A drop finds its way,\nJoining the eternal pull,\nThe mountain weeps.',
+        'Water knows no form,\nYet carves the hardest mountain,\nGentle but unyielding.',
+        'The current runs deep,\nCarrying the weight of time,\nInto the quiet.'
       ]
     },
     DEEP_FOREST: {
@@ -53,7 +62,10 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
       poems: [
         'Shadows grow longer,\nFireflies wake in the dark,\nThe world breathes as one.',
         'No light touches here,\nYet life moves within the damp,\nA hidden slow pulse.',
-        'The deep ancient root,\nHolding everything tightly,\nQuietly asleep.'
+        'The deep ancient root,\nHolding everything tightly,\nQuietly asleep.',
+        'The dark is not empty,\nIt hums with a thousand lives,\nUnseen but present.',
+        'Where the shadows meet,\nThe boundaries of self dissolve,\nInto the forest.',
+        'A spark in the dark,\nThe quiet flight of a soul,\nGuiding the lost way.'
       ]
     },
   }

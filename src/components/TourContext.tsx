@@ -50,6 +50,14 @@ export const TOUR_STEPS: TourStep[] = [
     title: 'Ascent',
     description: 'Reaching for the light, rooted in darkness. The bamboo teaches us to bend without breaking.',
     duration: 4
+  },
+  {
+    position: [4, 25, 4],
+    target: [0, 5, 0], // Looking down from above
+    zone: 'CLEARING',
+    title: 'The Canopy',
+    description: 'From above, the individual stalks vanish into a unified sea of green. A reminder of the greater whole we belong to.',
+    duration: 5
   }
 ]
 
