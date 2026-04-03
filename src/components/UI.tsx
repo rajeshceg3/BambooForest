@@ -186,14 +186,14 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/40 to-transparent" />
 
         {/* Top Left: Title (Subtle) */}
-        <div className={`absolute top-6 left-6 md:top-8 md:left-8 transition-opacity duration-1000 pointer-events-auto ${isIdle ? 'opacity-0' : 'opacity-60 hover:opacity-100'}`}>
+        <div className={`absolute top-6 left-6 md:top-8 md:left-8 transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-60 hover:opacity-100 pointer-events-auto'}`}>
            <span className="font-serif text-xs md:text-sm tracking-widest uppercase text-white drop-shadow-sm">
              Bamboo Forest
            </span>
         </div>
 
         {/* Top Right: Award Badge */}
-        <div className={`absolute top-6 right-6 md:top-8 md:right-8 pointer-events-auto group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-1000 hover:bg-white/10 hover:border-white/30 cursor-pointer ${isIdle ? 'opacity-0' : 'opacity-100'}`}>
+        <div className={`absolute top-6 right-6 md:top-8 md:right-8 group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-1000 hover:bg-white/10 hover:border-white/30 cursor-pointer ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}>
           <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 md:w-5 md:h-5 text-white/70 group-hover:text-white transition-colors duration-500">
              <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
@@ -234,7 +234,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
         </div>
 
         {/* Bottom Left: Meditate Toggle */}
-        <div className={`absolute bottom-6 left-6 md:bottom-10 md:left-10 pointer-events-auto transition-opacity duration-1000 ${isIdle ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="Breathe">
+        <div className={`absolute bottom-6 left-6 md:bottom-10 md:left-10 transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`} data-cursor-text="Breathe">
           <MagneticButton
             onClick={() => setMeditationMode(!meditationMode)}
             ariaLabel="Meditate"
@@ -245,7 +245,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
         </div>
 
         {/* Bottom Left: Audio Toggle */}
-        <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
+        <div className={`absolute bottom-6 left-20 md:bottom-10 md:left-28 transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`} data-cursor-text={audioEnabled ? "Mute" : "Unmute"}>
           <MagneticButton
             onClick={onToggleAudio}
             ariaLabel={audioEnabled ? "Mute" : "Unmute"}
@@ -267,7 +267,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
         </div>
 
         {/* Bottom Right: Info Button */}
-        <div className={`absolute bottom-6 right-6 md:bottom-10 md:right-10 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`} data-cursor-text="About">
+        <div className={`absolute bottom-6 right-6 md:bottom-10 md:right-10 transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`} data-cursor-text="About">
           <MagneticButton
             onClick={() => setAboutOpen(true)}
             ariaLabel="About"
@@ -305,14 +305,17 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
                 {/* Center dot */}
                 <div className="w-2 h-2 rounded-full bg-white/30 backdrop-blur-md"></div>
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 mt-48 text-center flex flex-col items-center">
-                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-inhale">
-                        Inhale
+                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-inhale flex flex-col items-center gap-2">
+                        <span>Inhale</span>
+                        <span className="font-sans text-[8px] tracking-[0.2em] opacity-50 lowercase">draw the forest in</span>
                     </span>
-                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-hold">
-                        Hold
+                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-hold flex flex-col items-center gap-2">
+                        <span>Hold</span>
+                        <span className="font-sans text-[8px] tracking-[0.2em] opacity-50 lowercase">find the stillness</span>
                     </span>
-                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-exhale">
-                        Exhale
+                    <span className="absolute font-serif italic text-white/40 text-sm tracking-[0.4em] uppercase animate-breathe-text-exhale flex flex-col items-center gap-2">
+                        <span>Exhale</span>
+                        <span className="font-sans text-[8px] tracking-[0.2em] opacity-50 lowercase">release into the mist</span>
                     </span>
                 </div>
             </div>
