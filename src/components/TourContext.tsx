@@ -57,11 +57,14 @@ interface TourContextType {
   isActive: boolean
   currentStepIndex: number
   isTransitioning: boolean
+  isAutoPlay: boolean
   startTour: () => void
   endTour: () => void
   nextStep: () => void
   prevStep: () => void
   setTransitioning: (state: boolean) => void
+  toggleAutoPlay: () => void
+  setIsAutoPlay: (state: boolean) => void
   currentStep: TourStep
   steps: TourStep[]
 }
@@ -72,6 +75,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState(false)
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [isAutoPlay, setIsAutoPlay] = useState(false)
 
   const startTour = () => {
     setIsActive(true)
@@ -83,6 +87,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     setIsActive(false)
     setCurrentStepIndex(0)
     setIsTransitioning(false)
+    setIsAutoPlay(false)
   }
 
   const nextStep = () => {
@@ -101,6 +106,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const toggleAutoPlay = () => setIsAutoPlay(prev => !prev)
+
   const value = {
     isActive,
     currentStepIndex,
@@ -110,6 +117,9 @@ export function TourProvider({ children }: { children: ReactNode }) {
     nextStep,
     prevStep,
     setTransitioning: setIsTransitioning,
+    isAutoPlay,
+    toggleAutoPlay,
+    setIsAutoPlay,
     currentStep: TOUR_STEPS[currentStepIndex],
     steps: TOUR_STEPS
   }

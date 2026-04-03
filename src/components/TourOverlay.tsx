@@ -7,7 +7,7 @@ interface TourOverlayProps {
 }
 
 export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProps) {
-  const { isActive, currentStep, currentStepIndex, isTransitioning, nextStep, prevStep, startTour, endTour } = useTour()
+  const { isActive, currentStep, currentStepIndex, isTransitioning, isAutoPlay, toggleAutoPlay, nextStep, prevStep, startTour, endTour } = useTour()
   const [showContent, setShowContent] = useState(false)
 
   // Manage content visibility based on transition state
@@ -22,6 +22,19 @@ export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProp
       return () => clearTimeout(timer)
     }
   }, [isTransitioning, currentStepIndex])
+
+  // Auto-play logic
+  useEffect(() => {
+    if (!isActive || !isAutoPlay || isTransitioning || !showContent) return
+
+    const duration = (currentStep.duration || 4) * 1000 + 4000 // duration + reading time
+
+    const timer = setTimeout(() => {
+      nextStep()
+    }, duration)
+
+    return () => clearTimeout(timer)
+  }, [isActive, isAutoPlay, isTransitioning, showContent, currentStep, nextStep])
 
   if (!isActive) {
     return (
@@ -60,7 +73,33 @@ export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProp
             ))}
         </div>
 
-        {/* Exit Button */}
+        <div className="flex items-center gap-4">
+            {/* Auto-Play Toggle */}
+            <button
+                onClick={toggleAutoPlay}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full backdrop-blur-3xl border transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${
+                    isAutoPlay
+                        ? 'bg-white/20 border-white/40 text-white'
+                        : 'bg-black/20 border-white/5 text-white/50 hover:text-white/80 hover:bg-black/40 hover:border-white/20'
+                }`}
+                data-cursor-text={isAutoPlay ? "Pause Auto-Play" : "Start Auto-Play"}
+            >
+                {isAutoPlay ? (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                    </svg>
+                ) : (
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                )}
+                <span className="text-[10px] uppercase tracking-widest font-sans">
+                    {isAutoPlay ? 'Auto' : 'Manual'}
+                </span>
+            </button>
+
+            {/* Exit Button */}
         <button
             onClick={endTour}
             className="group p-3 rounded-full bg-black/20 hover:bg-black/40 backdrop-blur-3xl border border-white/5 hover:border-white/20 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
@@ -71,6 +110,7 @@ export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProp
                 <path d="M1 1L11 11M1 11L11 1" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
             </svg>
         </button>
+        </div>
       </div>
 
       {/* Center/Bottom: Content Card */}
@@ -111,15 +151,18 @@ export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProp
 
                 <button
                     onClick={nextStep}
-                    className="group flex items-center gap-2 transition-all duration-300 font-thin hover:underline underline-offset-4 decoration-1 decoration-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm"
+                    className="group flex items-center gap-2 transition-all duration-300 font-thin hover:underline underline-offset-4 decoration-1 decoration-white/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black rounded-sm relative"
                     data-cursor-text={currentStepIndex === TOUR_STEPS.length - 1 ? "Finish" : "Next"}
                 >
-                    <span className="text-[10px] uppercase tracking-widest text-white/90 group-hover:text-white">
+                    <span className="text-[10px] uppercase tracking-widest text-white/90 group-hover:text-white relative z-10">
                         {currentStepIndex === TOUR_STEPS.length - 1 ? 'Finish Tour' : 'Next Step'}
                     </span>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" className="group-hover:translate-x-1 transition-transform">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" className="group-hover:translate-x-1 transition-transform relative z-10">
                         <path d="M1 6H11M11 6L7 2M11 6L7 10" stroke="white" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
+                    {isAutoPlay && (
+                        <div className="absolute -bottom-2 left-0 h-[1px] bg-white/40 transition-all duration-100 linear w-full origin-left animate-progress" style={{ animationDuration: `${(currentStep.duration || 4) + 4}s` }}></div>
+                    )}
                 </button>
             </div>
         </div>
