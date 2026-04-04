@@ -7,10 +7,15 @@ export default {
   theme: {
     extend: {
       animation: {
+        progress: 'progress linear forwards',
         'fade-in': 'fadeIn 2s ease-out forwards',
         'fade-in-up': 'fadeInUp 1.5s ease-out forwards',
       },
       keyframes: {
+        progress: {
+          '0%': { transform: 'scaleX(0)' },
+          '100%': { transform: 'scaleX(1)' },
+        },
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },

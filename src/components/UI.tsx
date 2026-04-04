@@ -73,12 +73,37 @@ interface UIProps {
 export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = false, onToggleZenMode }: UIProps) => {
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'philosophy' | 'lore'>('philosophy')
+  const [activeTab, setActiveTab] = useState<'philosophy' | 'lore' | 'meditation'>('philosophy')
   const [meditationMode, setMeditationMode] = useState(false)
   const [hasInteracted, setHasInteracted] = useState(false)
+  const [showIntention, setShowIntention] = useState(false)
+  const [currentIntention, setCurrentIntention] = useState('')
+  const [zenTransitionMsg, setZenTransitionMsg] = useState(false)
+
+  const INTENTIONS = [
+    "Find stillness today.",
+    "Breathe in the present.",
+    "Let go of velocity.",
+    "Observe without judgment.",
+    "Root yourself in this moment.",
+    "Listen to the quiet."
+  ]
   const [isTouch, setIsTouch] = useState(false)
   const { progress, active } = useProgress()
   const titleRef = useRef<HTMLDivElement>(null)
+
+  // Zen Mode Transition Effect
+  useEffect(() => {
+    if (zenMode) {
+      setZenTransitionMsg(true)
+      const timer = setTimeout(() => {
+        setZenTransitionMsg(false)
+      }, 4000)
+      return () => clearTimeout(timer)
+    } else {
+      setZenTransitionMsg(false)
+    }
+  }, [zenMode])
 
   // Interaction Detection
   useEffect(() => {
@@ -98,6 +123,18 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
       window.removeEventListener('touchstart', handleInteraction)
     }
   }, [])
+
+  // Intro Animation on Mount
+  useEffect(() => {
+    if (started) {
+      setCurrentIntention(INTENTIONS[Math.floor(Math.random() * INTENTIONS.length)])
+      setShowIntention(true)
+      const timer = setTimeout(() => {
+        setShowIntention(false)
+      }, 8000)
+      return () => clearTimeout(timer)
+    }
+  }, [started])
 
   // Intro Animation on Mount
   useEffect(() => {
@@ -175,6 +212,24 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
             <span className="absolute bottom-0 left-0 w-full h-[1px] bg-white/20 transform scale-x-50 group-hover:scale-x-100 transition-transform duration-700 ease-out"></span>
           </button>
         </div>
+      </div>
+
+      {/* Zen Mode Transition Message */}
+      <div className={`absolute inset-0 z-[45] pointer-events-none flex items-center justify-center transition-opacity duration-[3000ms] ${zenTransitionMsg ? 'opacity-100' : 'opacity-0'}`}>
+         <div className="text-center px-8">
+            <p className="font-serif italic font-light text-white/50 text-xl md:text-3xl tracking-[0.3em] animate-blur-in drop-shadow-xl">
+                Embrace the void
+            </p>
+         </div>
+      </div>
+
+      {/* Daily Intention */}
+      <div className={`absolute inset-0 z-[45] pointer-events-none flex items-center justify-center transition-opacity duration-[4000ms] ${showIntention ? 'opacity-100' : 'opacity-0'}`}>
+         <div className="text-center px-8">
+            <p className="font-serif italic font-light text-white/60 text-lg md:text-2xl tracking-[0.2em] animate-breathe drop-shadow-lg">
+                {currentIntention}
+            </p>
+         </div>
       </div>
 
       {/* HUD - Visible only when started */}
@@ -367,6 +422,14 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
               >
                 Lore
               </button>
+              <button
+                onClick={() => setActiveTab('meditation')}
+                className={`font-sans text-[10px] uppercase tracking-[0.4em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${
+                  activeTab === 'meditation' ? 'text-white' : 'text-white/40 hover:text-white/70'
+                }`}
+              >
+                Meditation
+              </button>
             </div>
 
             <div className="text-white/80 font-sans font-light leading-relaxed text-sm md:text-base tracking-wide min-h-[300px]">
@@ -408,6 +471,20 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
                       <p className="text-sm text-white/50 leading-relaxed">Fireflies in Japanese folklore are often seen as the souls of soldiers or poets, flickering briefly before fading. Here, they respond to your movement. Walk too fast, and they scatter; remain perfectly still, and they emerge to illuminate the deep forest, rewarding patience with delicate light.</p>
                     </div>
                   </div>
+                </section>
+              </div>
+
+              <div className={`transition-opacity duration-500 ${activeTab === 'meditation' ? 'opacity-100 block' : 'opacity-0 hidden'}`}>
+                <section className="space-y-4">
+                  <p>
+                    This sanctuary offers multiple ways to practice mindfulness. Use the <span className="font-serif italic text-white/70">Zen Mode</span> (toggle in the bottom right) to clear away all interfaces, leaving you alone with the environment.
+                  </p>
+                  <p>
+                    Activate the <span className="font-serif italic text-white/70">Breathing Guide</span> (bottom left) to engage in a synchronized rhythm. Inhale as the circle expands, hold your breath at the peak, and exhale as it contracts. Let your breath match the slow, deliberate pace.
+                  </p>
+                  <p>
+                    The environment rewards patience. If you remain perfectly still without interacting, the forest will subtly change—fireflies will gather, dust motes will settle, and the ambient soundscape will deepen. Let this <span className="font-serif italic text-white/70">stillness reward</span> be a mirror to your own internal calm.
+                  </p>
                 </section>
               </div>
 
