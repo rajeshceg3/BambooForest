@@ -39,7 +39,8 @@ function dprRangeForTier(tier: QualityTier): [number, number] {
 
 export function QualityProvider({ children }: { children: ReactNode }) {
   const [viewportTier, setViewportTier] = useState<QualityTier>(clampTierFromViewport)
-  const [runtimeTier, setRuntimeTier] = useState<QualityTier>('HIGH')
+  // Start at the viewport tier: never boot at HIGH on a constrained device.
+  const [runtimeTier, setRuntimeTier] = useState<QualityTier>(clampTierFromViewport)
 
   const frameWindowRef = useRef<number[]>([])
   const cooldownRef = useRef(0)

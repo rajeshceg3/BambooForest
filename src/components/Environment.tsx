@@ -5,6 +5,16 @@ import * as THREE from 'three'
 import gsap from 'gsap'
 import { Zone } from '../types'
 import { GroundCover } from './GroundCover'
+import { useQuality, type QualityTier } from './QualityContext'
+
+// Ground-cover density per quality tier. A flat 100k instanced blades on every
+// device was the heaviest single draw in the scene and the prime suspect behind
+// mobile crashes (provisional diagnosis).
+const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
+  HIGH: 60000,
+  MEDIUM: 30000,
+  LOW: 12000,
+}
 
 interface EnvironmentProps {
   currentZone: Zone
@@ -12,6 +22,7 @@ interface EnvironmentProps {
 
 export function Environment({ currentZone }: EnvironmentProps) {
   const { scene } = useThree()
+  const { tier } = useQuality()
   const ambientLightRef = useRef<THREE.AmbientLight>(null)
   const directionalLightRef = useRef<THREE.DirectionalLight>(null)
 
@@ -241,7 +252,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
       </mesh>
 
       {/* Ground Cover - Grass */}
-      <GroundCover />
+      <GroundCover count={COVER_COUNT_BY_TIER[tier]} />
     </>
   )
 }
