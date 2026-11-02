@@ -71,6 +71,10 @@ export function QualityProvider({ children }: { children: ReactNode }) {
 
   const frameWindowRef = useRef<number[]>([])
   const cooldownRef = useRef(0)
+  const consecutiveSlowRef = useRef(0)
+  // Once the sampler trips to ULTRA_LOW, stay there: letting averages climb
+  // back up re-builds the heavy scene on a GPU that already choked once.
+  const ultraLowLatchedRef = useRef(IS_SOFTWARE_RENDERER)
 
   useEffect(() => {
     const onResize = () => {
