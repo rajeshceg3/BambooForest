@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { DIAG } from '../diag'
 
 export type QualityTier = 'LOW' | 'MEDIUM' | 'HIGH'
 
@@ -38,9 +39,9 @@ function dprRangeForTier(tier: QualityTier): [number, number] {
 }
 
 export function QualityProvider({ children }: { children: ReactNode }) {
-  const [viewportTier, setViewportTier] = useState<QualityTier>(clampTierFromViewport)
+  const [viewportTier, setViewportTier] = useState<QualityTier>(() => DIAG.forceTier ?? clampTierFromViewport())
   // Start at the viewport tier: never boot at HIGH on a constrained device.
-  const [runtimeTier, setRuntimeTier] = useState<QualityTier>(clampTierFromViewport)
+  const [runtimeTier, setRuntimeTier] = useState<QualityTier>(() => DIAG.forceTier ?? clampTierFromViewport())
 
   const frameWindowRef = useRef<number[]>([])
   const cooldownRef = useRef(0)
@@ -76,6 +77,11 @@ export function QualityProvider({ children }: { children: ReactNode }) {
   const tier: QualityTier = useMemo(() => {
     return tierRank[viewportTier] <= tierRank[runtimeTier] ? viewportTier : runtimeTier
   }, [runtimeTier, viewportTier])
+
+  useEffect(() => {
+    document.documentElement.dataset.qtier = tier
+    ;(window as unknown as { __QTIER?: string }).__QTIER = tier
+  }, [tier])
 
   const value = useMemo<QualityContextValue>(() => ({
     tier,
