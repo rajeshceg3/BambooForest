@@ -39,7 +39,10 @@ function dprRangeForTier(tier: QualityTier): [number, number] {
 
 export function QualityProvider({ children }: { children: ReactNode }) {
   const [viewportTier, setViewportTier] = useState<QualityTier>(clampTierFromViewport)
-  const [runtimeTier, setRuntimeTier] = useState<QualityTier>('HIGH')
+  // Boot conservative: always start the runtime tier at LOW and let measured
+  // frame times upgrade it. Booting at the viewport-implied tier builds the
+  // full HIGH scene before the sampler can react, which kills weak GPUs.
+  const [runtimeTier, setRuntimeTier] = useState<QualityTier>('LOW')
 
   const frameWindowRef = useRef<number[]>([])
   const cooldownRef = useRef(0)

@@ -5,6 +5,24 @@ import * as THREE from 'three'
 import gsap from 'gsap'
 import { Zone } from '../types'
 import { GroundCover } from './GroundCover'
+import { useQuality, type QualityTier } from './QualityContext'
+
+// Ground-cover density per quality tier. A flat 100k instanced blades on every
+// device was the heaviest single draw in the scene and the prime suspect behind
+// mobile crashes (provisional diagnosis).
+const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
+  HIGH: 60000,
+  MEDIUM: 30000,
+  LOW: 12000,
+}
+
+// Shadow budget per tier. A fixed 4096 shadow map with PCSS soft shadows and
+// every instanced mesh casting was enough to kill weak GPUs on first render.
+const SHADOW_MAP_BY_TIER: Record<QualityTier, number> = {
+  HIGH: 4096,
+  MEDIUM: 2048,
+  LOW: 1024,
+}
 
 interface EnvironmentProps {
   currentZone: Zone
@@ -12,6 +30,7 @@ interface EnvironmentProps {
 
 export function Environment({ currentZone }: EnvironmentProps) {
   const { scene } = useThree()
+  const { tier } = useQuality()
   const ambientLightRef = useRef<THREE.AmbientLight>(null)
   const directionalLightRef = useRef<THREE.DirectionalLight>(null)
 
@@ -211,7 +230,9 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
   return (
     <>
-      <SoftShadows size={25} focus={0.8} samples={16} />
+      {tier !== 'LOW' && (
+        <SoftShadows size={tier === 'HIGH' ? 25 : 20} focus={0.8} samples={tier === 'HIGH' ? 16 : 8} />
+      )}
       <ambientLight ref={ambientLightRef} intensity={0.4} color="#ffffff" />
 
       <directionalLight
@@ -219,7 +240,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
         castShadow
         position={[15, 25, 10]}
         intensity={1.2}
-        shadow-mapSize={[4096, 4096]}
+        shadow-mapSize={[SHADOW_MAP_BY_TIER[tier], SHADOW_MAP_BY_TIER[tier]]}
         shadow-bias={-0.0001}
         shadow-normalBias={0.04}
         color="#fff0d0"
@@ -241,7 +262,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
       </mesh>
 
       {/* Ground Cover - Grass */}
-      <GroundCover />
+      <GroundCover count={COVER_COUNT_BY_TIER[tier]} castShadow={tier === 'HIGH'} />
     </>
   )
 }
