@@ -86,6 +86,22 @@ export function QualityProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const reportFrameTime = useCallback((frameTimeMs: number) => {
+    // Fast path: a single catastrophic frame (>1s) or three consecutive slow
+    // frames (>200ms) mean the GPU is drowning - drop to ULTRA_LOW immediately
+    // instead of waiting for the averaged window to notice.
+    if (frameTimeMs > 1000) {
+      ultraLowLatchedRef.current = true
+    }
+    consecutiveSlowRef.current = frameTimeMs > 200 ? consecutiveSlowRef.current + 1 : 0
+    if (consecutiveSlowRef.current >= 3) {
+      ultraLowLatchedRef.current = true
+    }
+    if (ultraLowLatchedRef.current) {
+      setRuntimeTier((prev) => (prev === 'ULTRA_LOW' ? prev : 'ULTRA_LOW'))
+      frameWindowRef.current = []
+      return
+    }
+
     const frameWindow = frameWindowRef.current
     frameWindow.push(frameTimeMs)
     if (frameWindow.length > 45) frameWindow.shift()
@@ -107,6 +123,9 @@ export function QualityProvider({ children }: { children: ReactNode }) {
               ? 'HIGH'
               : runtimeTier
 
+    if (nextRuntimeTier === 'ULTRA_LOW') {
+      ultraLowLatchedRef.current = true
+    }
     if (nextRuntimeTier !== runtimeTier) {
       setRuntimeTier(nextRuntimeTier)
     }
