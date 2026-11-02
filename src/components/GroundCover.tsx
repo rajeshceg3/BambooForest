@@ -2,7 +2,7 @@ import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
-export function GroundCover({ count = 100000 }) {
+export function GroundCover({ count = 100000, castShadow = true }: { count?: number; castShadow?: boolean }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const { camera } = useThree()
   const [matrices, setMatrices] = useState<{ instanceMatrixArray: Float32Array; actualCount: number } | null>(null)
@@ -268,7 +268,7 @@ export function GroundCover({ count = 100000 }) {
     <instancedMesh
       ref={meshRef}
       args={[undefined, undefined, count]} // Initial buffer size
-      castShadow
+      castShadow={castShadow}
       receiveShadow
       geometry={geometry}
     >

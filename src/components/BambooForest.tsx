@@ -6,6 +6,7 @@ import { Zone } from '../types'
 interface BambooForestProps {
   currentZone?: Zone
   count?: number
+  castShadow?: boolean
 }
 
 // Global Wind Logic for Stalks, Branches, and Leaves
@@ -41,7 +42,7 @@ vec3 getWindOffset(vec3 pos, float time, vec3 camPos) {
 }
 `;
 
-export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooForestProps) {
+export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow = true }: BambooForestProps) {
   const meshRef = useRef<THREE.InstancedMesh | null>(null)
   const branchMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
@@ -560,7 +561,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
                 if (node) node.layers.enable(1);
             }}
             args={[undefined, undefined, count]}
-            castShadow
+            castShadow={castShadow}
             receiveShadow
         >
             <cylinderGeometry args={[0.08, 0.15, 8, 1]} />
@@ -570,7 +571,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
         <instancedMesh
             ref={branchMeshRef}
             args={[undefined, undefined, count * 5]}
-            castShadow
+            castShadow={castShadow}
             receiveShadow
             geometry={branchGeometry}
         >
@@ -580,7 +581,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000 }: BambooFor
         <instancedMesh
             ref={leafMeshRef}
             args={[undefined, undefined, count * 5 * 3]}
-            castShadow
+            castShadow={castShadow}
             receiveShadow
             geometry={leafGeometry}
         >

@@ -16,6 +16,14 @@ const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
   LOW: 12000,
 }
 
+// Shadow budget per tier. A fixed 4096 shadow map with PCSS soft shadows and
+// every instanced mesh casting was enough to kill weak GPUs on first render.
+const SHADOW_MAP_BY_TIER: Record<QualityTier, number> = {
+  HIGH: 4096,
+  MEDIUM: 2048,
+  LOW: 1024,
+}
+
 interface EnvironmentProps {
   currentZone: Zone
 }
@@ -222,7 +230,9 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
   return (
     <>
-      <SoftShadows size={25} focus={0.8} samples={16} />
+      {tier !== 'LOW' && (
+        <SoftShadows size={tier === 'HIGH' ? 25 : 20} focus={0.8} samples={tier === 'HIGH' ? 16 : 8} />
+      )}
       <ambientLight ref={ambientLightRef} intensity={0.4} color="#ffffff" />
 
       <directionalLight
@@ -230,7 +240,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
         castShadow
         position={[15, 25, 10]}
         intensity={1.2}
-        shadow-mapSize={[4096, 4096]}
+        shadow-mapSize={[SHADOW_MAP_BY_TIER[tier], SHADOW_MAP_BY_TIER[tier]]}
         shadow-bias={-0.0001}
         shadow-normalBias={0.04}
         color="#fff0d0"
@@ -252,7 +262,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
       </mesh>
 
       {/* Ground Cover - Grass */}
-      <GroundCover count={COVER_COUNT_BY_TIER[tier]} />
+      <GroundCover count={COVER_COUNT_BY_TIER[tier]} castShadow={tier === 'HIGH'} />
     </>
   )
 }
