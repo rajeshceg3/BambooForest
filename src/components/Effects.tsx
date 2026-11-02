@@ -11,6 +11,7 @@ export function Effects() {
 
   const isHigh = tier === 'HIGH'
   const isMedium = tier === 'MEDIUM'
+  const isUltraLow = tier === 'ULTRA_LOW'
 
   return (
     <EffectComposer enableNormalPass={false}>
@@ -29,12 +30,16 @@ export function Effects() {
       ) : (
         <></>
       )}
-      <Bloom
-        luminanceThreshold={1}
-        mipmapBlur={false}
-        intensity={0.8} // Reduced for subtlety and performance
-        radius={0.4}
-      />
+      {isUltraLow ? (
+        <></>
+      ) : (
+        <Bloom
+          luminanceThreshold={1}
+          mipmapBlur={false}
+          intensity={0.8} // Reduced for subtlety and performance
+          radius={0.4}
+        />
+      )}
       {isHigh ? (
         <>
           <DepthOfField
@@ -50,7 +55,7 @@ export function Effects() {
       ) : (
         <></>
       )}
-      <Noise opacity={0.05} />
+      {isUltraLow ? <></> : <Noise opacity={0.05} />}
       <Vignette eskil={false} offset={0.1} darkness={0.5} />
       <ToneMapping mode={ToneMappingMode.ACES_FILMIC} />
     </EffectComposer>
