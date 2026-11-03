@@ -38,13 +38,13 @@ self.onmessage = (e: MessageEvent) => {
       if (n < 0.45) continue;
 
       const distToCenter = Math.sqrt(x * x + z * z)
-      const distToStream = Math.abs(x + z + 15) / Math.sqrt(2)
+      const distToStream = Math.abs(x - z + 15) / Math.sqrt(2)
 
       // Stream plane is 20 wide (+-10 from its axis); excluding only <6 left
       // stalk bases standing in the water once the field shrank to the fog
       // window. Keep stalks fully on the bank.
       if (distToStream < 12) continue
-      if (distToCenter < 5) continue
+      if (distToCenter < 5 || Math.hypot(x, z - 25) < 5) continue
 
       valid = true
       break;

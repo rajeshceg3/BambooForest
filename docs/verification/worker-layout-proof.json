@@ -1,18 +1,18 @@
 [
   {
     "name": "bambooWorker",
-    "count": 4996,
+    "count": 4994,
     "deterministic": true,
     "bankViolations": 0,
-    "within40OfEntry": 273,
-    "hash": "3e05b0ba2377634727f05277a5743cb45f87c6df70e2b5a03005a2304f4e9808"
+    "within40OfEntry": 224,
+    "hash": "15345f397752ced33ed8208cabb29c17f7d0dc39f94970343ab319aa014a3125"
   },
   {
     "name": "grassWorker",
-    "count": 7736,
+    "count": 7708,
     "deterministic": true,
     "bankViolations": 0,
-    "within40OfEntry": 286,
-    "hash": "e4266419e69c8ab3da809f8c7254685cda486bd83f47d052cbff3842e3fa9159"
+    "within40OfEntry": 243,
+    "hash": "4060c8293ce7c9d8a55820838b4928ffd2db7cab63fb0f4e84cfd5c3ca3e36cb"
   }
 ]

@@ -36,7 +36,7 @@ self.onmessage = (e: MessageEvent) => {
 
           if (random() > probability) continue;
 
-          const distToStream = Math.abs(x + z + 15) / Math.sqrt(2)
+          const distToStream = Math.abs(x - z + 15) / Math.sqrt(2)
           const distToCenter = Math.sqrt(x * x + z * z)
 
           if (distToStream < 12) continue
