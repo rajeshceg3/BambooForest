@@ -55,7 +55,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
     return new THREE.MeshStandardMaterial({
         map,
         bumpMap,
-        bumpScale: 4,
+        bumpScale: 0.12,
         roughness: 0.8,   // Slightly smoother for damp look
         metalness: 0.1,
     })

@@ -406,8 +406,8 @@ export function Navigation({
     // Damp towards target
     // Smooth factor (higher = faster)
     const damp = smoothTime
-    rotation.current.theta += (targetRotation.current.theta - rotation.current.theta) * damp * delta
-    rotation.current.phi += (targetRotation.current.phi - rotation.current.phi) * damp * delta
+    rotation.current.theta += (targetRotation.current.theta - rotation.current.theta) * (1 - Math.exp(-damp * delta))
+    rotation.current.phi += (targetRotation.current.phi - rotation.current.phi) * (1 - Math.exp(-damp * delta))
 
     // Hard bounds on the damped values, not just the targets: any path that
     // writes targetRotation (mouse lock, drag fallback, touch) clamps, but a

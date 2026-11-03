@@ -156,6 +156,8 @@ export function Deer(props: any) {
 
   useFrame((stateContext, delta) => {
     if (!groupRef.current) return
+    // Never extrapolate lerps or physics after a stalled frame.
+    delta = Math.min(delta, 0.05)
 
     const t = stateContext.clock.getElapsedTime()
     stateTimer.current -= delta
