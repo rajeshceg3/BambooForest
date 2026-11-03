@@ -18,10 +18,16 @@ const tierRank: Record<QualityTier, number> = {
   HIGH: 2,
 }
 
-// Software rasterizers (SwiftShader, llvmpipe, Basic Render) fill-rate every
-// fragment on the CPU: even the LOW tier saturates the main thread for seconds
-// per drag. Detect them once at boot and floor the whole session at ULTRA_LOW.
-function detectSoftwareRenderer(): boolean {
+// Weak GPUs make the LOW tier's first interaction stall the main thread for
+// tens of seconds (measured on an Intel UHD 620: ~30s per drag before the
+// runtime tripwire could react). Floor those sessions at ULTRA_LOW from boot
+// instead of discovering it mid-drag. Two evidence-based signals:
+//  1. Software rasterizers (SwiftShader, llvmpipe, Basic Render) fill-rate
+//     every fragment on the CPU.
+//  2. Pre-2019 integrated Intel (UHD/HD Graphics 3xx-6xx): measured stalls on
+//     UHD 620 in cloud-browser testing; these parts lack the fill rate for
+//     even the LOW instance counts.
+function detectWeakRenderer(): boolean {
   if (typeof document === 'undefined') return false
   try {
     const canvas = document.createElement('canvas')
@@ -32,13 +38,14 @@ function detectSoftwareRenderer(): boolean {
       ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL))
       : String(gl.getParameter(gl.RENDERER))
     gl.getExtension('WEBGL_lose_context')?.loseContext()
-    return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)
+    if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)) return true
+    return /intel[^)]*\b(uhd|hd)\s+graphics\s+[3-6]\d\d\b/i.test(renderer)
   } catch {
     return false
   }
 }
 
-const IS_SOFTWARE_RENDERER = detectSoftwareRenderer()
+const IS_WEAK_RENDERER = detectWeakRenderer()
 
 function clampTierFromViewport(): QualityTier {
   if (typeof window === 'undefined') return 'MEDIUM'
@@ -49,7 +56,7 @@ function clampTierFromViewport(): QualityTier {
   const renderPixels = width * height * dpr * dpr
 
   // Conservative defaults for mobile/high-DPR devices.
-  if (IS_SOFTWARE_RENDERER) return 'ULTRA_LOW'
+  if (IS_WEAK_RENDERER) return 'ULTRA_LOW'
   if (renderPixels > 5_200_000 || dpr >= 2.75 || width < 900) return 'LOW'
   if (renderPixels > 3_000_000 || dpr >= 2.1 || width < 1280) return 'MEDIUM'
   return 'HIGH'
@@ -67,14 +74,14 @@ export function QualityProvider({ children }: { children: ReactNode }) {
   // Boot conservative: always start the runtime tier at LOW and let measured
   // frame times upgrade it. Booting at the viewport-implied tier builds the
   // full HIGH scene before the sampler can react, which kills weak GPUs.
-  const [runtimeTier, setRuntimeTier] = useState<QualityTier>(IS_SOFTWARE_RENDERER ? 'ULTRA_LOW' : 'LOW')
+  const [runtimeTier, setRuntimeTier] = useState<QualityTier>(IS_WEAK_RENDERER ? 'ULTRA_LOW' : 'LOW')
 
   const frameWindowRef = useRef<number[]>([])
   const cooldownRef = useRef(0)
   const consecutiveSlowRef = useRef(0)
   // Once the sampler trips to ULTRA_LOW, stay there: letting averages climb
   // back up re-builds the heavy scene on a GPU that already choked once.
-  const ultraLowLatchedRef = useRef(IS_SOFTWARE_RENDERER)
+  const ultraLowLatchedRef = useRef(IS_WEAK_RENDERER)
 
   useEffect(() => {
     const onResize = () => {
