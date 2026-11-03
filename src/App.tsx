@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DIAG } from './diag'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, type RootState } from '@react-three/fiber'
 import { Experience } from './components/Experience'
 import { Overlay } from './components/Overlay'
 import { UI } from './components/UI'
@@ -13,8 +13,11 @@ import { useIdle } from './components/useIdle'
 import { QualityProvider, useQuality } from './components/QualityContext'
 import './App.css'
 
-// Stable identity: idle/zone UI rerenders must not reset the active tour camera.
-const ENTRY_CAMERA = { position: [18, 2, -10] as [number, number, number], fov: 45 }
+// Set entry once, not through Canvas.configure on every UI render.
+const initializeCamera = ({ camera }: RootState) => {
+  camera.position.set(18, 2, -10)
+  camera.lookAt(18, 2, -20)
+}
 
 function App() {
   return (
@@ -46,7 +49,7 @@ function AppScene() {
         <TierBodySync />
       <Canvas
           shadows={!DIAG.noShadows}
-          camera={ENTRY_CAMERA}
+          onCreated={initializeCamera}
           dpr={dprRange}
           gl={{ antialias: !DIAG.noAntialias, toneMappingExposure: 1.2 }}
         >
