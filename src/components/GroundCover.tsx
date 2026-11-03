@@ -2,7 +2,7 @@ import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
-export function GroundCover({ count = 100000, castShadow = true }: { count?: number; castShadow?: boolean }) {
+export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }: { count?: number; castShadow?: boolean; spread?: number }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const { camera } = useThree()
   const [matrices, setMatrices] = useState<{ instanceMatrixArray: Float32Array; actualCount: number } | null>(null)
@@ -15,12 +15,12 @@ export function GroundCover({ count = 100000, castShadow = true }: { count?: num
       setMatrices(e.data)
     }
 
-    worker.postMessage({ count })
+    worker.postMessage({ count, spread })
 
     return () => {
       worker.terminate()
     }
-  }, [count])
+  }, [count, spread])
 
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({

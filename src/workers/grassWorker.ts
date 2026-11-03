@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { SimplexNoise } from 'three-stdlib'
 
 self.onmessage = (e: MessageEvent) => {
-  const { count } = e.data
+  const { count, spread = 2000 } = e.data
 
   const array = new Float32Array(count * 16)
   const tempObject = new THREE.Object3D()
@@ -15,8 +15,8 @@ self.onmessage = (e: MessageEvent) => {
 
       // Try to place grass
       for(let attempt = 0; attempt < 5; attempt++) {
-          x = (Math.random() - 0.5) * 2000
-          z = (Math.random() - 0.5) * 2000
+          x = (Math.random() - 0.5) * spread
+          z = (Math.random() - 0.5) * spread
 
           const noiseVal = simplex.noise(x * 0.015, z * 0.015);
           const n = noiseVal * 0.5 + 0.5;

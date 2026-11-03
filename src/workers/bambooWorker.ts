@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { SimplexNoise } from 'three-stdlib'
 
 self.onmessage = (e: MessageEvent) => {
-  const { count } = e.data
+  const { count, spread = 2000 } = e.data
 
   const stalkArray = new Float32Array(count * 16)
   const branchArray = new Float32Array(count * 5 * 16)
@@ -23,8 +23,8 @@ self.onmessage = (e: MessageEvent) => {
     let valid = false
 
     for (let attempt = 0; attempt < 10; attempt++) {
-      x = (Math.random() - 0.5) * 2000
-      z = (Math.random() - 0.5) * 2000
+      x = (Math.random() - 0.5) * spread
+      z = (Math.random() - 0.5) * spread
 
       const noiseVal = simplex.noise(x * 0.015, z * 0.015);
       const n = noiseVal * 0.5 + 0.5;

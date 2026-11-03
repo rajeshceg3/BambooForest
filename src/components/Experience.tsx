@@ -35,7 +35,7 @@ export function Experience({ currentZone, onZoneChange, isIdle = false }: Experi
       <QualityFrameSampler />
       <Navigation enabled={!isActive} />
       <Environment currentZone={currentZone} />
-      <BambooForest currentZone={currentZone} count={DIAG.noBamboo ? 0 : preset.bamboo} castShadow={!DIAG.noShadows && (tier === 'MEDIUM' || tier === 'HIGH')} />
+      <BambooForest currentZone={currentZone} count={DIAG.noBamboo ? 0 : preset.bamboo} spread={BAMBOO_SPREAD_BY_TIER[tier]} castShadow={!DIAG.noShadows && (tier === 'MEDIUM' || tier === 'HIGH')} />
       {!DIAG.noCritters && (
         <>
           <Fireflies count={preset.fireflies} isIdle={isIdle} />
@@ -64,6 +64,17 @@ interface ZoneLodPreset {
   butterflies: number
   leaves: number
   leavesIdle: number
+}
+
+// Scatter radius (square side) for bamboo placement per tier. LOW tiers cut
+// stalk counts 3-6x for perf; scattering the survivors over the full 2000-unit
+// map left the visible forest empty (fog hides everything past ~100u anyway),
+// so shrink the field to keep perceived density. Cost-neutral: same instances.
+const BAMBOO_SPREAD_BY_TIER: Record<QualityTier, number> = {
+  ULTRA_LOW: 500,
+  LOW: 800,
+  MEDIUM: 2000,
+  HIGH: 2000,
 }
 
 const zoneLodPresets: Record<Zone, Record<QualityTier, ZoneLodPreset>> = {

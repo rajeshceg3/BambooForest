@@ -19,6 +19,14 @@ const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
   LOW: 12000,
 }
 
+// Same field-shrink as bamboo: keep surviving blades inside the fog window.
+const COVER_SPREAD_BY_TIER: Record<QualityTier, number> = {
+  ULTRA_LOW: 500,
+  LOW: 800,
+  MEDIUM: 2000,
+  HIGH: 2000,
+}
+
 // Shadow budget per tier. A fixed 4096 shadow map with PCSS soft shadows and
 // every instanced mesh casting was enough to kill weak GPUs on first render.
 const SHADOW_MAP_BY_TIER: Record<QualityTier, number> = {
@@ -171,7 +179,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
       </mesh>
 
       {/* Ground Cover - Grass */}
-      <GroundCover count={DIAG.noCover ? 0 : COVER_COUNT_BY_TIER[tier]} castShadow={!DIAG.noShadows && tier === 'HIGH'} />
+      <GroundCover count={DIAG.noCover ? 0 : COVER_COUNT_BY_TIER[tier]} spread={COVER_SPREAD_BY_TIER[tier]} castShadow={!DIAG.noShadows && tier === 'HIGH'} />
     </>
   )
 }

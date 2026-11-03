@@ -6,6 +6,7 @@ import { Zone } from '../types'
 interface BambooForestProps {
   currentZone?: Zone
   count?: number
+  spread?: number
   castShadow?: boolean
 }
 
@@ -42,7 +43,7 @@ vec3 getWindOffset(vec3 pos, float time, vec3 camPos) {
 }
 `;
 
-export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow = true }: BambooForestProps) {
+export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow = true, spread = 2000 }: BambooForestProps) {
   const meshRef = useRef<THREE.InstancedMesh | null>(null)
   const branchMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
@@ -58,12 +59,12 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
       setMatrices(e.data)
     }
 
-    worker.postMessage({ count })
+    worker.postMessage({ count, spread })
 
     return () => {
       worker.terminate()
     }
-  }, [count])
+  }, [count, spread])
 
   // Custom material setup for Bamboo Stalks
   const material = useMemo(() => {

@@ -257,11 +257,15 @@ export function Stream() {
       <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[20, 2000, 4, 64]} />
         {cheapWater ? (
+          // Cheap water: no transmission pass, but keep it alive - deeper tint,
+          // higher opacity, low roughness + a little metalness so the forest
+          // env-map reflection breaks up the flat pale sheet.
           <meshStandardMaterial
-            color="#8fbcd4"
+            color="#7fb0c9"
             transparent
-            opacity={0.55}
-            roughness={0.3}
+            opacity={0.7}
+            roughness={0.15}
+            metalness={0.2}
           />
         ) : (
           <MeshTransmissionMaterial

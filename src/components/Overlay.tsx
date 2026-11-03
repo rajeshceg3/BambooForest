@@ -92,8 +92,11 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
 
       {/* Idle Reward Poetry (Fades in when Idle) */}
       <div className={`absolute inset-0 flex flex-col items-center justify-end pb-32 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle && !zenMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <div key={`poem-container-${currentZone}`} className="text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
-            <p className={`font-serif italic font-light text-white/55 text-sm md:text-base leading-[2.5] md:leading-[3] tracking-[0.3em] md:tracking-[0.4em] whitespace-pre-line [text-shadow:0_1px_10px_rgba(0,0,0,0.65)] hover:text-white/80 transition-all duration-500 ${isFading ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'} animate-blur-in`}>
+        <div key={`poem-container-${currentZone}`} className="relative text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
+            {/* Soft dark scrim behind the poem - same treatment as the zone
+                description, keeps ink legible over bright water/fog */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[34rem] max-w-[90vw] h-56 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-black/60 via-black/30 to-transparent blur-xl rounded-full pointer-events-none"></div>
+            <p className={`relative font-serif italic font-normal text-white/85 text-base md:text-lg leading-[2.2] md:leading-[2.4] tracking-[0.15em] md:tracking-[0.2em] whitespace-pre-line [text-shadow:0_1px_8px_rgba(0,0,0,0.8)] hover:text-white transition-all duration-500 ${isFading ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'} animate-blur-in`}>
                 {zoneConfig[currentZone].poems[poemIndex]}
             </p>
         </div>
