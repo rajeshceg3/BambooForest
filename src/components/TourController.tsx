@@ -10,7 +10,7 @@ interface TourControllerProps {
 }
 
 export function TourController({ onZoneChange }: TourControllerProps) {
-  const { camera } = useThree()
+  const { camera, gl } = useThree()
   const { isActive, currentStep, currentStepIndex, setTransitioning } = useTour()
 
   // We use a ref to track where the camera should be looking
@@ -66,6 +66,10 @@ export function TourController({ onZoneChange }: TourControllerProps) {
   }, [currentStepIndex, isActive, camera, currentStep, onZoneChange, setTransitioning])
 
   useFrame((state) => {
+    // Read-only verification markers, no alternate rendering mode.
+    gl.domElement.dataset.cameraPosition = camera.position.toArray().map(v => v.toFixed(2)).join(',')
+    gl.domElement.dataset.tourActive = String(isActive)
+    gl.domElement.dataset.tourStep = String(currentStepIndex)
     if (!isActive) return
 
     // Apply Drift (Breathing effect)
