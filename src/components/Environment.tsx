@@ -5,6 +5,7 @@ import * as THREE from 'three'
 import gsap from 'gsap'
 import { Zone } from '../types'
 import { GroundCover } from './GroundCover'
+import { bakeGroundTextures } from '../utils/groundTextures'
 import { useQuality, type QualityTier } from './QualityContext'
 import { DIAG } from '../diag'
 
@@ -39,112 +40,17 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
   // Custom Ground Material with Procedural Texturing
   const groundMaterial = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-        color: '#2e3a24', // Darker base
+    // The fbm noise is static - bake it once into textures instead of
+    // evaluating ~20 simplex samples per fragment every frame (the change
+    // that took the UHD 620 test bed from ~1 fps to interactive).
+    const { map, bumpMap } = bakeGroundTextures(512)
+    return new THREE.MeshStandardMaterial({
+        map,
+        bumpMap,
+        bumpScale: 4,
         roughness: 0.8,   // Slightly smoother for damp look
         metalness: 0.1,
     })
-
-    mat.onBeforeCompile = (shader) => {
-        shader.vertexShader = `
-          varying vec3 vWorldPosition;
-          ${shader.vertexShader}
-        `
-        shader.vertexShader = shader.vertexShader.replace(
-          '#include <begin_vertex>',
-          `
-          #include <begin_vertex>
-          vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
-          `
-        )
-
-        shader.fragmentShader = `
-          varying vec3 vWorldPosition;
-
-          // Simplex 2D noise
-          vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
-          float snoise(vec2 v){
-            const vec4 C = vec4(0.211324865405187, 0.366025403784439,
-                     -0.577350269189626, 0.024390243902439);
-            vec2 i  = floor(v + dot(v, C.yy) );
-            vec2 x0 = v -   i + dot(i, C.xx);
-            vec2 i1;
-            i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
-            vec4 x12 = x0.xyxy + C.xxzz;
-            x12.xy -= i1;
-            i = mod(i, 289.0);
-            vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 ))
-            + i.x + vec3(0.0, i1.x, 1.0 ));
-            vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
-            m = m*m ;
-            m = m*m ;
-            vec3 x = 2.0 * fract(p * C.www) - 1.0;
-            vec3 h = abs(x) - 0.5;
-            vec3 ox = floor(x + 0.5);
-            vec3 a0 = x - ox;
-            m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
-            vec3 g;
-            g.x  = a0.x  * x0.x  + h.x  * x0.y;
-            g.yz = a0.yz * x12.xz + h.yz * x12.yw;
-            return 130.0 * dot(m, g);
-          }
-
-          // FBM for more detail
-          float fbm(vec2 x) {
-              float v = 0.0;
-              float a = 0.5;
-              vec2 shift = vec2(100.0);
-              mat2 rot = mat2(cos(0.5), sin(0.5), -sin(0.5), cos(0.50));
-              for (int i = 0; i < 5; ++i) {
-                  v += a * snoise(x);
-                  x = rot * x * 2.0 + shift;
-                  a *= 0.5;
-              }
-              return v;
-          }
-
-          ${shader.fragmentShader}
-        `
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <color_fragment>',
-          `
-          #include <color_fragment>
-
-          float noise = fbm(vWorldPosition.xz * 0.1);
-          float noiseDetail = fbm(vWorldPosition.xz * 0.5);
-
-          vec3 mossColor = vec3(0.12, 0.20, 0.08); // Darker moss
-          vec3 dirtColor = vec3(0.20, 0.16, 0.12); // Darker dirt
-          vec3 dryColor = vec3(0.28, 0.24, 0.16); // Darker dry patches
-
-          float mixFactor = smoothstep(-0.2, 0.6, noise);
-          float dryFactor = smoothstep(0.4, 0.8, noiseDetail);
-
-          vec3 baseColor = mix(mossColor, dirtColor, mixFactor);
-          baseColor = mix(baseColor, dryColor, dryFactor * 0.5);
-
-          diffuseColor.rgb = baseColor;
-          `
-        )
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-            '#include <normal_fragment_maps>',
-            `
-            #include <normal_fragment_maps>
-
-            // Perturb normal based on noise
-            float nHeight = fbm(vWorldPosition.xz * 1.5);
-            float nHeightX = fbm(vWorldPosition.xz * 1.5 + vec2(0.01, 0.0));
-            float nHeightZ = fbm(vWorldPosition.xz * 1.5 + vec2(0.0, 0.01));
-
-            // Calculate gradient
-            vec3 bumpNormal = normalize(vec3(nHeight - nHeightX, 0.1, nHeight - nHeightZ));
-            normal = normalize(normal + bumpNormal * 0.8);
-            `
-        )
-    }
-    return mat
   }, [])
 
   useEffect(() => {
