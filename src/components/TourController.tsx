@@ -9,6 +9,7 @@ interface TourControllerProps { onZoneChange: (zone: Zone) => void }
 export function TourController({ onZoneChange }: TourControllerProps) {
   const { camera, gl } = useThree()
   const { isActive, currentStep, currentStepIndex, setTransitioning } = useTour()
+  const reducedMotion = useRef(window.matchMedia('(prefers-reduced-motion: reduce)'))
   const target = useRef(new THREE.Vector3())
   const displayedTarget = useRef(new THREE.Vector3())
   const transition = useRef<{
@@ -39,7 +40,7 @@ export function TourController({ onZoneChange }: TourControllerProps) {
       target.current.lerpVectors(motion.fromTarget, motion.toTarget, eased)
       if (p === 1 && !motion.complete) { motion.complete = true; setTransitioning(false) }
       displayedTarget.current.copy(target.current)
-      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      if (!reducedMotion.current.matches) {
         displayedTarget.current.x += Math.sin(state.clock.elapsedTime * 0.5) * 0.2
         displayedTarget.current.y += Math.cos(state.clock.elapsedTime * 0.3) * 0.2
       }
