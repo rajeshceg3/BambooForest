@@ -35,7 +35,7 @@ export function Experience({ currentZone, onZoneChange, isIdle = false }: Experi
       <QualityFrameSampler />
       <Navigation enabled={!isActive} />
       <Environment currentZone={currentZone} />
-      <BambooForest currentZone={currentZone} count={DIAG.noBamboo ? 80 : preset.bamboo} castShadow={!DIAG.noShadows && (tier === 'MEDIUM' || tier === 'HIGH')} />
+      <BambooForest currentZone={currentZone} count={DIAG.noBamboo ? 0 : preset.bamboo} castShadow={!DIAG.noShadows && (tier === 'MEDIUM' || tier === 'HIGH')} />
       {!DIAG.noCritters && (
         <>
           <Fireflies count={preset.fireflies} isIdle={isIdle} />
