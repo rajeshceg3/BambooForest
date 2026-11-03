@@ -260,8 +260,8 @@ export function Stream() {
           <meshStandardMaterial
             color="#8fbcd4"
             transparent
-            opacity={0.72}
-            roughness={0.15}
+            opacity={0.55}
+            roughness={0.3}
           />
         ) : (
           <MeshTransmissionMaterial
