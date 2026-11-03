@@ -517,16 +517,19 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         meshRef.current.count = matrices.stalkInstances.length / 16
         meshRef.current.instanceMatrix.array.set(matrices.stalkInstances)
         meshRef.current.instanceMatrix.needsUpdate = true
+        meshRef.current.computeBoundingSphere()
     }
     if (branchMeshRef.current) {
         branchMeshRef.current.count = matrices.branchInstances.length / 16
         branchMeshRef.current.instanceMatrix.array.set(matrices.branchInstances)
         branchMeshRef.current.instanceMatrix.needsUpdate = true
+        branchMeshRef.current.computeBoundingSphere()
     }
     if (leafMeshRef.current) {
         leafMeshRef.current.count = matrices.leafInstances.length / 16
         leafMeshRef.current.instanceMatrix.array.set(matrices.leafInstances)
         leafMeshRef.current.instanceMatrix.needsUpdate = true
+        leafMeshRef.current.computeBoundingSphere()
     }
   }, [matrices])
 
@@ -565,7 +568,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
             castShadow={castShadow}
             receiveShadow
         >
-            <cylinderGeometry args={[0.08, 0.15, 8, 1]} />
+            <cylinderGeometry args={[0.08, 0.15, 8, 8]} />
             <primitive object={material} attach="material" />
         </instancedMesh>
 

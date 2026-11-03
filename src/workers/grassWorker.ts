@@ -3,10 +3,16 @@ import { SimplexNoise } from 'three-stdlib'
 
 self.onmessage = (e: MessageEvent) => {
   const { count, spread = 2000 } = e.data
+  // Repeatable placement, including the noise permutation table.
+  let seed = 1931
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
+    return seed / 4294967296
+  }
 
   const array = new Float32Array(count * 16)
   const tempObject = new THREE.Object3D()
-  const simplex = new SimplexNoise()
+  const simplex = new SimplexNoise({ random })
   let validCount = 0
 
   for (let i = 0; i < count; i++) {
@@ -15,8 +21,8 @@ self.onmessage = (e: MessageEvent) => {
 
       // Try to place grass
       for(let attempt = 0; attempt < 5; attempt++) {
-          x = (Math.random() - 0.5) * spread
-          z = (Math.random() - 0.5) * spread
+          x = (random() - 0.5) * spread
+          z = (random() - 0.5) * spread
 
           const noiseVal = simplex.noise(x * 0.015, z * 0.015);
           const n = noiseVal * 0.5 + 0.5;
@@ -28,12 +34,12 @@ self.onmessage = (e: MessageEvent) => {
               probability = 0.9;
           }
 
-          if (Math.random() > probability) continue;
+          if (random() > probability) continue;
 
-          const distToStream = Math.abs(x + z) / Math.sqrt(2)
+          const distToStream = Math.abs(x + z + 15) / Math.sqrt(2)
           const distToCenter = Math.sqrt(x * x + z * z)
 
-          if (distToStream < 2) continue
+          if (distToStream < 12) continue
           if (distToCenter < 2) continue
 
           valid = true;
@@ -42,12 +48,12 @@ self.onmessage = (e: MessageEvent) => {
 
       if (!valid) continue;
 
-      const scale = 0.6 + Math.random() * 0.8
+      const scale = 0.6 + random() * 0.8
       tempObject.position.set(x, 0, z)
 
-      tempObject.rotation.y = Math.random() * Math.PI * 2
-      tempObject.rotation.x = (Math.random() - 0.5) * 0.3
-      tempObject.rotation.z = (Math.random() - 0.5) * 0.3
+      tempObject.rotation.y = random() * Math.PI * 2
+      tempObject.rotation.x = (random() - 0.5) * 0.3
+      tempObject.rotation.z = (random() - 0.5) * 0.3
 
       tempObject.scale.set(scale, scale, scale)
       tempObject.updateMatrix()
