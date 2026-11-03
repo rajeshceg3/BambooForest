@@ -39,7 +39,10 @@ function detectWeakRenderer(): boolean {
       : String(gl.getParameter(gl.RENDERER))
     gl.getExtension('WEBGL_lose_context')?.loseContext()
     if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)) return true
-    return /intel[^)]*\b(uhd|hd)\s+graphics\s+[3-6]\d\d\b/i.test(renderer)
+    // ANGLE strings carry two parenthesized segments ("ANGLE (Intel, Intel(R)
+    // UHD Graphics 620 (...))"), so match the vendor and the model tier
+    // independently rather than with one span.
+    return /intel/i.test(renderer) && /\b(uhd|hd)\s+graphics\s+[3-6]\d\d\b/i.test(renderer)
   } catch {
     return false
   }
