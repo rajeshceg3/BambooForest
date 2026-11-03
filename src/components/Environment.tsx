@@ -13,7 +13,7 @@ import { DIAG } from '../diag'
 // device was the heaviest single draw in the scene and the prime suspect behind
 // mobile crashes (provisional diagnosis).
 const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
-  ULTRA_LOW: 3000,
+  ULTRA_LOW: 8000,
   HIGH: 60000,
   MEDIUM: 30000,
   LOW: 12000,
@@ -21,8 +21,8 @@ const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
 
 // Same field-shrink as bamboo: keep surviving blades inside the fog window.
 const COVER_SPREAD_BY_TIER: Record<QualityTier, number> = {
-  ULTRA_LOW: 500,
-  LOW: 800,
+  ULTRA_LOW: 350,
+  LOW: 600,
   MEDIUM: 2000,
   HIGH: 2000,
 }

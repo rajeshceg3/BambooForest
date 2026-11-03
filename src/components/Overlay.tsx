@@ -95,8 +95,8 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
         <div key={`poem-container-${currentZone}`} className="relative text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
             {/* Soft dark scrim behind the poem - same treatment as the zone
                 description, keeps ink legible over bright water/fog */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[34rem] max-w-[90vw] h-56 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-black/60 via-black/30 to-transparent blur-xl rounded-full pointer-events-none"></div>
-            <p className={`relative font-serif italic font-normal text-white/85 text-base md:text-lg leading-[2.2] md:leading-[2.4] tracking-[0.15em] md:tracking-[0.2em] whitespace-pre-line [text-shadow:0_1px_8px_rgba(0,0,0,0.8)] hover:text-white transition-all duration-500 ${isFading ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'} animate-blur-in`}>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] max-w-[92vw] h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-black/75 via-black/45 to-transparent blur-xl rounded-full pointer-events-none"></div>
+            <p className={`relative font-serif italic font-normal text-white/95 text-base md:text-lg leading-[2.2] md:leading-[2.4] tracking-[0.15em] md:tracking-[0.2em] whitespace-pre-line [text-shadow:0_1px_8px_rgba(0,0,0,0.8)] hover:text-white transition-all duration-500 ${isFading ? 'opacity-0 scale-95 blur-sm' : 'opacity-100 scale-100 blur-0'} animate-blur-in`}>
                 {zoneConfig[currentZone].poems[poemIndex]}
             </p>
         </div>
