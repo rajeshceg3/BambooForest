@@ -44,7 +44,7 @@ self.onmessage = (e: MessageEvent) => {
       // stalk bases standing in the water once the field shrank to the fog
       // window. Keep stalks fully on the bank.
       if (distToStream < 12) continue
-      if (distToCenter < 5 || Math.hypot(x, z - 25) < 5) continue
+      if (distToCenter < 5 || Math.hypot(x - 12, z) < 5) continue
 
       valid = true
       break;
