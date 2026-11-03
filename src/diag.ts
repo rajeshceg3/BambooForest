@@ -19,4 +19,9 @@ export const DIAG = {
   noEffects: flag('noeffects') || (minimal && !withList.has('effects')),
   noCritters: flag('nocritters') || (minimal && !withList.has('critters')),
   noStream: flag('nostream') || (minimal && !withList.has('stream')),
+  // Base-pipeline isolation flags (standalone; minimal keeps its meaning for comparability):
+  noEnv: flag('noenv'),
+  noAntialias: flag('noantialias'),
+  noLantern: flag('nolantern'),
+  flatGround: flag('flatground'),
 }

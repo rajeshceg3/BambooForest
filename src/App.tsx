@@ -36,7 +36,7 @@ function AppScene() {
           shadows={!DIAG.noShadows}
           camera={{ position: [0, 5, 25], fov: 45 }}
           dpr={dprRange}
-          gl={{ antialias: true, toneMappingExposure: 1.2 }}
+          gl={{ antialias: !DIAG.noAntialias, toneMappingExposure: 1.2 }}
         >
           {/* We pass onZoneChange to Experience so the TourController can update the environment */}
           <Experience currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} />

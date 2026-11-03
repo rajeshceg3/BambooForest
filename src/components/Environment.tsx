@@ -251,7 +251,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
         <orthographicCamera attach="shadow-camera" args={[-65, 65, 65, -65]} />
       </directionalLight>
 
-      <EnvironmentDrei preset="forest" background={false} />
+      {!DIAG.noEnv && <EnvironmentDrei preset="forest" background={false} />}
 
       {/* Ground - Custom Shader Material */}
       <mesh
@@ -260,7 +260,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
         receiveShadow
         position={[0, -0.01, 0]}
       >
-        <planeGeometry args={[2000, 2000, 256, 256]} />
+        <planeGeometry args={DIAG.flatGround ? [2000, 2000, 1, 1] : [2000, 2000, 256, 256]} />
         <primitive object={groundMaterial} attach="material" />
       </mesh>
 

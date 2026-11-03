@@ -48,7 +48,7 @@ export function Experience({ currentZone, onZoneChange, isIdle = false }: Experi
         </>
       )}
       {!DIAG.noStream && <Stream />}
-      <StoneLantern position={[10, 0, 10]} rotation={[0, Math.PI / 4, 0]} />
+      {!DIAG.noLantern && <StoneLantern position={[10, 0, 10]} rotation={[0, Math.PI / 4, 0]} />}
       {!DIAG.noEffects && <Effects />}
       <TourController onZoneChange={onZoneChange} />
     </>
