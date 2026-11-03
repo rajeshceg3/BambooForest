@@ -12,6 +12,7 @@ import { DIAG } from '../diag'
 // device was the heaviest single draw in the scene and the prime suspect behind
 // mobile crashes (provisional diagnosis).
 const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
+  ULTRA_LOW: 3000,
   HIGH: 60000,
   MEDIUM: 30000,
   LOW: 12000,
@@ -20,6 +21,7 @@ const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
 // Shadow budget per tier. A fixed 4096 shadow map with PCSS soft shadows and
 // every instanced mesh casting was enough to kill weak GPUs on first render.
 const SHADOW_MAP_BY_TIER: Record<QualityTier, number> = {
+  ULTRA_LOW: 512,
   HIGH: 4096,
   MEDIUM: 2048,
   LOW: 1024,
@@ -231,7 +233,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
   return (
     <>
-      {tier !== 'LOW' && !DIAG.noShadows && (
+      {!DIAG.noShadows && (tier === 'MEDIUM' || tier === 'HIGH') && (
         <SoftShadows size={tier === 'HIGH' ? 25 : 20} focus={0.8} samples={tier === 'HIGH' ? 16 : 8} />
       )}
       <ambientLight ref={ambientLightRef} intensity={0.4} color="#ffffff" />

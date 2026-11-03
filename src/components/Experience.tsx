@@ -35,7 +35,7 @@ export function Experience({ currentZone, onZoneChange, isIdle = false }: Experi
       <QualityFrameSampler />
       <Navigation enabled={!isActive} />
       <Environment currentZone={currentZone} />
-      <BambooForest currentZone={currentZone} count={DIAG.noBamboo ? 80 : preset.bamboo} castShadow={!DIAG.noShadows && tier !== 'LOW'} />
+      <BambooForest currentZone={currentZone} count={DIAG.noBamboo ? 80 : preset.bamboo} castShadow={!DIAG.noShadows && (tier === 'MEDIUM' || tier === 'HIGH')} />
       {!DIAG.noCritters && (
         <>
           <Fireflies count={preset.fireflies} isIdle={isIdle} />
@@ -47,7 +47,7 @@ export function Experience({ currentZone, onZoneChange, isIdle = false }: Experi
           <Butterflies count={preset.butterflies} />
         </>
       )}
-      <Stream />
+      {!DIAG.noStream && <Stream />}
       <StoneLantern position={[10, 0, 10]} rotation={[0, Math.PI / 4, 0]} />
       {!DIAG.noEffects && <Effects />}
       <TourController onZoneChange={onZoneChange} />
@@ -68,22 +68,26 @@ interface ZoneLodPreset {
 
 const zoneLodPresets: Record<Zone, Record<QualityTier, ZoneLodPreset>> = {
   GROVE: {
+    ULTRA_LOW: { bamboo: 2500, dust: 250, dustIdle: 500, fireflies: 25, birds: 3, butterflies: 2, leaves: 6, leavesIdle: 12 },
     HIGH: { bamboo: 15000, dust: 2000, dustIdle: 4000, fireflies: 150, birds: 15, butterflies: 8, leaves: 60, leavesIdle: 120 },
     MEDIUM: { bamboo: 11500, dust: 1400, dustIdle: 2600, fireflies: 105, birds: 11, butterflies: 6, leaves: 40, leavesIdle: 80 },
     LOW: { bamboo: 8500, dust: 900, dustIdle: 1800, fireflies: 70, birds: 8, butterflies: 4, leaves: 20, leavesIdle: 40 },
   },
   CLEARING: {
+    ULTRA_LOW: { bamboo: 2200, dust: 220, dustIdle: 450, fireflies: 22, birds: 3, butterflies: 2, leaves: 5, leavesIdle: 10 },
     HIGH: { bamboo: 12000, dust: 1600, dustIdle: 3200, fireflies: 120, birds: 14, butterflies: 10, leaves: 40, leavesIdle: 80 },
     MEDIUM: { bamboo: 9600, dust: 1200, dustIdle: 2200, fireflies: 85, birds: 10, butterflies: 7, leaves: 25, leavesIdle: 50 },
     LOW: { bamboo: 7000, dust: 800, dustIdle: 1600, fireflies: 60, birds: 7, butterflies: 5, leaves: 15, leavesIdle: 30 },
   },
   STREAM: {
+    ULTRA_LOW: { bamboo: 2400, dust: 240, dustIdle: 480, fireflies: 24, birds: 3, butterflies: 2, leaves: 4, leavesIdle: 8 },
     HIGH: { bamboo: 13000, dust: 1500, dustIdle: 2800, fireflies: 130, birds: 16, butterflies: 9, leaves: 30, leavesIdle: 60 },
     MEDIUM: { bamboo: 10100, dust: 1100, dustIdle: 2100, fireflies: 92, birds: 12, butterflies: 7, leaves: 20, leavesIdle: 40 },
     LOW: { bamboo: 7600, dust: 760, dustIdle: 1450, fireflies: 65, birds: 8, butterflies: 5, leaves: 10, leavesIdle: 20 },
   },
   // Preserve dense ambience in deep forest even on lower tiers for perceptual richness.
   DEEP_FOREST: {
+    ULTRA_LOW: { bamboo: 3500, dust: 400, dustIdle: 800, fireflies: 40, birds: 4, butterflies: 3, leaves: 12, leavesIdle: 24 },
     HIGH: { bamboo: 18000, dust: 2600, dustIdle: 4800, fireflies: 250, birds: 18, butterflies: 10, leaves: 100, leavesIdle: 200 },
     MEDIUM: { bamboo: 15000, dust: 2100, dustIdle: 3800, fireflies: 205, birds: 14, butterflies: 8, leaves: 70, leavesIdle: 140 },
     LOW: { bamboo: 12500, dust: 1600, dustIdle: 3000, fireflies: 165, birds: 11, butterflies: 6, leaves: 40, leavesIdle: 80 },
