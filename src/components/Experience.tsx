@@ -42,8 +42,8 @@ export function Experience({ currentZone, onZoneChange, isIdle = false }: Experi
           <DustMotes count={dustCount} />
           <FallingLeaves count={isIdle ? preset.leavesIdle : preset.leaves} />
           <Birds count={preset.birds} />
-          <Deer position={[-5, 0, -5]} rotation={[0, Math.PI / 3, 0]} />
-          <Crane position={[-12, 0, 5]} rotation={[0, -Math.PI / 4, 0]} />
+          <Deer position={[9, 0, -8]} rotation={[0, Math.PI / 3, 0]} />
+          <Crane position={[-2, 0, -10]} rotation={[0, -Math.PI / 4, 0]} />
           <Butterflies count={preset.butterflies} />
         </>
       )}

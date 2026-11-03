@@ -96,7 +96,7 @@ export interface BakedGround {
   bumpMap: THREE.CanvasTexture
 }
 
-const WORLD_SIZE = 2000
+const WORLD_SIZE = 32
 
 export function bakeGroundTextures(size = 512): BakedGround {
   const colorCanvas = document.createElement('canvas')
@@ -152,5 +152,9 @@ export function bakeGroundTextures(size = 512): BakedGround {
   const map = new THREE.CanvasTexture(colorCanvas)
   map.colorSpace = THREE.SRGBColorSpace
   const bumpMap = new THREE.CanvasTexture(bumpCanvas)
+  for (const texture of [map, bumpMap]) {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    texture.repeat.set(2000 / WORLD_SIZE, 2000 / WORLD_SIZE)
+  }
   return { map, bumpMap }
 }

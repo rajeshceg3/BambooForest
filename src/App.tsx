@@ -43,7 +43,7 @@ function AppScene() {
         <TierBodySync />
       <Canvas
           shadows={!DIAG.noShadows}
-          camera={{ position: [12, 2, 0], fov: 45 }}
+          camera={{ position: [18, 2, -10], fov: 45 }}
           dpr={dprRange}
           gl={{ antialias: !DIAG.noAntialias, toneMappingExposure: 1.2 }}
         >
