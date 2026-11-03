@@ -15,6 +15,7 @@ import { Zone } from '../types'
 import { DustMotes } from './DustMotes'
 import { FallingLeaves } from './FallingLeaves'
 import { QualityFrameSampler, useQuality, type QualityTier } from './QualityContext'
+import { DIAG } from '../diag'
 
 interface ExperienceProps {
   currentZone: Zone
@@ -34,17 +35,21 @@ export function Experience({ currentZone, onZoneChange, isIdle = false }: Experi
       <QualityFrameSampler />
       <Navigation enabled={!isActive} />
       <Environment currentZone={currentZone} />
-      <BambooForest currentZone={currentZone} count={preset.bamboo} castShadow={tier === 'MEDIUM' || tier === 'HIGH'} />
-      <Fireflies count={preset.fireflies} isIdle={isIdle} />
-      <DustMotes count={dustCount} />
-      <FallingLeaves count={isIdle ? preset.leavesIdle : preset.leaves} />
-      <Birds count={preset.birds} />
-      <Stream />
-      <StoneLantern position={[10, 0, 10]} rotation={[0, Math.PI / 4, 0]} />
-      <Deer position={[-5, 0, -5]} rotation={[0, Math.PI / 3, 0]} />
-      <Crane position={[-12, 0, 5]} rotation={[0, -Math.PI / 4, 0]} />
-      <Butterflies count={preset.butterflies} />
-      <Effects />
+      <BambooForest currentZone={currentZone} count={DIAG.noBamboo ? 0 : preset.bamboo} castShadow={!DIAG.noShadows && (tier === 'MEDIUM' || tier === 'HIGH')} />
+      {!DIAG.noCritters && (
+        <>
+          <Fireflies count={preset.fireflies} isIdle={isIdle} />
+          <DustMotes count={dustCount} />
+          <FallingLeaves count={isIdle ? preset.leavesIdle : preset.leaves} />
+          <Birds count={preset.birds} />
+          <Deer position={[-5, 0, -5]} rotation={[0, Math.PI / 3, 0]} />
+          <Crane position={[-12, 0, 5]} rotation={[0, -Math.PI / 4, 0]} />
+          <Butterflies count={preset.butterflies} />
+        </>
+      )}
+      {!DIAG.noStream && <Stream />}
+      {!DIAG.noLantern && <StoneLantern position={[10, 0, 10]} rotation={[0, Math.PI / 4, 0]} />}
+      {!DIAG.noEffects && <Effects />}
       <TourController onZoneChange={onZoneChange} />
     </>
   )

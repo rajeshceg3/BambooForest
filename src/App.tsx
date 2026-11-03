@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { DIAG } from './diag'
 import { Canvas } from '@react-three/fiber'
 import { Experience } from './components/Experience'
 import { Overlay } from './components/Overlay'
@@ -20,6 +21,14 @@ function App() {
   )
 }
 
+function TierBodySync() {
+  const { tier } = useQuality()
+  useEffect(() => {
+    document.body.dataset.tier = tier
+  }, [tier])
+  return null
+}
+
 function AppScene() {
   const [currentZone, setCurrentZone] = useState<Zone>('GROVE')
   const [audioEnabled, setAudioEnabled] = useState(false)
@@ -31,11 +40,12 @@ function AppScene() {
     <TourProvider>
       <div className="relative w-full h-screen overflow-hidden bg-black">
         <div className="absolute inset-0 pointer-events-none z-[200] bg-grain opacity-[0.05] mix-blend-overlay"></div>
-        <Canvas
-          shadows
+        <TierBodySync />
+      <Canvas
+          shadows={!DIAG.noShadows}
           camera={{ position: [0, 5, 25], fov: 45 }}
           dpr={dprRange}
-          gl={{ antialias: true, toneMappingExposure: 1.2 }}
+          gl={{ antialias: !DIAG.noAntialias, toneMappingExposure: 1.2 }}
         >
           {/* We pass onZoneChange to Experience so the TourController can update the environment */}
           <Experience currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} />

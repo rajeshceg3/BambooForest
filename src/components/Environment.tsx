@@ -6,6 +6,7 @@ import gsap from 'gsap'
 import { Zone } from '../types'
 import { GroundCover } from './GroundCover'
 import { useQuality, type QualityTier } from './QualityContext'
+import { DIAG } from '../diag'
 
 // Ground-cover density per quality tier. A flat 100k instanced blades on every
 // device was the heaviest single draw in the scene and the prime suspect behind
@@ -232,14 +233,14 @@ export function Environment({ currentZone }: EnvironmentProps) {
 
   return (
     <>
-      {(tier === 'MEDIUM' || tier === 'HIGH') && (
+      {!DIAG.noShadows && (tier === 'MEDIUM' || tier === 'HIGH') && (
         <SoftShadows size={tier === 'HIGH' ? 25 : 20} focus={0.8} samples={tier === 'HIGH' ? 16 : 8} />
       )}
       <ambientLight ref={ambientLightRef} intensity={0.4} color="#ffffff" />
 
       <directionalLight
         ref={directionalLightRef}
-        castShadow
+        castShadow={!DIAG.noShadows}
         position={[15, 25, 10]}
         intensity={1.2}
         shadow-mapSize={[SHADOW_MAP_BY_TIER[tier], SHADOW_MAP_BY_TIER[tier]]}
@@ -250,7 +251,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
         <orthographicCamera attach="shadow-camera" args={[-65, 65, 65, -65]} />
       </directionalLight>
 
-      <EnvironmentDrei preset="forest" background={false} />
+      {!DIAG.noEnv && <EnvironmentDrei preset="forest" background={false} />}
 
       {/* Ground - Custom Shader Material */}
       <mesh
@@ -259,12 +260,12 @@ export function Environment({ currentZone }: EnvironmentProps) {
         receiveShadow
         position={[0, -0.01, 0]}
       >
-        <planeGeometry args={[2000, 2000, 256, 256]} />
+        <planeGeometry args={DIAG.flatGround ? [2000, 2000, 1, 1] : [2000, 2000, 256, 256]} />
         <primitive object={groundMaterial} attach="material" />
       </mesh>
 
       {/* Ground Cover - Grass */}
-      <GroundCover count={COVER_COUNT_BY_TIER[tier]} castShadow={tier === 'HIGH'} />
+      <GroundCover count={DIAG.noCover ? 0 : COVER_COUNT_BY_TIER[tier]} castShadow={!DIAG.noShadows && tier === 'HIGH'} />
     </>
   )
 }

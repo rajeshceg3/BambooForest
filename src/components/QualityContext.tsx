@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { DIAG } from '../diag'
 
 export type QualityTier = 'ULTRA_LOW' | 'LOW' | 'MEDIUM' | 'HIGH'
 
@@ -73,11 +74,11 @@ function dprRangeForTier(tier: QualityTier): [number, number] {
 }
 
 export function QualityProvider({ children }: { children: ReactNode }) {
-  const [viewportTier, setViewportTier] = useState<QualityTier>(clampTierFromViewport)
+  const [viewportTier, setViewportTier] = useState<QualityTier>(() => DIAG.forceTier ?? clampTierFromViewport())
   // Boot conservative: always start the runtime tier at LOW and let measured
   // frame times upgrade it. Booting at the viewport-implied tier builds the
   // full HIGH scene before the sampler can react, which kills weak GPUs.
-  const [runtimeTier, setRuntimeTier] = useState<QualityTier>(IS_WEAK_RENDERER ? 'ULTRA_LOW' : 'LOW')
+  const [runtimeTier, setRuntimeTier] = useState<QualityTier>(() => DIAG.forceTier ?? (IS_WEAK_RENDERER ? 'ULTRA_LOW' : 'LOW'))
 
   const frameWindowRef = useRef<number[]>([])
   const cooldownRef = useRef(0)
