@@ -28,8 +28,8 @@ export const TOUR_STEPS: TourStep[] = [
     duration: 4
   },
   {
-    position: [-10, 1.5, 3],
-    target: [-15, 0.5, 0],
+    position: [-2, 1.5, -10],
+    target: [-10, 0.1, -7],
     zone: 'STREAM',
     title: 'Flowing Reflection',
     description: 'Water, the softest element, overcomes the hardest stone. Its gentle murmur is the forest\'s constant song.',

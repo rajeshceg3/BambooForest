@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DIAG } from './diag'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, type RootState } from '@react-three/fiber'
 import { Experience } from './components/Experience'
 import { Overlay } from './components/Overlay'
 import { UI } from './components/UI'
@@ -12,6 +12,12 @@ import { Zone } from './types'
 import { useIdle } from './components/useIdle'
 import { QualityProvider, useQuality } from './components/QualityContext'
 import './App.css'
+
+// Set entry once, not through Canvas.configure on every UI render.
+const initializeCamera = ({ camera }: RootState) => {
+  camera.position.set(18, 2, -10)
+  camera.lookAt(18, 2, -20)
+}
 
 function App() {
   return (
@@ -43,7 +49,7 @@ function AppScene() {
         <TierBodySync />
       <Canvas
           shadows={!DIAG.noShadows}
-          camera={{ position: [0, 5, 25], fov: 45 }}
+          onCreated={initializeCamera}
           dpr={dprRange}
           gl={{ antialias: !DIAG.noAntialias, toneMappingExposure: 1.2 }}
         >

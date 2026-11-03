@@ -13,10 +13,18 @@ import { DIAG } from '../diag'
 // device was the heaviest single draw in the scene and the prime suspect behind
 // mobile crashes (provisional diagnosis).
 const COVER_COUNT_BY_TIER: Record<QualityTier, number> = {
-  ULTRA_LOW: 3000,
+  ULTRA_LOW: 8000,
   HIGH: 60000,
   MEDIUM: 30000,
   LOW: 12000,
+}
+
+// Same field-shrink as bamboo: keep surviving blades inside the fog window.
+const COVER_SPREAD_BY_TIER: Record<QualityTier, number> = {
+  ULTRA_LOW: 350,
+  LOW: 600,
+  MEDIUM: 2000,
+  HIGH: 2000,
 }
 
 // Shadow budget per tier. A fixed 4096 shadow map with PCSS soft shadows and
@@ -47,7 +55,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
     return new THREE.MeshStandardMaterial({
         map,
         bumpMap,
-        bumpScale: 4,
+        bumpScale: 0.12,
         roughness: 0.8,   // Slightly smoother for damp look
         metalness: 0.1,
     })
@@ -171,7 +179,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
       </mesh>
 
       {/* Ground Cover - Grass */}
-      <GroundCover count={DIAG.noCover ? 0 : COVER_COUNT_BY_TIER[tier]} castShadow={!DIAG.noShadows && tier === 'HIGH'} />
+      <GroundCover count={DIAG.noCover ? 0 : COVER_COUNT_BY_TIER[tier]} spread={COVER_SPREAD_BY_TIER[tier]} castShadow={!DIAG.noShadows && tier === 'HIGH'} />
     </>
   )
 }

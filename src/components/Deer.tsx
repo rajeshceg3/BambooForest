@@ -156,6 +156,8 @@ export function Deer(props: any) {
 
   useFrame((stateContext, delta) => {
     if (!groupRef.current) return
+    // Never extrapolate lerps or physics after a stalled frame.
+    delta = Math.min(delta, 0.05)
 
     const t = stateContext.clock.getElapsedTime()
     stateTimer.current -= delta
@@ -230,6 +232,15 @@ export function Deer(props: any) {
     } else {
         // Idle bob
         groupRef.current.position.y = Math.sin(t * 1.0) * 0.005
+    }
+
+    // Keep the deer on its bank instead of walking through the water plane.
+    const bankDistance = (groupRef.current.position.x - groupRef.current.position.z + 15) / Math.SQRT2
+    if (bankDistance < 12) {
+      const correction = (12 - bankDistance) / Math.SQRT2
+      groupRef.current.position.x += correction
+      groupRef.current.position.z -= correction
+      targetDir.current.set(1, 0, -1).normalize()
     }
 
     // 2. Leg Animation (Inverse Kinematics-ish)

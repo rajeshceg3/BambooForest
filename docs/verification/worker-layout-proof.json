@@ -1,0 +1,18 @@
+[
+  {
+    "name": "bambooWorker",
+    "count": 4994,
+    "deterministic": true,
+    "bankViolations": 0,
+    "within40OfEntry": 117,
+    "hash": "15345f397752ced33ed8208cabb29c17f7d0dc39f94970343ab319aa014a3125"
+  },
+  {
+    "name": "grassWorker",
+    "count": 7708,
+    "deterministic": true,
+    "bankViolations": 0,
+    "within40OfEntry": 280,
+    "hash": "4060c8293ce7c9d8a55820838b4928ffd2db7cab63fb0f4e84cfd5c3ca3e36cb"
+  }
+]
