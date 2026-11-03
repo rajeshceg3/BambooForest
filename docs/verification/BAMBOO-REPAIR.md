@@ -21,3 +21,5 @@ Tour inspection exposed the camera remaining at entry after Next Step changed zo
 Verification skill and feature map are now in `.agents/skills/verify-bamboo/`. Generated only. Entry-only screenshot checks above are not full feature-map or quadrant coverage.
 
 Camera-stability hypotheses 091953a and 505bd48 did not fix the tour. Read-only markers on 8fef3d1 showed tourActive=true/step=0 while camera stayed [18,2,-10] after five seconds. Thus UI changed while the camera did not. fb79b69 replaces that tour's separate GSAP position tween with bounded wall-clock interpolation in the R3F frame loop; fresh step-camera/pixel proof required. The prior candidate explanations are not confirmed root causes.
+
+`stream-axis.cjs` derives the river axis and half-width from its actual Three.js group transform. Use this test instead of guessing the sign of the rotation.
