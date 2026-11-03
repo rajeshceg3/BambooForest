@@ -56,9 +56,14 @@ self.onmessage = (e: MessageEvent) => {
     tempStalk.matrix.toArray(stalkArray, stalkCount * 16)
     stalkCount++
 
-    const numNodes = 5;
+    // Branches only in the upper half of the stalk (localY 0.2..2.0): with
+    // branches from -1.5 up, sparse tiers showed diagonal sticks and leaf
+    // clusters floating at heights where the thin trunk doesn't read, i.e.
+    // fragments detached from any visible trunk. Crown placement keeps
+    // foliage attached to a continuous visible column.
+    const numNodes = 3;
     for (let h = 0; h < numNodes; h++) {
-        const localY = -1.5 + h * 1.0 + (Math.random() * 0.2 - 0.1);
+        const localY = 0.2 + h * 0.9 + (Math.random() * 0.2 - 0.1);
         if (localY > 2.0) continue;
 
         if (Math.random() > 0.3) {
