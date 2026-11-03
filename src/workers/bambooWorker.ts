@@ -34,7 +34,10 @@ self.onmessage = (e: MessageEvent) => {
       const distToCenter = Math.sqrt(x * x + z * z)
       const distToStream = Math.abs(x + z) / Math.sqrt(2)
 
-      if (distToStream < 6) continue
+      // Stream plane is 20 wide (+-10 from its axis); excluding only <6 left
+      // stalk bases standing in the water once the field shrank to the fog
+      // window. Keep stalks fully on the bank.
+      if (distToStream < 12) continue
       if (distToCenter < 5) continue
 
       valid = true
