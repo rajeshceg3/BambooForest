@@ -409,6 +409,27 @@ export function Navigation({
     rotation.current.theta += (targetRotation.current.theta - rotation.current.theta) * damp * delta
     rotation.current.phi += (targetRotation.current.phi - rotation.current.phi) * damp * delta
 
+    // Hard bounds on the damped values, not just the targets: any path that
+    // writes targetRotation (mouse lock, drag fallback, touch) clamps, but a
+    // NaN or an out-of-range write must never reach the camera - an inverted
+    // or NaN orientation is unrecoverable for the user.
+    if (!Number.isFinite(rotation.current.phi) || !Number.isFinite(rotation.current.theta)) {
+      rotation.current.phi = 0
+      rotation.current.theta = 0
+      targetRotation.current.phi = 0
+      targetRotation.current.theta = 0
+    }
+    rotation.current.phi = Math.max(
+      -Math.PI / 2 + 0.1,
+      Math.min(Math.PI / 2 - 0.1, rotation.current.phi)
+    )
+    // Keep theta wrapped so long sessions never accumulate huge angles.
+    if (rotation.current.theta > Math.PI || rotation.current.theta < -Math.PI) {
+      const wrapped = ((rotation.current.theta + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI
+      rotation.current.theta = wrapped
+      targetRotation.current.theta = wrapped
+    }
+
     // Apply rotation to camera
     // Reset quaternion
     euler.current.set(rotation.current.phi, rotation.current.theta, 0, 'YXZ')
