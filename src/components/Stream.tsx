@@ -1,6 +1,7 @@
 import { useRef, useMemo } from 'react'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
+import { useQuality } from './QualityContext'
 
 // Simple seedable random (LCG)
 function mulberry32(a: number) {
@@ -14,6 +15,13 @@ function mulberry32(a: number) {
 
 export function Stream() {
   const meshRef = useRef<THREE.Mesh>(null)
+  const { tier } = useQuality()
+  // MeshTransmissionMaterial renders the whole scene into an FBO every frame
+  // (resolution 512, 6 samples, temporal distortion) - the dominant fill-rate
+  // cost on weak GPUs, enough to hold a UHD 620 under 1 fps even at ULTRA_LOW.
+  // LOW and below get a plain transparent standard material instead: same
+  // colour and geometry, no transmission pass.
+  const cheapWater = tier === 'LOW' || tier === 'ULTRA_LOW'
 
   const rockMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -248,19 +256,28 @@ export function Stream() {
       {/* Water Surface */}
       <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[20, 2000, 4, 64]} />
-        <MeshTransmissionMaterial
-            resolution={512}
-            samples={6}
-            thickness={0.5}
-            roughness={0.1}
-            ior={1.33}
-            chromaticAberration={0.03}
-            anisotropy={0.5}
-            distortion={0.5}
-            distortionScale={0.5}
-            temporalDistortion={0.2}
+        {cheapWater ? (
+          <meshStandardMaterial
             color="#8fbcd4"
-        />
+            transparent
+            opacity={0.72}
+            roughness={0.15}
+          />
+        ) : (
+          <MeshTransmissionMaterial
+              resolution={512}
+              samples={6}
+              thickness={0.5}
+              roughness={0.1}
+              ior={1.33}
+              chromaticAberration={0.03}
+              anisotropy={0.5}
+              distortion={0.5}
+              distortionScale={0.5}
+              temporalDistortion={0.2}
+              color="#8fbcd4"
+          />
+        )}
       </mesh>
 
       {/* River Stones Instanced */}
