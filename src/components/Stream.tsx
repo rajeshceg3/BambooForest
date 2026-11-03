@@ -26,6 +26,27 @@ export function Stream() {
 
   // Small tiled height map gives low-tier water a readable surface without
   // another scene render. Texture work happens once, not per fragment.
+  const rippleColor = useMemo(() => {
+    const size = 256
+    const data = new Uint8Array(size * size * 4)
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const u = x / size * Math.PI * 2, v = y / size * Math.PI * 2
+      const ripple = Math.pow(0.5 + 0.5 * Math.sin(6 * v + Math.sin(2 * u)), 6)
+      const detail = Math.sin(13 * v + 3 * u) * 3
+      const i = (y * size + x) * 4
+      data[i] = 76 + ripple * 22 + detail
+      data[i + 1] = 111 + ripple * 24 + detail
+      data[i + 2] = 107 + ripple * 22 + detail
+      data[i + 3] = 255
+    }
+    const texture = new THREE.DataTexture(data, size, size)
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    texture.magFilter = texture.minFilter = THREE.LinearFilter
+    texture.repeat.set(3, 300)
+    texture.needsUpdate = true
+    return texture
+  }, [])
   const rippleMap = useMemo(() => {
     const size = 128
     const data = new Uint8Array(size * size * 4)
@@ -47,6 +68,7 @@ export function Stream() {
   const reduceMotion = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)'), [])
   useFrame((_, delta) => {
     if (!reduceMotion.matches) {
+      rippleColor.offset.y = rippleMap.offset.y
       rippleMap.offset.y = (rippleMap.offset.y + Math.min(delta, 0.05) * 0.025) % 1
     }
   })
@@ -289,7 +311,8 @@ export function Stream() {
           // higher opacity, low roughness + a little metalness so the forest
           // env-map reflection breaks up the flat pale sheet.
           <meshStandardMaterial
-            color="#315b59"
+            color="#b6d3cb"
+            map={rippleColor}
             bumpMap={rippleMap}
             bumpScale={0.12}
             transparent
