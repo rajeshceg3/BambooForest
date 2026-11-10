@@ -577,6 +577,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
   return (
     <group>
         <instancedMesh
+            name="bamboo-stalks"
             ref={(node) => {
                 if (meshRef) meshRef.current = node;
                 if (node) node.layers.enable(1);
