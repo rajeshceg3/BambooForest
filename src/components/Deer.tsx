@@ -5,7 +5,7 @@ import * as THREE from 'three'
 
 type DeerState = 'IDLE' | 'GRAZE' | 'WALK' | 'ALERT';
 
-function animateLeg(leg: THREE.Group | null, offset: number, isWalking: boolean, walkTime: number, delta: number) {
+function animateLeg(leg: THREE.Group | null, offset: number, isWalking: boolean, walkTime: number, delta: number, restY: number) {
     if (!leg) return
 
     const legAmp = 0.3
@@ -20,7 +20,7 @@ function animateLeg(leg: THREE.Group | null, offset: number, isWalking: boolean,
             // Actually, just rotation.x
             const p = phase / 0.5 // 0..1
             leg.rotation.x = THREE.MathUtils.lerp(legAmp, -legAmp, p)
-            leg.position.y = -0.15 // Grounded (relative height)
+            leg.position.y = restY // Hooves meet the ground at the rest pivot height
 
             // Knee straightens slightly?
             // Simplified: just rotate hip
@@ -31,12 +31,12 @@ function animateLeg(leg: THREE.Group | null, offset: number, isWalking: boolean,
             const lift = Math.sin(p * Math.PI) * 0.15
             // Move forward
             leg.rotation.x = THREE.MathUtils.lerp(-legAmp, legAmp, p)
-            leg.position.y = -0.15 + lift
+            leg.position.y = restY + lift
         }
     } else {
         // Idle stance
         leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, delta * 5)
-        leg.position.y = THREE.MathUtils.lerp(leg.position.y, -0.15, delta * 5)
+        leg.position.y = THREE.MathUtils.lerp(leg.position.y, restY, delta * 5)
     }
 }
 
@@ -253,10 +253,10 @@ export function Deer(props: any) {
     // Trot gait: Diagonal pairs
     // FL (0.0), BR (0.0)
     // FR (0.5), BL (0.5)
-    animateLeg(legFLRef.current, 0.0, isWalking, walkTime.current, delta)
-    animateLeg(legBRRef.current, 0.0, isWalking, walkTime.current, delta)
-    animateLeg(legFRRef.current, 0.5, isWalking, walkTime.current, delta)
-    animateLeg(legBLRef.current, 0.5, isWalking, walkTime.current, delta)
+    animateLeg(legFLRef.current, 0.0, isWalking, walkTime.current, delta, -0.025)
+    animateLeg(legBRRef.current, 0.0, isWalking, walkTime.current, delta, -0.005)
+    animateLeg(legFRRef.current, 0.5, isWalking, walkTime.current, delta, -0.025)
+    animateLeg(legBLRef.current, 0.5, isWalking, walkTime.current, delta, -0.005)
 
 
     // 3. Head/Neck Animation
@@ -322,7 +322,7 @@ export function Deer(props: any) {
       <group position={[0, 0.85, 0]}>
 
         {/* Torso/Ribcage */}
-        <mesh name="ribcage" position={[0, 0, 0.15]} castShadow>
+        <mesh name="ribcage" position={[0, 0, 0.15]} rotation={[Math.PI / 2, 0, 0]} castShadow>
              <capsuleGeometry args={[0.22, 0.5, 8, 16]} />
              <primitive object={material} attach="material" />
         </mesh>
@@ -392,7 +392,7 @@ export function Deer(props: any) {
         {/* Pivot points need to be at the shoulder/hip joint */}
 
         {/* Front Left */}
-        <group ref={legFLRef} position={[0.15, 0.1, 0.35]}>
+        <group ref={legFLRef} position={[0.15, -0.025, 0.35]}>
             {/* Thigh/Shoulder */}
             <mesh position={[0, -0.2, 0]} rotation={[0, 0, 0]} castShadow>
                 <coneGeometry args={[0.08, 0.4, 16]} />
@@ -416,7 +416,7 @@ export function Deer(props: any) {
         </group>
 
         {/* Front Right */}
-        <group ref={legFRRef} position={[-0.15, 0.1, 0.35]}>
+        <group ref={legFRRef} position={[-0.15, -0.025, 0.35]}>
              <mesh position={[0, -0.2, 0]} castShadow>
                 <coneGeometry args={[0.08, 0.4, 16]} />
                 <primitive object={material} attach="material" />
@@ -436,7 +436,7 @@ export function Deer(props: any) {
         </group>
 
         {/* Back Left */}
-        <group ref={legBLRef} position={[0.15, 0.05, -0.35]}>
+        <group ref={legBLRef} position={[0.15, -0.005, -0.35]}>
              {/* Thigh (Haunch) */}
              <mesh position={[0, -0.2, 0]} rotation={[0.2, 0, 0]} castShadow>
                 <coneGeometry args={[0.1, 0.45, 16]} />
@@ -459,7 +459,7 @@ export function Deer(props: any) {
         </group>
 
         {/* Back Right */}
-        <group ref={legBRRef} position={[-0.15, 0.05, -0.35]}>
+        <group ref={legBRRef} position={[-0.15, -0.005, -0.35]}>
              <mesh position={[0, -0.2, 0]} rotation={[0.2, 0, 0]} castShadow>
                 <coneGeometry args={[0.1, 0.45, 16]} />
                 <primitive object={material} attach="material" />
