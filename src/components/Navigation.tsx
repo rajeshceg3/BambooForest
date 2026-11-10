@@ -401,6 +401,8 @@ export function Navigation({
 
   useFrame((_state, delta) => {
     if (!enabled) return
+    // Bound both physics and look after a stalled frame or background tab.
+    delta = Math.min(delta, 0.05)
 
     // 1. Rotation Smoothing
     // Damp towards target
@@ -535,7 +537,21 @@ export function Navigation({
          targetRotation.current.phi = euler.x
          targetRotation.current.theta = euler.y
      }
-  }, [camera])
+  }, [camera, enabled])
+
+  useEffect(() => {
+    const reset = () => {
+      if (!enabled) return
+      camera.position.set(18, 2, -10)
+      camera.rotation.set(0, 0, 0)
+      rotation.current = { phi: 0, theta: 0 }
+      targetRotation.current = { phi: 0, theta: 0 }
+      velocity.current.set(0, 0, 0)
+      onGround.current = true
+    }
+    window.addEventListener('forest-reset-view', reset)
+    return () => window.removeEventListener('forest-reset-view', reset)
+  }, [camera, enabled])
 
   return (
     <Html fullscreen pointerEvents="none" style={{ pointerEvents: 'none', userSelect: 'none' }}>

@@ -1,3 +1,4 @@
+import { reducedMotion } from '../utils/motion'
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -29,6 +30,7 @@ export function Fireflies({ count = 100, isIdle = false }: FirefliesProps) {
   }), [])
 
   useFrame((state) => {
+    if (reducedMotion.matches) return
     if (shaderRef.current) {
       shaderRef.current.uniforms.uTime.value = state.clock.getElapsedTime()
       // Smoothly transition the idle multiplier

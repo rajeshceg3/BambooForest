@@ -36,8 +36,8 @@ export const TOUR_STEPS: TourStep[] = [
     duration: 4
   },
   {
-    position: [-2, 1.2, -2],
-    target: [-5, 0.8, -5],
+    position: [13, 2, -3],
+    target: [9, 0.9, -8],
     zone: 'DEEP_FOREST',
     title: 'Life in the Shadows',
     description: 'The forest breathes through its inhabitants. In the deep shade, life thrives in quiet harmony.',

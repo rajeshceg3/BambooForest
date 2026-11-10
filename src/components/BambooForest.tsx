@@ -1,3 +1,6 @@
+import { useQuality } from './QualityContext'
+import { bakeBambooSurface } from '../utils/bambooSurface'
+import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -47,7 +50,10 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
   const meshRef = useRef<THREE.InstancedMesh | null>(null)
   const branchMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
-  const { camera } = useThree()
+  const { camera, gl } = useThree()
+  const { tier } = useQuality()
+  const cheapSurface = tier === 'LOW' || tier === 'ULTRA_LOW'
+  const bakedSurface = useMemo(() => bakeBambooSurface(), [])
 
   const [matrices, setMatrices] = useState<{ stalkInstances: Float32Array; branchInstances: Float32Array; leafInstances: Float32Array } | null>(null)
 
@@ -69,8 +75,9 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
   // Custom material setup for Bamboo Stalks
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-        color: '#7b904b',
-        roughness: 0.4,
+        color: cheapSurface ? '#ffffff' : '#7b904b',
+        map: cheapSurface ? bakedSurface : null,
+        roughness: cheapSurface ? 0.8 : 0.4,
         flatShading: false,
     })
 
@@ -169,6 +176,10 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
             gl_Position = projectionMatrix * mvPosition;
             `
         )
+
+        // Preserve the vertex shape and wind; only static surface work is
+        // replaced by a baked map in the existing low quality tiers.
+        if (cheapSurface) return
 
         shader.fragmentShader = `
           varying vec3 vLocalPosition;
@@ -289,7 +300,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         )
     }
     return mat
-  }, [])
+  }, [cheapSurface, bakedSurface])
 
   // Branch Material
   const branchMaterial = useMemo(() => {
@@ -505,9 +516,14 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
   }, [])
 
   const leafGeometry = useMemo(() => {
-    // Increased segments for midrib
-    const geo = new THREE.PlaneGeometry(0.2, 0.6, 1, 2)
-    geo.translate(0, 0.3, 0)
+    // Keep the original topology budget; taper the rectangle into a blade.
+    const geo = new THREE.PlaneGeometry(0.2, 0.7, 1, 2)
+    const vertices = geo.attributes.position
+    for (let i = 0; i < vertices.count; i++) {
+      const t = (vertices.getY(i) + 0.35) / 0.7
+      vertices.setXYZ(i, vertices.getX(i) * Math.sin(Math.PI * t), t * 0.7, -0.06 * t * t)
+    }
+    geo.computeVertexNormals()
     return geo
   }, [])
 
@@ -530,11 +546,12 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         leafMeshRef.current.instanceMatrix.array.set(matrices.leafInstances)
         leafMeshRef.current.instanceMatrix.needsUpdate = true
         leafMeshRef.current.computeBoundingSphere()
+        gl.domElement.dataset.bambooReady = String(matrices.stalkInstances.length / 16)
     }
-  }, [matrices])
+  }, [matrices, gl])
 
   useFrame((state) => {
-      const time = state.clock.getElapsedTime()
+      const time = reducedMotion.matches ? 0 : state.clock.getElapsedTime()
       const windSpeed = currentZone === 'DEEP_FOREST' ? 1.5 : 1.0
 
       if (material.userData.shader) {

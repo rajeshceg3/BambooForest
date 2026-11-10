@@ -1,3 +1,4 @@
+import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -258,6 +259,7 @@ export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }
   }, [matrices])
 
   useFrame((state) => {
+    if (reducedMotion.matches) return
     if (material.userData.shader) {
         material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()
         material.userData.shader.uniforms.uCameraPosition.value.copy(camera.position)

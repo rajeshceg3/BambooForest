@@ -1,3 +1,4 @@
+import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -155,6 +156,7 @@ export function Deer(props: any) {
   }, [])
 
   useFrame((stateContext, delta) => {
+    if (reducedMotion.matches) return
     if (!groupRef.current) return
     // Never extrapolate lerps or physics after a stalled frame.
     delta = Math.min(delta, 0.05)

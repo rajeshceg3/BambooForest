@@ -299,13 +299,27 @@ export function Stream() {
       return array;
   }, []);
 
+  const waterGeometry = useMemo(() => {
+    // The existing 12-unit scatter exclusion still contains every bank point.
+    // Shape both banks inside that corridor; never widen into the grove.
+    const geometry = new THREE.PlaneGeometry(20, 2000, 4, 512)
+    const p = geometry.attributes.position
+    for (let i = 0; i < p.count; i++) {
+      const along = p.getY(i)
+      const center = Math.sin(along * 0.045) * 1.0 + Math.sin(along * 0.13) * 0.3
+      const halfWidth = 7.6 + Math.sin(along * 0.085 + 0.7) * 0.65
+      p.setX(i, center + p.getX(i) / 10 * halfWidth)
+    }
+    geometry.computeVertexNormals()
+    return geometry
+  }, [])
+
   const instancedMeshRef = useRef<THREE.InstancedMesh | null>(null);
 
   return (
     <group position={[-15, 0.05, 0]} rotation={[0, Math.PI / 4, 0]}>
       {/* Water Surface */}
-      <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 2000, 4, 64]} />
+      <mesh ref={meshRef} geometry={waterGeometry} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         {cheapWater ? (
           // Cheap water: no transmission pass, but keep it alive - deeper tint,
           // higher opacity, low roughness + a little metalness so the forest

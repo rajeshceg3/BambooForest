@@ -15,6 +15,10 @@ import './App.css'
 
 // Set entry once, not through Canvas.configure on every UI render.
 const initializeCamera = ({ camera }: RootState) => {
+  // Explicit lens: prior debugging silently inherited R3F's 75-degree default.
+  // Keep 75 explicit: controlled local tour tests with a 60-degree lens stalled
+  // while 75 reached the clearing. This is a bounded test, not a device guarantee.
+  if ('fov' in camera) { (camera as import('three').PerspectiveCamera).fov = 75; camera.updateProjectionMatrix() }
   camera.position.set(18, 2, -10)
   camera.lookAt(18, 2, -20)
 }

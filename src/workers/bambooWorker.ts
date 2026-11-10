@@ -55,7 +55,7 @@ self.onmessage = (e: MessageEvent) => {
     const rotationY = random() * Math.PI * 2
     const scale = 0.7 + random() * 0.8
 
-    tempStalk.position.set(x, 2.5, z)
+    tempStalk.position.set(x, 4 * scale, z)
     tempStalk.rotation.set(0, rotationY, 0)
     tempStalk.scale.set(scale, scale, scale)
     tempStalk.updateMatrix()
@@ -75,7 +75,7 @@ self.onmessage = (e: MessageEvent) => {
         if (random() > 0.3) {
             const branchAngle = random() * Math.PI * 2;
 
-            tempBranch.position.set(x, 2.5 + localY * scale, z);
+            tempBranch.position.set(x, (4 + localY) * scale, z);
             tempBranch.rotation.set(0, branchAngle, 0);
             tempBranch.rotateX(-Math.PI / 4 - random() * 0.2);
 
@@ -89,15 +89,10 @@ self.onmessage = (e: MessageEvent) => {
                 branchCount++
             }
 
-            const tilt = Math.PI / 4 + 0.1;
-            const dy = Math.sin(tilt) * branchLen * scale;
-            const dr = Math.cos(tilt) * branchLen * scale;
-            const dx = Math.sin(branchAngle) * dr;
-            const dz = Math.cos(branchAngle) * dr;
-
-            const tipX = x + dx;
-            const tipY = (2.5 + localY * scale) + dy;
-            const tipZ = z + dz;
+            // Use the actual branch transform rather than separate trig with
+            // an opposite Z sign. Keep the existing instance budget.
+            const tip = new THREE.Vector3(0, 1, 0).applyMatrix4(tempBranch.matrix)
+            const tipX = tip.x, tipY = tip.y, tipZ = tip.z
 
             const numLeaves = 3 + Math.floor(random() * 3);
             for (let L = 0; L < numLeaves; L++) {

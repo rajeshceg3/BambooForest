@@ -75,11 +75,11 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
       {/* Centered Zone Description (Fades out when Idle) */}
       <div className={`flex flex-col items-center justify-center flex-1 text-center px-8 pb-20 md:pb-0 relative transition-opacity duration-[2000ms] ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`}>
         <div key={currentZone} className="animate-blur-in transform delay-500">
-          <div className="animate-breathe">
+          <div className="animate-breathe zone-card">
              {/* Subtle backing for legibility against bright fog */}
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[30rem] h-40 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-black/40 via-black/10 to-transparent blur-2xl rounded-full -z-10 pointer-events-none"></div>
 
-             <h2 className="text-white/40 font-serif italic text-xl md:text-2xl tracking-[0.2em] mb-3 drop-shadow-md">
+             <h2 className="text-white/95 font-serif italic text-xl md:text-2xl tracking-[0.2em] mb-3 drop-shadow-md">
                {zoneConfig[currentZone].name}
              </h2>
              <div className="w-8 h-[1px] bg-white/20 mx-auto mb-4 box-shadow-lg"></div>
@@ -92,7 +92,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
 
       {/* Idle Reward Poetry (Fades in when Idle) */}
       <div className={`absolute inset-0 flex flex-col items-center justify-end pb-32 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle && !zenMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-        <div key={`poem-container-${currentZone}`} className="relative text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
+        <div key={`poem-container-${currentZone}`} className="poem-card relative text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
             {/* Soft dark scrim behind the poem - same treatment as the zone
                 description, keeps ink legible over bright water/fog */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[36rem] max-w-[92vw] h-64 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-black/75 via-black/45 to-transparent blur-xl rounded-full pointer-events-none"></div>
@@ -106,16 +106,16 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
       <div className={`flex justify-center items-end w-full pb-8 md:pb-16 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`}>
 
         {/* Mobile Navigation (Capsule) */}
-        <nav className="md:hidden flex bg-black/40 backdrop-blur-3xl rounded-full border border-white/5 px-6 py-2 gap-2 mx-4 max-w-full overflow-x-auto no-scrollbar">
+        <nav className="md:hidden flex bg-black/80 backdrop-blur-3xl rounded-full border border-white/5 px-2 py-2 gap-0 mx-4 max-w-full overflow-x-auto no-scrollbar">
           {zones.map((zone) => (
             <button
               key={zone}
               onClick={() => onZoneChange(zone)}
-              className={`relative px-4 py-3 rounded-full transition-all duration-500 whitespace-nowrap ${
-                currentZone === zone ? 'bg-white/10 text-white shadow-inner' : 'text-white/40 hover:text-white/70 hover:bg-white/5'
+              className={`relative px-2 py-3 rounded-full transition-all duration-500 whitespace-nowrap ${
+                currentZone === zone ? 'bg-white/10 text-white shadow-inner' : 'text-white/90 hover:text-white hover:bg-white/5'
               } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black`}
             >
-              <span className="text-[9px] uppercase tracking-widest font-sans font-medium block text-center">
+              <span className="text-[12px] uppercase tracking-widest font-sans font-medium block text-center">
                 {zoneConfig[zone].name}
               </span>
             </button>
@@ -133,7 +133,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
               data-cursor-text={zoneConfig[zone].name}
             >
                {/* Label (Reveals on Hover) */}
-               <span className={`absolute bottom-full mb-6 text-[10px] tracking-[0.3em] uppercase whitespace-nowrap transition-all duration-500 origin-bottom font-light ${
+               <span className={`absolute bottom-full mb-6 text-[12px] tracking-[0.15em] uppercase whitespace-nowrap transition-all duration-500 origin-bottom font-light ${
                  currentZone === zone
                     ? 'opacity-100 translate-y-0 text-white'
                     : 'opacity-0 translate-y-4 text-white/50 group-hover:opacity-100 group-hover:translate-y-0'

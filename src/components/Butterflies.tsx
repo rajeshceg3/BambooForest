@@ -1,3 +1,4 @@
+import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -81,6 +82,7 @@ export function Butterflies({ count = 15 }) {
   }, [instanceMatrixArray])
 
   useFrame((state) => {
+    if (reducedMotion.matches) return
     if (!meshRef.current) return
     if (material.userData.shader) {
       material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()

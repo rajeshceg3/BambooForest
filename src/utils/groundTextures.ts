@@ -4,8 +4,8 @@ import * as THREE from 'three'
 //
 // The ground shader used to evaluate fbm (5 octaves of simplex noise) four
 // times per fragment - colour mix plus three taps for normal perturbation -
-// over a 2000x2000 plane that fills most of the screen. That is ~15M noise
-// evaluations per frame and held a UHD 620 near 1 fps at every quality tier.
+// over a 2000x2000 plane. Baking removes that repeated shader work; it
+// did not isolate the remaining low frame rate on the diagnostic machine.
 // The noise field is static, so bake it once at boot into a colour map and a
 // height (bump) map and render with a plain standard material.
 

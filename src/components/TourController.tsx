@@ -23,7 +23,7 @@ export function TourController({ onZoneChange }: TourControllerProps) {
       ? target.current.clone()
       : camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(10).add(camera.position)
     transition.current = {
-      started: performance.now(), duration: (currentStep.duration || 3.5) * 1000,
+      started: performance.now(), duration: reducedMotion.current.matches ? 1 : (currentStep.duration || 3.5) * 1000,
       from: camera.position.clone(), to: new THREE.Vector3(...currentStep.position),
       fromTarget, toTarget: new THREE.Vector3(...currentStep.target), complete: false,
     }
@@ -49,6 +49,8 @@ export function TourController({ onZoneChange }: TourControllerProps) {
     gl.domElement.dataset.cameraPosition = camera.position.toArray().map(v => v.toFixed(2)).join(',')
     gl.domElement.dataset.tourActive = String(isActive)
     gl.domElement.dataset.tourStep = String(currentStepIndex)
+    gl.domElement.dataset.cameraLens = String((camera as THREE.PerspectiveCamera).fov)
+    gl.domElement.dataset.cameraRotation = new THREE.Euler().setFromQuaternion(camera.quaternion, 'YXZ').toArray().slice(0, 3).join(',')
   })
   return null
 }

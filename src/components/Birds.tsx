@@ -1,3 +1,4 @@
+import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -74,6 +75,7 @@ export function Birds({ count = 30 }) {
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
   useFrame((state) => {
+    if (reducedMotion.matches) return
     if (!meshRef.current) return
     if (material.userData.shader) {
       material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()
