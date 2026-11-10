@@ -71,6 +71,15 @@ interface UIProps {
   onToggleZenMode?: () => void
 }
 
+const INTENTIONS = [
+    "Find stillness today.",
+    "Breathe in the present.",
+    "Let go of velocity.",
+    "Observe without judgment.",
+    "Root yourself in this moment.",
+    "Listen to the quiet."
+  ]
+
 export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = false, onToggleZenMode }: UIProps) => {
   const { isActive: tourActive } = useTour()
   const [started, setStarted] = useState(false)
@@ -82,14 +91,7 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
   const [currentIntention, setCurrentIntention] = useState('')
   const [zenTransitionMsg, setZenTransitionMsg] = useState(false)
 
-  const INTENTIONS = [
-    "Find stillness today.",
-    "Breathe in the present.",
-    "Let go of velocity.",
-    "Observe without judgment.",
-    "Root yourself in this moment.",
-    "Listen to the quiet."
-  ]
+
   const [isTouch, setIsTouch] = useState(false)
   const { progress, active } = useProgress()
   const titleRef = useRef<HTMLDivElement>(null)
