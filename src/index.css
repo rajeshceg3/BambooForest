@@ -143,7 +143,7 @@ body[data-tier='ULTRA_LOW'] [class*='backdrop-blur'] {
 }
 
 /* Bound text contrast independently of the moving scene. These panels do
-   not sample or blur the WebGL canvas. White on #11291f is 15:1. */
+   not sample or blur the WebGL canvas. #f5f4e8 on #11291f measures 13.95:1. */
 .zone-card, .poem-card { background: #11291f; color: #f5f4e8; border-radius: 16px; padding: 16px 24px; }
 .zone-card { max-width: 90vw; }
 .zone-card > div, .poem-card > div { display: none; }

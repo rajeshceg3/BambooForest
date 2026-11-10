@@ -93,7 +93,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
       </div>
 
       {/* Idle Reward Poetry (Fades in when Idle) */}
-      <div className={`absolute inset-0 flex flex-col items-center justify-end pb-32 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle && !zenMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+      <div className={`absolute inset-0 flex flex-col items-center justify-end pb-48 md:pb-40 pointer-events-none transition-all duration-[4000ms] ease-out ${isIdle && !zenMode ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div key={`poem-container-${currentZone}`} className="poem-card relative text-center px-8 pointer-events-auto cursor-pointer" onClick={handlePoemClick} data-cursor-text="Reflect">
             {/* Soft dark scrim behind the poem - same treatment as the zone
                 description, keeps ink legible over bright water/fog */}

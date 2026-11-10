@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, ReactNode } from 'react'
 import { useProgress } from '@react-three/drei'
 import gsap from 'gsap'
+import { useTour } from './TourContext'
 
 // --- Components ---
 
@@ -71,6 +72,7 @@ interface UIProps {
 }
 
 export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = false, onToggleZenMode }: UIProps) => {
+  const { isActive: tourActive } = useTour()
   const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'philosophy' | 'lore' | 'meditation'>('philosophy')
@@ -241,14 +243,14 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
         <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/40 to-transparent" />
 
         {/* Top Left: Title (Subtle) */}
-        <div className={`absolute top-6 left-6 md:top-8 md:left-8 transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-60 hover:opacity-100 pointer-events-auto'}`}>
+        <div className={`${tourActive ? 'hidden' : ''} absolute top-6 left-6 md:top-8 md:left-8 transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-60 hover:opacity-100 pointer-events-auto'}`}>
            <span className="font-serif text-xs md:text-sm tracking-widest uppercase text-white drop-shadow-sm">
              Bamboo Forest
            </span>
         </div>
 
         {/* Top Right: Award Badge */}
-        <div className={`absolute top-6 right-6 md:top-8 md:right-8 group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-1000 hover:bg-white/10 hover:border-white/30 cursor-pointer ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}>
+        <div className={`${tourActive ? 'hidden' : ''} absolute top-6 right-6 md:top-8 md:right-8 group w-10 h-10 md:w-12 md:h-12 rounded-full bg-black/20 backdrop-blur-2xl border border-white/10 flex items-center justify-center transition-all duration-1000 hover:bg-white/10 hover:border-white/30 cursor-pointer ${isIdle || zenMode ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}>
           <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 md:w-5 md:h-5 text-white/70 group-hover:text-white transition-colors duration-500">
              <path d="M12 2L15 8L21 9L16.5 14L18 20L12 17L6 20L7.5 14L3 9L9 8L12 2Z" stroke="currentColor" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>

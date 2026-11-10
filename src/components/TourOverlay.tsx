@@ -121,10 +121,9 @@ export function TourOverlay({ zenMode = false }: TourOverlayProps) {
             ? 'opacity-100 translate-y-0 filter-none'
             : 'opacity-0 translate-y-8 blur-sm'
       }`}>
-        <div className="tour-card relative max-w-lg w-full bg-black/20 backdrop-blur-3xl border border-white/5 p-6 md:p-10 rounded-3xl shadow-2xl pointer-events-auto overflow-hidden">
+        <div className="tour-card relative max-w-lg w-full bg-black/20 backdrop-blur-3xl border border-white/5 p-6 md:p-10 rounded-3xl shadow-2xl pointer-events-auto overflow-clip">
 
-            {/* Decorative gradient blob */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 blur-3xl rounded-full pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
+            {/* Solid contrast panel needs no overflowing decorative layer. */}
 
             {/* Title */}
             <h2 className="font-serif text-2xl md:text-3xl text-white mb-2 italic tracking-widest">
