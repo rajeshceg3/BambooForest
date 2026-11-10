@@ -38,7 +38,7 @@ export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProp
 
   if (!isActive) {
     return (
-      <div className={`world-controls fixed bottom-8 right-8 z-50 pointer-events-auto transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`}>
+      <div className={`world-controls fixed bottom-8 right-8 z-50 pointer-events-auto transition-opacity duration-1000 ${zenMode ? 'opacity-0' : 'opacity-100'}`}>
         <button className="reset-view" onClick={() => window.dispatchEvent(new Event('forest-reset-view'))}>Reset view</button>
         <button
           onClick={startTour}
@@ -58,7 +58,7 @@ export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProp
 
   // Active Tour UI
   return (
-    <div className={`fixed inset-0 z-50 pointer-events-none flex flex-col justify-between p-8 md:p-12 transition-opacity duration-1000 ${isIdle || zenMode ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 z-50 pointer-events-none flex flex-col justify-between p-8 md:p-12 transition-opacity duration-1000 ${zenMode ? 'opacity-0' : 'opacity-100'}`}>
 
       {/* Top Bar: Progress & Exit */}
       <div className="flex justify-between items-start w-full pointer-events-auto">

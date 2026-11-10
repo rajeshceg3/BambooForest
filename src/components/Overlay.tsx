@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Zone } from '../types'
+import { useTour } from './TourContext'
 
 interface OverlayProps {
   currentZone: Zone
@@ -9,6 +10,7 @@ interface OverlayProps {
 }
 
 export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = false }: OverlayProps) {
+  const { isActive: tourActive } = useTour()
   const zones: Zone[] = ['GROVE', 'CLEARING', 'STREAM', 'DEEP_FOREST']
   const [poemIndex, setPoemIndex] = useState(0)
   const [isFading, setIsFading] = useState(false)
@@ -68,7 +70,7 @@ export function Overlay({ currentZone, onZoneChange, isIdle = false, zenMode = f
   }
 
   return (
-    <div className={`fixed inset-0 pointer-events-none flex flex-col justify-between z-10 transition-opacity duration-1000 ${zenMode ? 'opacity-0' : 'opacity-100'}`}>
+    <div className={`fixed inset-0 pointer-events-none flex flex-col justify-between z-10 transition-opacity duration-1000 ${zenMode || tourActive ? 'opacity-0' : 'opacity-100'}`}>
       {/* Header Spacer - keeps text visual center appropriate */}
       <div className="flex-none h-32 md:h-0"></div>
 
