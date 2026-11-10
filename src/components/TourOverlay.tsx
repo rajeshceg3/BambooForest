@@ -6,7 +6,7 @@ interface TourOverlayProps {
   zenMode?: boolean
 }
 
-export function TourOverlay({ isIdle = false, zenMode = false }: TourOverlayProps) {
+export function TourOverlay({ zenMode = false }: TourOverlayProps) {
   const { isActive, currentStep, currentStepIndex, isTransitioning, isAutoPlay, toggleAutoPlay, nextStep, prevStep, startTour, endTour } = useTour()
   const [showContent, setShowContent] = useState(false)
 
