@@ -53,16 +53,18 @@ export function TourController({ onZoneChange }: TourControllerProps) {
               }
             }
             const choice = chooseDeerView(deer.position.x,deer.position.z,deer.rotation.y,nearby)
-            if (view.count < 0) {view.dx = choice.x; view.dz = choice.z}
+            if (view.count !== trunks.count) {view.dx = choice.x; view.dz = choice.z}
             Object.assign(view,{x:deer.position.x,z:deer.position.z,count:trunks.count,targetX:choice.x,targetZ:choice.z})
             gl.domElement.dataset.deerViewClearance = choice.clearance.toFixed(3)
           }
           const currentAngle = Math.atan2(view.dx, view.dz)
           const desiredAngle = Math.atan2(view.targetX, view.targetZ)
           const turn = Math.atan2(Math.sin(desiredAngle-currentAngle),Math.cos(desiredAngle-currentAngle))
-          const angle = currentAngle + turn * (1-Math.exp(-2*Math.min(delta,.05)))
+          const angle = currentAngle + turn * (1-Math.exp(-2*Math.max(0,delta)))
           view.dx = Math.sin(angle)*5.5
           view.dz = Math.cos(angle)*5.5
+          gl.domElement.dataset.deerViewOffset = `${view.dx.toFixed(3)},${view.dz.toFixed(3)}`
+          gl.domElement.dataset.deerViewTarget = `${view.targetX.toFixed(3)},${view.targetZ.toFixed(3)}`
           motion.to.set(deer.position.x + view.dx, deer.position.y + 2, deer.position.z + view.dz)
           motion.toTarget.set(deer.position.x, deer.position.y - .45, deer.position.z)
         }
