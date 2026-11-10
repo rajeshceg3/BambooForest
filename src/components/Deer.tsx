@@ -349,12 +349,12 @@ export function Deer(props: any) {
         {/* Neck Group */}
         <group ref={neckRef} position={[0, 0.35, 0.45]} rotation={[-0.2, 0, 0]}>
             {/* Neck base */}
-            <mesh position={[0, 0.25, 0]} castShadow>
-                <coneGeometry args={[0.12, 0.6, 16]} />
+            <mesh position={[0, 0.15, 0]} castShadow>
+                <cylinderGeometry args={[0.08, 0.12, 0.6, 16]} />
                 <primitive object={material} attach="material" />
             </mesh>
             {/* Head Group */}
-            <group ref={headRef} position={[0, 0.55, 0.1]} rotation={[0.2, 0, 0]}>
+            <group ref={headRef} position={[0, 0.45, 0.1]} rotation={[0.2, 0, 0]}>
                 {/* Cranium */}
                 <mesh position={[0, 0, 0]} castShadow>
                     <sphereGeometry args={[0.11, 16, 16]} />

@@ -36,3 +36,13 @@ Live GitHub PR82 remains open/unmerged at2ee8e59, matching deployment success. R
 Decision: HOLD PR82. Original bank, foliage, animal, full-quadrant, reduced-motion and performance holds remain. No production change.
 
 Local deer combined-scene diagnostic pixels now unobscured at390/1365 using temporary Zen initial state and camera10,2,-5, yaw0.322/pitch-0.157. All4994 stalks remain. Temporary Zen/camera/navigation source restored. Neutral hooves are visible, but torso/neck anatomy still reads as disconnected/lumpy and no walk/alert proof exists. Reject promotion from these pixels. Build and deterministic worker tests pass, separate from visual acceptance. Preserve candidate on a local-only diagnostic branch; do not push or merge it as a fix.
+
+## Nov11 04:25 conditional-preview checkpoint
+
+Fresh GitHub read confirms PR82 remains open/unmerged2ee8e59 with successful matching preview. Kilimanjaro/MoroccanDays/JapaneseVillage main SHAs unchanged. No remote effects this run.
+
+Bounded local neck experiment changes neck cone to tapered cylinder, lowers its mesh center0.25 to0.15 and head pivot0.55 to0.45 to meet the torso. Full-scene desktop diagnostic pixels inspected: seam is connected, but animal still reads as a long-necked toy, not accepted deer anatomy. Phone diagnostic unexpectedly changed orientation before capture and did not show the deer; this is explicitly not phone proof. Temporary initial camera/Zen/navigation edits restored. Build passes. Preserve experiment locally only, no new hosted preview and no merge.
+
+The phone diagnostic orientation deviation is an observation, not an isolated app bug. Navigation listens to canvas drag/pointer lock and initialization, so distinguish test-input effects from an actual user defect before proposing a change. Existing full-look/interaction hold stays open.
+
+05:00 checkpoint outcome: no safe new repair preview. Existing2ee8e59 preview remains the last hosted candidate. Return remaining scene/animation/performance work to parent for next focused lane; no whole-crash closeout.
