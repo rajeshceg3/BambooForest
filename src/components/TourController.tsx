@@ -7,7 +7,7 @@ import { Zone } from '../types'
 interface TourControllerProps { onZoneChange: (zone: Zone) => void }
 
 export function TourController({ onZoneChange }: TourControllerProps) {
-  const { camera, gl } = useThree()
+  const { camera, gl, scene } = useThree()
   const { isActive, currentStep, currentStepIndex, setTransitioning } = useTour()
   const reducedMotion = useRef(window.matchMedia('(prefers-reduced-motion: reduce)'))
   const target = useRef(new THREE.Vector3())
@@ -34,6 +34,15 @@ export function TourController({ onZoneChange }: TourControllerProps) {
   useFrame((state) => {
     const motion = transition.current
     if (isActive && motion) {
+      // The animal roams before the visitor reaches this step. Frame its real
+      // position rather than the spawn point, which can put the lens in its face.
+      if (currentStepIndex === 3) {
+        const deer = scene.getObjectByName('roe-deer')
+        if (deer) {
+          motion.to.set(deer.position.x - 4.6, deer.position.y + 2, deer.position.z - 3)
+          motion.toTarget.set(deer.position.x, deer.position.y - .45, deer.position.z)
+        }
+      }
       const p = Math.min(1, (performance.now() - motion.started) / motion.duration)
       const eased = p * p * (3 - 2 * p)
       camera.position.lerpVectors(motion.from, motion.to, eased)

@@ -37,3 +37,7 @@ npm run lint; npm run build; test-workers.cjs; test-deer.cjs; animation-bounds.c
 Lint follow-up: fixed the new callback dependency/semicolon issue; corrected existing Birds array dependencies and moved UI intention data outside the component. Existing context-module shared hook/data exports have explicit narrow Fast Refresh exceptions. No correctness lint rule was disabled globally.
 
 Awaited: exact hosted candidate SHA/bundle and actual normal entry/tour view at both widths, visible phone animal, plus parent visual review. No merge until that review. Graze is not certified by the walk/alert frames. No physical-device or broad hardware-health claim.
+
+## Hosted normal-tour deviation and follow-up
+
+The first exact-head hosted phone normal-tour run reached step3 via Enter, Guided Tour and three Next actions. It exposed a framing failure: the deer had roamed to9.736,0,-6.083, about a metre from the fixed10,2,-5 camera, cropping the face and hiding the body. This is a failed gate, not an accepted candidate. The next change makes the animal step frame the actual deer root with a safe side offset(-4.6,2,-3), looking below its root to leave room above the phone card. Scene geometry is untouched. Requires renewed hosted pixels. Full suite rerun passed before the follow-up push. Local normal tour navigation suffered software-rendering timeouts and supplies no pass.
