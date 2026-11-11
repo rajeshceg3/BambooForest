@@ -1,0 +1,7 @@
+# Grass worker CPU bounds
+
+Confirmed11:51ISTNov11 with read-only live-mesh instrumentation after installedcount7708 and firstmatrixtranslation matchedworker(-67.21835327148438): cachedspherecenter(0,.4,-.15)radius.430116. Independentlycomputedboundsfromexactinstalledworkertransforms center(.103589,.315677,2.088399)radius245.27944. Entryfrustumrejectscachedspherebutacceptsaccurateone;630grasscentersinsideview. Thusworkerdatawasinstalledbutgrasswronglyculled.
+
+Fix: allocationmeshcount0untilworkerinstallation inlayout-effect, installsameworkerarray/count, recomputeCPUbound andpad3unitsforwind/playerbend. Keeporiginalgeometry/material/all7708validtransforms. No scenecontentdeleted. Newtestexecutesactualinstallationblockonactualworkeroutput, checksbytedataidentityandcorrectedbounds. Fullrepo suite/lint/buildpassedbeforepush. Local390normalmotionactualentrypixelsinspected, grassnowvisible. SoftwareChromiumtwo10secondwindows1.277/1.331fps,148drawcalls/frameand1.931mvertices/frame; correctnessrestore,notspeedclaim. Hosted/fullzonechecksrequiredbeforemerge.
+
+Thisfixisstandaloneonproductionff6ad57, excludesheldPR92stoneandPR93groundcandidates. Existingfulljourney/scenequality/audio/performanceholdsremain.
