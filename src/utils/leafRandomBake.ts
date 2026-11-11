@@ -6,6 +6,7 @@ import * as THREE from 'three'
 export function bakeLeafRandomIds(renderer: THREE.WebGLRenderer, matrices: Float32Array) {
   if (!renderer.capabilities.isWebGL2) return null
   const gl = renderer.getContext() as WebGL2RenderingContext
+  const previousTarget = renderer.getRenderTarget()
   const count = matrices.length / 16
   const positions = new Float32Array(count * 3)
   for (let i = 0; i < count; i++) positions.set(matrices.subarray(i * 16 + 12, i * 16 + 15), i * 3)
@@ -55,6 +56,7 @@ export function bakeLeafRandomIds(renderer: THREE.WebGLRenderer, matrices: Float
     gl.deleteBuffer(input); gl.deleteBuffer(output)
     gl.deleteProgram(program); gl.deleteShader(vertex); gl.deleteShader(fragment)
     renderer.resetState()
+    renderer.setRenderTarget(previousTarget)
   }
 }
 

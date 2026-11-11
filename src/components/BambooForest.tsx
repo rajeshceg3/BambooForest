@@ -56,6 +56,12 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
   const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const { camera, gl } = useThree()
   const chunkGroup = useRef<THREE.Group>(null)
+  const [contextVersion, setContextVersion] = useState(0)
+  useEffect(() => {
+    const restored = () => setContextVersion(version => version + 1)
+    gl.domElement.addEventListener('webglcontextrestored', restored)
+    return () => gl.domElement.removeEventListener('webglcontextrestored', restored)
+  }, [gl])
   const { tier } = useQuality()
   const cheapSurface = tier === 'LOW' || tier === 'ULTRA_LOW'
   const bakedSurface = useMemo(() => bakeBambooSurface(), [])
@@ -358,10 +364,12 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         flatShading: false,
     })
 
+    const timeUniform = { value: 0 }
+    const cameraUniform = { value: new THREE.Vector3() }
     mat.customProgramCacheKey = () => mat.userData.bakedRandom ? 'leaf-baked-random-v1' : 'leaf-live-random-v1'
     mat.onBeforeCompile = (shader) => {
-        shader.uniforms.uTime = { value: 0 }
-        shader.uniforms.uCameraPosition = { value: new THREE.Vector3() }
+        shader.uniforms.uTime = timeUniform
+        shader.uniforms.uCameraPosition = cameraUniform
         mat.userData.shader = shader
 
         shader.vertexShader = `
@@ -525,7 +533,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
       delete leafMaterial.userData.bakedRandom
       leafMaterial.needsUpdate = true
     }
-  }, [matrices, material, branchMaterial, leafMaterial, castShadow, spread, gl])
+  }, [matrices, material, branchMaterial, leafMaterial, castShadow, spread, gl, contextVersion])
 
   useFrame((state) => {
       const time = reducedMotion.matches ? 0 : state.clock.getElapsedTime()
