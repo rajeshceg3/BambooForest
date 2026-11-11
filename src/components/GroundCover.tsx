@@ -6,14 +6,14 @@ import * as THREE from 'three'
 export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }: { count?: number; castShadow?: boolean; spread?: number }) {
   const meshRef = useRef<THREE.InstancedMesh | null>(null)
   const { camera } = useThree()
-  const [matrices, setMatrices] = useState<{ instanceMatrixArray: Float32Array; actualCount: number } | null>(null)
+  const [matrices, setMatrices] = useState<{ instanceMatrixArray: Float32Array; actualCount: number; requestedCount: number; requestedSpread: number } | null>(null)
 
   useEffect(() => {
     // Initialize Web Worker
     const worker = new Worker(new URL('../workers/grassWorker.ts', import.meta.url), { type: 'module' })
 
     worker.onmessage = (e) => {
-      setMatrices(e.data)
+      setMatrices({ ...e.data, requestedCount: count, requestedSpread: spread })
     }
 
     worker.postMessage({ count, spread })
@@ -251,7 +251,7 @@ export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }
   }, [])
 
   useLayoutEffect(() => {
-    if (!meshRef.current || !matrices) return
+    if (!meshRef.current || !matrices || matrices.requestedCount !== count || matrices.requestedSpread !== spread) return
     meshRef.current.count = matrices.actualCount;
     // We can directly update the instanceMatrix buffer to avoid iterating and calling setMatrixAt
     meshRef.current.instanceMatrix.array.set(matrices.instanceMatrixArray);
@@ -261,7 +261,7 @@ export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }
     meshRef.current.computeBoundingSphere()
     // Wind and near-player bending happen in the vertex shader.
     if (meshRef.current.boundingSphere) meshRef.current.boundingSphere.radius += 3
-  }, [matrices])
+  }, [matrices, count, spread])
 
   useFrame((state) => {
     if (reducedMotion.matches) return
@@ -276,7 +276,7 @@ export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }
       ref={mesh => {
         meshRef.current = mesh
         // Allocation is not content. Never draw the uninitialized identity pile.
-        if (mesh && !matrices) mesh.count = 0
+        if (mesh && (!matrices || matrices.requestedCount !== count || matrices.requestedSpread !== spread)) mesh.count = 0
       }}
       args={[undefined, undefined, count]} // Initial buffer size
       castShadow={castShadow}
