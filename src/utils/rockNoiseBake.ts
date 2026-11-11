@@ -70,7 +70,16 @@ export function bakeRockNoise(renderer: THREE.WebGLRenderer, sets: RockSet[]) {
   const scene = new THREE.Scene()
   scene.add(new THREE.Mesh(geometry, material))
   const previous = renderer.getRenderTarget()
-  try { renderer.setRenderTarget(target); renderer.render(scene, new THREE.Camera()) }
-  finally { renderer.setRenderTarget(previous); input.dispose(); seeds.dispose(); material.dispose(); geometry.dispose() }
+  let valid = false
+  try {
+    renderer.setRenderTarget(target)
+    const gl = renderer.getContext()
+    valid = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE
+    if (valid) renderer.render(scene, new THREE.Camera())
+  } finally {
+    renderer.setRenderTarget(previous)
+    input.dispose(); seeds.dispose(); material.dispose(); geometry.dispose()
+  }
+  if (!valid) { target.dispose(); return null }
   return { target, texture: target.texture, width, height }
 }

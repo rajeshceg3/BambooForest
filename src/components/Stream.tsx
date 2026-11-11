@@ -1,4 +1,4 @@
-import { useRef, useMemo, useLayoutEffect } from 'react'
+import { useRef, useMemo, useLayoutEffect, useEffect, useState } from 'react'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -22,6 +22,12 @@ export function Stream() {
   const meshRef = useRef<THREE.Mesh>(null)
   const { tier } = useQuality()
   const { gl } = useThree()
+  const [contextVersion, setContextVersion] = useState(0)
+  useEffect(() => {
+    const restored = () => setContextVersion(version => version + 1)
+    gl.domElement.addEventListener('webglcontextrestored', restored)
+    return () => gl.domElement.removeEventListener('webglcontextrestored', restored)
+  }, [gl])
   // MeshTransmissionMaterial renders the whole scene into an FBO every frame
   // (resolution 512, 6 samples, temporal distortion) - the dominant fill-rate
   // cost on weak GPUs, enough to hold a UHD 620 under 1 fps even at ULTRA_LOW.
@@ -85,6 +91,7 @@ export function Stream() {
         flatShading: false,
     })
 
+    mat.customProgramCacheKey = () => mat.userData.bakedNoise ? 'rock-baked-v1' : 'rock-live-v1'
     mat.onBeforeCompile = (shader) => {
 
 
@@ -268,14 +275,17 @@ export function Stream() {
   useLayoutEffect(() => {
     if (new URLSearchParams(location.search).get('rockbake') !== '1') return
     const sets = [{ geometry: baseGeometry, transforms: rockInstances }, { geometry: shoreGeometry, transforms: shoreStones }]
+    const started = performance.now()
     const baked = bakeRockNoise(gl, sets)
+    gl.domElement.dataset.rockBake = baked ? 'gpu-float32' : 'original-fallback'
+    gl.domElement.dataset.rockBakeMs = (performance.now() - started).toFixed(1)
     if (!baked) return
     indexRockBake(sets)
     rockMaterial.userData.bakedNoise = baked.texture
     rockMaterial.userData.bakedSize = new THREE.Vector2(baked.width, baked.height)
     rockMaterial.needsUpdate = true
     return () => { baked.target.dispose(); delete rockMaterial.userData.bakedNoise; rockMaterial.needsUpdate = true }
-  }, [gl, baseGeometry, shoreGeometry, rockInstances, shoreStones, rockMaterial])
+  }, [gl, baseGeometry, shoreGeometry, rockInstances, shoreStones, rockMaterial, contextVersion])
 
   return (
     <group position={[-15, 0.05, 0]} rotation={[0, Math.PI / 4, 0]}>
