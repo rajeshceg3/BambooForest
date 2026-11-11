@@ -8,6 +8,7 @@ import * as THREE from 'three'
 import { Zone } from '../types'
 import { createBambooChunks } from '../utils/bambooChunks'
 import { DIAG } from '../diag'
+import { bakeLeafRandomIds, leafTranslationKey, installLeafRandomIds } from '../utils/leafRandomBake'
 
 interface BambooForestProps {
   currentZone?: Zone
@@ -357,12 +358,14 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         flatShading: false,
     })
 
+    mat.customProgramCacheKey = () => mat.userData.bakedRandom ? 'leaf-baked-random-v1' : 'leaf-live-random-v1'
     mat.onBeforeCompile = (shader) => {
         shader.uniforms.uTime = { value: 0 }
         shader.uniforms.uCameraPosition = { value: new THREE.Vector3() }
         mat.userData.shader = shader
 
         shader.vertexShader = `
+            ${mat.userData.bakedRandom ? 'attribute float aLeafRandom;' : ''}
             uniform float uTime;
             uniform vec3 uCameraPosition;
             varying vec3 vWorldPos;
@@ -377,7 +380,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
             #include <begin_vertex>
             #ifdef USE_INSTANCING
                 vWorldPos = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
-                vRandId = fract(sin(dot(instanceMatrix[3].xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+                vRandId = ${mat.userData.bakedRandom ? 'aLeafRandom' : 'fract(sin(dot(instanceMatrix[3].xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453)'};
                 float worldX = instanceMatrix[3][0];
                 float worldZ = instanceMatrix[3][2];
                 float flutter = sin(uTime * 3.0 + worldX) * 0.05 * position.x;
@@ -497,10 +500,30 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
     const sources = [meshRef.current, branchMeshRef.current, leafMeshRef.current]
     if (DIAG.noSpatial || !group || !matrices || sources.some(source => !source)) return
     const chunks = sources.flatMap(source => createBambooChunks(source!, Math.max(24, spread / 14)))
+    let bakedGeometries: THREE.BufferGeometry[] = []
+    if (new URLSearchParams(location.search).get('leafbake') === '1') {
+      const started = performance.now()
+      const values = bakeLeafRandomIds(gl, matrices.leafInstances)
+      if (values) {
+        const map = new Map<string, number>()
+        values.forEach((value, index) => map.set(leafTranslationKey(matrices.leafInstances, index * 16), value))
+        const leaves = chunks.filter(mesh => mesh.material === leafMaterial)
+        leaves.forEach(mesh => installLeafRandomIds(mesh, map))
+        bakedGeometries = leaves.map(mesh => mesh.geometry)
+        leafMaterial.userData.bakedRandom = true
+        leafMaterial.needsUpdate = true
+        gl.domElement.dataset.leafBake = 'gpu-vertex-float32'
+        gl.domElement.dataset.leafBakeMs = (performance.now() - started).toFixed(1)
+        gl.domElement.dataset.leafBakeCount = String(values.length)
+      } else gl.domElement.dataset.leafBake = 'original-fallback'
+    }
     chunks.forEach(mesh => group.add(mesh))
     gl.domElement.dataset.bambooSpatialBatches = String(chunks.length)
     return () => {
       chunks.forEach(mesh => { group.remove(mesh); mesh.dispose() })
+      bakedGeometries.forEach(geometry => geometry.dispose())
+      delete leafMaterial.userData.bakedRandom
+      leafMaterial.needsUpdate = true
     }
   }, [matrices, material, branchMaterial, leafMaterial, castShadow, spread, gl])
 
