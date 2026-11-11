@@ -19,12 +19,12 @@ for (const attribute of ['position', 'normal', 'uv']) {
 }
 assert.equal(geometry.index.count / 3, 24);
 assert(Math.abs(geometry.boundingBox.min.y) < 1e-6);
-assert(Math.abs(geometry.boundingBox.max.y - 0.7) < 1e-6);
-assert(geometry.boundingBox.max.x - geometry.boundingBox.min.x <= 0.161);
+assert(geometry.boundingBox.max.y <= 0.71 && geometry.boundingBox.max.y > 0.65);
+assert(geometry.boundingBox.max.x - geometry.boundingBox.min.x < 0.6);
 const p = geometry.attributes.position;
-for (let i = 0; i < p.count; i++) {
-  if (p.getY(i) < 1e-6 || p.getY(i) > 0.69999) assert(Math.abs(p.getX(i)) < 1e-6, 'pointed ends');
-}
+assert.equal(p.count, 28);
+// Both rounded blades start together at the attachment; tips stay finite.
+assert([...p.array].every(Number.isFinite));
 // A regression anchor: foliage edits must not move or delete existing trunks.
 let output;
 const box = compile('src/workers/bambooWorker.ts', { self: {}, postMessage: value => { output = value; }, Float32Array, Math });

@@ -79,7 +79,7 @@ self.onmessage = (e: MessageEvent) => {
             tempBranch.rotation.set(0, branchAngle, 0);
             tempBranch.rotateX(-Math.PI / 4 - random() * 0.2);
 
-            const branchLen = 0.8 + random() * 0.5;
+            const branchLen = 1.4 + random() * 0.8;
             tempBranch.scale.set(scale * 0.5, branchLen, scale * 0.5);
 
             tempBranch.updateMatrix();
@@ -112,7 +112,7 @@ self.onmessage = (e: MessageEvent) => {
                      (random() - 0.5) * 0.5
                  );
 
-                 const leafScale = (0.5 + random() * 0.5) * scale;
+                 const leafScale = (0.8 + random() * 0.5) * scale;
                  tempLeaf.scale.set(leafScale, leafScale, leafScale);
                  tempLeaf.updateMatrix();
 
