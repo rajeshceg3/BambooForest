@@ -1,0 +1,12 @@
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const source=fs.readFileSync('src/components/TourContext.tsx','utf8');
+const block=source.split("title: 'Ascent'")[0].split('position:').at(-1);
+const position=JSON.parse(block.match(/\[[^\]]+\]/)[0]);
+const target=JSON.parse(block.match(/target:\s*(\[[^\]]+\])/)[1]);
+const horizontal=Math.hypot(target[0]-position[0],target[2]-position[2]);
+const elevation=Math.atan2(target[1]-position[1],horizontal);
+assert(horizontal>=8,'Ascent must frame actual grove rather than its empty zenith');
+assert(elevation>.1&&elevation<.6,'Ascent should look gently upward within the grove');
+assert(position[1]>2&&position[1]<5,'Ascent should rise below most stalk tops');
+assert.deepEqual(position,[18,3.5,-10]);assert.deepEqual(target,[12,6,-20]);
+console.log('Ascent source framing contract passes; actual pixels remain required');

@@ -1,8 +1,9 @@
+import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
-export function GroundCover({ count = 100000 }) {
+export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }: { count?: number; castShadow?: boolean; spread?: number }) {
   const meshRef = useRef<THREE.InstancedMesh>(null)
   const { camera } = useThree()
   const [matrices, setMatrices] = useState<{ instanceMatrixArray: Float32Array; actualCount: number } | null>(null)
@@ -15,12 +16,12 @@ export function GroundCover({ count = 100000 }) {
       setMatrices(e.data)
     }
 
-    worker.postMessage({ count })
+    worker.postMessage({ count, spread })
 
     return () => {
       worker.terminate()
     }
-  }, [count])
+  }, [count, spread])
 
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -258,6 +259,7 @@ export function GroundCover({ count = 100000 }) {
   }, [matrices])
 
   useFrame((state) => {
+    if (reducedMotion.matches) return
     if (material.userData.shader) {
         material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()
         material.userData.shader.uniforms.uCameraPosition.value.copy(camera.position)
@@ -268,7 +270,7 @@ export function GroundCover({ count = 100000 }) {
     <instancedMesh
       ref={meshRef}
       args={[undefined, undefined, count]} // Initial buffer size
-      castShadow
+      castShadow={castShadow}
       receiveShadow
       geometry={geometry}
     >

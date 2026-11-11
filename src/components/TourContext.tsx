@@ -10,6 +10,7 @@ export interface TourStep {
   duration?: number // Optional duration override for transition
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- The controller and provider share this immutable tour definition.
 export const TOUR_STEPS: TourStep[] = [
   {
     position: [0, 4, 15],
@@ -28,24 +29,26 @@ export const TOUR_STEPS: TourStep[] = [
     duration: 4
   },
   {
-    position: [-10, 1.5, 3],
-    target: [-15, 0.5, 0],
+    position: [-16, 2.5, -16],
+    // Look downstream from the bank, rather than across a horizontal stripe.
+    target: [-2, 0.15, 8],
     zone: 'STREAM',
     title: 'Flowing Reflection',
     description: 'Water, the softest element, overcomes the hardest stone. Its gentle murmur is the forest\'s constant song.',
     duration: 4
   },
   {
-    position: [-2, 1.2, -2],
-    target: [-5, 0.8, -5],
+    position: [10, 2, -5],
+    // Frame the animal above the phone tour card, with a clear sightline.
+    target: [9, -0.15, -8],
     zone: 'DEEP_FOREST',
     title: 'Life in the Shadows',
     description: 'The forest breathes through its inhabitants. In the deep shade, life thrives in quiet harmony.',
     duration: 3.5
   },
   {
-    position: [0, 8, 0],
-    target: [0, 20, 0], // Looking straight up
+    position: [18, 3.5, -10],
+    target: [12, 6, -20], // Rise within the grove and frame its canopy, not the empty clearing zenith.
     zone: 'GROVE',
     title: 'Ascent',
     description: 'Reaching for the light, rooted in darkness. The bamboo teaches us to bend without breaking.',
@@ -131,6 +134,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- This context module intentionally exposes its provider and consumer hook.
 export function useTour() {
   const context = useContext(TourContext)
   if (context === undefined) {

@@ -131,3 +131,28 @@ canvas {
     transition: none !important;
   }
 }
+
+/* Weak-GPU tiers: backdrop blur repaints its backdrop (the whole WebGL canvas)
+   every frame. On LOW/ULTRA_LOW replace every backdrop-blur utility with a
+   solid, slightly stronger scrim so panels keep their contrast. */
+body[data-tier='LOW'] [class*='backdrop-blur'],
+body[data-tier='ULTRA_LOW'] [class*='backdrop-blur'] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background-color: rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Bound text contrast independently of the moving scene. These panels do
+   not sample or blur the WebGL canvas. #f5f4e8 on #11291f measures 13.95:1. */
+.zone-card, .poem-card { background: #11291f; color: #f5f4e8; border-radius: 16px; padding: 16px 24px; }
+.zone-card { max-width: 90vw; }
+.zone-card > div, .poem-card > div { display: none; }
+.zone-card h2, .zone-card p, .poem-card p { color: #f5f4e8; text-shadow: none; letter-spacing: 0.06em; }
+.tour-card { background: #11291f !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+.world-controls { display: flex; align-items: center; gap: 8px; }
+.world-controls button, .reset-view { background: #11291f !important; color: #f5f4e8; font-size: 12px; padding: 14px 16px; border: 1px solid #7b9687; border-radius: 28px; }
+.reset-view:focus-visible { outline: 2px solid white; outline-offset: 4px; }
+@media (max-width: 767px) { .world-controls { right: 16px; bottom: 112px; } .poem-card { max-width: calc(100vw - 32px); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}

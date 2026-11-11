@@ -1,6 +1,9 @@
 import { useRef, useMemo } from 'react'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
+import { useFrame } from '@react-three/fiber'
+import { useQuality } from './QualityContext'
+import { createStreamBanks, createShoreStones, streamSection } from '../utils/streamBanks'
 
 // Simple seedable random (LCG)
 function mulberry32(a: number) {
@@ -14,6 +17,62 @@ function mulberry32(a: number) {
 
 export function Stream() {
   const meshRef = useRef<THREE.Mesh>(null)
+  const { tier } = useQuality()
+  // MeshTransmissionMaterial renders the whole scene into an FBO every frame
+  // (resolution 512, 6 samples, temporal distortion) - the dominant fill-rate
+  // cost on weak GPUs, enough to hold a UHD 620 under 1 fps even at ULTRA_LOW.
+  // LOW and below get a plain transparent standard material instead: same
+  // colour and geometry, no transmission pass.
+  const cheapWater = tier === 'LOW' || tier === 'ULTRA_LOW'
+
+  // Small tiled height map gives low-tier water a readable surface without
+  // another scene render. Texture work happens once, not per fragment.
+  const rippleColor = useMemo(() => {
+    const size = 256
+    const data = new Uint8Array(size * size * 4)
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const u = x / size * Math.PI * 2, v = y / size * Math.PI * 2
+      const ripple = Math.pow(0.5 + 0.5 * Math.sin(6 * v + Math.sin(2 * u)), 6)
+      const detail = Math.sin(13 * v + 3 * u) * 3
+      const i = (y * size + x) * 4
+      data[i] = 76 + ripple * 22 + detail
+      data[i + 1] = 111 + ripple * 24 + detail
+      data[i + 2] = 107 + ripple * 22 + detail
+      data[i + 3] = 255
+    }
+    const texture = new THREE.DataTexture(data, size, size)
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    texture.magFilter = texture.minFilter = THREE.LinearFilter
+    texture.repeat.set(3, 300)
+    texture.needsUpdate = true
+    return texture
+  }, [])
+  const rippleMap = useMemo(() => {
+    const size = 128
+    const data = new Uint8Array(size * size * 4)
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const u = x / size * Math.PI * 2, v = y / size * Math.PI * 2
+      const h = 128 + 40 * Math.sin(4 * v + 0.8 * Math.sin(2 * u))
+        + 16 * Math.sin(9 * v + 3 * u)
+      const i = (y * size + x) * 4
+      data[i] = data[i + 1] = data[i + 2] = h
+      data[i + 3] = 255
+    }
+    const texture = new THREE.DataTexture(data, size, size)
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+    texture.magFilter = texture.minFilter = THREE.LinearFilter
+    texture.repeat.set(4, 400)
+    texture.needsUpdate = true
+    return texture
+  }, [])
+  const reduceMotion = useMemo(() => window.matchMedia('(prefers-reduced-motion: reduce)'), [])
+  useFrame((_, delta) => {
+    if (!reduceMotion.matches) {
+      rippleColor.offset.y = rippleMap.offset.y
+      rippleMap.offset.y = (rippleMap.offset.y + Math.min(delta, 0.05) * 0.025) % 1
+    }
+  })
 
   const rockMaterial = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
@@ -125,7 +184,7 @@ export function Stream() {
                     transformed.z *= 1.0 + d * 0.2;
                 }
 
-                vWorldPos = (instanceMatrix * vec4(transformed, 1.0)).xyz;
+                vWorldPos = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
             #else
                 vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
             #endif
@@ -146,7 +205,7 @@ export function Stream() {
             // Moss is rougher (0.9), wet rock is smoother (0.2)
             float mossFactorR = smoothstep(0.4, 0.6, mossNoiseR);
             // Also adjust for height (wet near water level 0.0)
-            float wetness = smoothstep(0.4, -0.1, vWorldPos.y);
+            float wetness = (1.0 - smoothstep(-0.1, 0.4, vWorldPos.y));
 
             float baseRoughness = mix(0.7, 0.2, wetness); // Wet rocks are very glossy
             roughnessFactor = mix(baseRoughness, 1.0, mossFactorR);
@@ -167,7 +226,7 @@ export function Stream() {
             rockColor += vec3(n * 0.05);
 
             // Wetness Darkening
-            float wetnessColor = smoothstep(0.4, -0.1, vWorldPos.y);
+            float wetnessColor = (1.0 - smoothstep(-0.1, 0.4, vWorldPos.y));
             // Wet rocks are darker and more saturated
             rockColor = mix(rockColor, rockColor * 0.5, wetnessColor * 0.8);
 
@@ -195,7 +254,7 @@ export function Stream() {
             // We want to darken the very bottom of the geometry, regardless of world position if possible.
             // But vWorldPos works if we assume the rock sits on the ground.
             // Darken below y=0.1
-            float groundOcc = smoothstep(0.2, 0.0, vWorldPos.y);
+            float groundOcc = (1.0 - smoothstep(0.0, 0.2, vWorldPos.y));
             rockColor *= mix(1.0, 0.3, groundOcc); // Darken bottom significantly
 
             diffuseColor.rgb = rockColor;
@@ -241,27 +300,75 @@ export function Stream() {
       return array;
   }, []);
 
+  const waterGeometry = useMemo(() => {
+    // The existing 12-unit scatter exclusion still contains every bank point.
+    // Shape both banks inside that corridor; never widen into the grove.
+    const geometry = new THREE.PlaneGeometry(20, 2000, 4, 512)
+    const p = geometry.attributes.position
+    for (let i = 0; i < p.count; i++) {
+      const along = p.getY(i)
+      const { center, halfWidth } = streamSection(along)
+      p.setX(i, center + p.getX(i) / 10 * halfWidth)
+    }
+    geometry.computeVertexNormals()
+    return geometry
+  }, [])
+
+  const bankGeometry = useMemo(createStreamBanks, [])
+  const shoreStones = useMemo(createShoreStones, [])
   const instancedMeshRef = useRef<THREE.InstancedMesh | null>(null);
 
   return (
     <group position={[-15, 0.05, 0]} rotation={[0, Math.PI / 4, 0]}>
       {/* Water Surface */}
-      <mesh ref={meshRef} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <planeGeometry args={[20, 2000, 4, 64]} />
-        <MeshTransmissionMaterial
-            resolution={512}
-            samples={6}
-            thickness={0.5}
-            roughness={0.1}
-            ior={1.33}
-            chromaticAberration={0.03}
-            anisotropy={0.5}
-            distortion={0.5}
-            distortionScale={0.5}
-            temporalDistortion={0.2}
-            color="#8fbcd4"
-        />
+      <mesh ref={meshRef} geometry={waterGeometry} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        {cheapWater ? (
+          // Cheap water: no transmission pass, but keep it alive - deeper tint,
+          // higher opacity, low roughness + a little metalness so the forest
+          // env-map reflection breaks up the flat pale sheet.
+          <meshStandardMaterial
+            color="#b6d3cb"
+            map={rippleColor}
+            bumpMap={rippleMap}
+            bumpScale={0.12}
+            transparent
+            opacity={0.82}
+            roughness={0.28}
+            metalness={0.2}
+          />
+        ) : (
+          <MeshTransmissionMaterial
+              resolution={512}
+              samples={6}
+              thickness={0.5}
+              roughness={0.1}
+              ior={1.33}
+              chromaticAberration={0.03}
+              anisotropy={0.5}
+              distortion={0.5}
+              distortionScale={0.5}
+              temporalDistortion={0.2}
+              color="#8fbcd4"
+          />
+        )}
       </mesh>
+
+      <mesh geometry={bankGeometry} receiveShadow>
+        <meshStandardMaterial vertexColors transparent depthWrite={false} roughness={0.92} side={THREE.DoubleSide} />
+      </mesh>
+
+      <instancedMesh
+        ref={mesh => {
+          if (!mesh) return
+          mesh.instanceMatrix.array.set(shoreStones)
+          mesh.instanceMatrix.needsUpdate = true
+          mesh.computeBoundingSphere()
+        }}
+        args={[undefined, rockMaterial, 800]}
+        receiveShadow
+      >
+        <icosahedronGeometry args={[1, 1]} />
+      </instancedMesh>
 
       {/* River Stones Instanced */}
       <instancedMesh

@@ -1,3 +1,4 @@
+import { reducedMotion } from '../utils/motion'
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -56,6 +57,7 @@ export function FallingLeaves({ count = 100 }: FallingLeavesProps) {
   const euler = useMemo(() => new THREE.Euler(), [])
 
   useFrame((state, delta) => {
+    if (reducedMotion.matches) return
     if (!meshRef.current) return
 
     const time = state.clock.getElapsedTime()

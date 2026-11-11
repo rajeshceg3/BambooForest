@@ -1,3 +1,4 @@
+import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -32,7 +33,7 @@ export function Birds({ count = 30 }) {
           velocities[i*3+1] = (Math.random() - 0.5) * MAX_SPEED * 0.1
           velocities[i*3+2] = (Math.random() - 0.5) * MAX_SPEED
       }
-  }, [count])
+  }, [count, positions, velocities])
 
   const material = useMemo(() => {
     const mat = new THREE.MeshBasicMaterial({
@@ -74,6 +75,7 @@ export function Birds({ count = 30 }) {
   const dummy = useMemo(() => new THREE.Object3D(), [])
 
   useFrame((state) => {
+    if (reducedMotion.matches) return
     if (!meshRef.current) return
     if (material.userData.shader) {
       material.userData.shader.uniforms.uTime.value = state.clock.getElapsedTime()
