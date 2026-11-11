@@ -47,8 +47,8 @@ export const TOUR_STEPS: TourStep[] = [
     duration: 3.5
   },
   {
-    position: [0, 8, 0],
-    target: [0, 20, 0], // Looking straight up
+    position: [18, 3.5, -10],
+    target: [12, 6, -20], // Rise within the grove and frame its canopy, not the empty clearing zenith.
     zone: 'GROVE',
     title: 'Ascent',
     description: 'Reaching for the light, rooted in darkness. The bamboo teaches us to bend without breaking.',
