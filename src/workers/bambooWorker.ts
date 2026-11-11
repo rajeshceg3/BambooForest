@@ -91,23 +91,25 @@ self.onmessage = (e: MessageEvent) => {
 
             // Use the actual branch transform rather than separate trig with
             // an opposite Z sign. Keep the existing instance budget.
-            const tip = new THREE.Vector3(0, 1, 0).applyMatrix4(tempBranch.matrix)
-            const tipX = tip.x, tipY = tip.y, tipZ = tip.z
-
             const numLeaves = 3 + Math.floor(random() * 3);
             for (let L = 0; L < numLeaves; L++) {
                  const leafAngle = random() * Math.PI * 2;
 
+                 // Alternate blades along the branchlet instead of a
+                 // disconnected upright flag-cluster at its very tip.
+                 // Keep the same random draws, preserving all stalk matrices.
+                 const along = 0.45 + L / Math.max(1, numLeaves - 1) * 0.55
+                 const attach = new THREE.Vector3(0, along, 0).applyMatrix4(tempBranch.matrix)
                  tempLeaf.position.set(
-                     tipX + (random() - 0.5) * 0.2,
-                     tipY + (random() - 0.5) * 0.2,
-                     tipZ + (random() - 0.5) * 0.2
+                     attach.x + (random() - 0.5) * 0.05,
+                     attach.y + (random() - 0.5) * 0.05,
+                     attach.z + (random() - 0.5) * 0.05
                  );
 
                  tempLeaf.rotation.set(
-                     random() * 0.5,
-                     leafAngle,
-                     random() * 0.5
+                     -1.65 - random() * 0.4,
+                     branchAngle + (L % 2 ? -0.6 : 0.6) + leafAngle * 0.08,
+                     (random() - 0.5) * 0.5
                  );
 
                  const leafScale = (0.5 + random() * 0.5) * scale;
