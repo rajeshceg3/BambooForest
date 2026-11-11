@@ -41,3 +41,32 @@ Separate completed static-term experiments:
 - Leaf-ID branch diag/static-leaf-id-20261111/head7b960d8: bounded pixel pairs
   equal, no measured speed gain, startup readback and geometry clones. Do not
   promote. Both default to original unless explicit diagnostic query selected.
+
+## Bounded replacement experiment,16:25IST
+
+`?composerAA=smaa` selects0 compositor multisampling and SMAA Ultra.
+Normal route remains unchanged at its original requested8samples (actual4 on
+SwiftShader). `none`/`2` are comparison-only diagnostics; `inspect` makes the
+same-scene paused comparison refs available. No material/geometry/instance or
+wind changes, and tone mapping/vignette/bloom/other tier effects remain.
+
+Measured normal-motion390x844 with full4994/8800/35126:
+- Original4x actual MSAA:1.431 /1.393fps.
+-0MSAA+SMAA Medium:2.072 /2.076fps.
+-0MSAA+SMAA Ultra:2.109 /2.059fps.
+- Requested2MSAA:1.398 /1.366fps, no useful gain (actual sample rounding needs
+  checking before drawing a conclusion about2x).
+
+Actual same paused scene and composer at390: entry, higher stalk/leaf edges,
+cross-stream, shore and visible deer were rendered through the complete
+compositor for A-B. Camera and animation are identical within each pair.
+SMAA Ultra was inspected at full size and enlarged crops. It smooths edges
+much better than noAA, but is NOT pixel-identical to original multisampling.
+Fine stalk/leaf/hoof coverage can differ. No claim that edge quality is equal
+on every motion frame or physical phone. All original quality/performance
+holds remain; still only~2fps on this renderer.
+
+`node docs/verification/compositor-pixel-ab.mjs` reproduces same-scene paused
+full-compositor comparisons with ordinary UI overlays. Uses reduced motion
+and exact same stored scene state, not temporal shimmer proof. The deer pose
+uses the existing source sightline selector without moving any scene content.

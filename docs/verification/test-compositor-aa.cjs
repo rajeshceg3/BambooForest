@@ -1,0 +1,12 @@
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const source=fs.readFileSync('src/components/Effects.tsx','utf8');
+const expression=source.match(/const sampleCount = (.*)/)[1];
+const sampleCount=new Function('aaDiagnostic','return '+expression);
+for(const query of [null,'','unknown','original'])assert.equal(sampleCount(query),8);
+assert.equal(sampleCount('smaa'),0);assert.equal(sampleCount('none'),0);assert.equal(sampleCount('2'),2);
+assert(source.includes("aaDiagnostic === 'smaa' || aaDiagnostic === 'inspect'"));
+assert(source.includes('SMAAPreset.ULTRA : SMAAPreset.MEDIUM'));
+assert(source.includes('<Vignette eskil={false} offset={0.1} darkness={0.5} />'));
+assert(source.includes('<ToneMapping mode={ToneMappingMode.ACES_FILMIC} />'));
+assert(source.includes("if (aaDiagnostic !== 'inspect') return"));
+console.log('Compositor diagnostic default unchanged; SMAA opt-in, original tone map/vignette preserved');
