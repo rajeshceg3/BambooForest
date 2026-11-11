@@ -1,25 +1,37 @@
 import { EffectComposer, Bloom, Noise, Vignette, ToneMapping, N8AO, DepthOfField, SMAA } from '@react-three/postprocessing'
-import { ToneMappingMode } from 'postprocessing'
-import { useRef, useMemo } from 'react'
+import { ToneMappingMode, SMAAPreset, EffectComposer as Composer, SMAAEffect } from 'postprocessing'
+import { useRef, useMemo, useEffect } from 'react'
 import { Autofocus } from './Autofocus'
 import { useQuality } from './QualityContext'
 
+import { compositorDiagnostic } from '../utils/compositorDiagnostic'
+
 export function Effects() {
   const dofRef = useRef(null)
+  const composerRef = useRef<Composer>(null)
+  const smaaRef = useRef<SMAAEffect | null>(null)
   const target = useMemo(() => [0, 0, 0] as [number, number, number], [])
   const { tier } = useQuality()
 
   const isHigh = tier === 'HIGH'
   const isMedium = tier === 'MEDIUM'
   const isUltraLow = tier === 'ULTRA_LOW'
+  const aaDiagnostic = new URLSearchParams(location.search).get('composerAA')
+  const sampleCount = aaDiagnostic === 'smaa' || aaDiagnostic === 'none' ? 0 : aaDiagnostic === '2' ? 2 : 8
+  useEffect(() => {
+    if (aaDiagnostic !== 'inspect') return
+    compositorDiagnostic.composer = composerRef.current
+    compositorDiagnostic.smaa = smaaRef.current
+    return () => { compositorDiagnostic.composer = null; compositorDiagnostic.smaa = null }
+  }, [aaDiagnostic])
 
   return (
-    <EffectComposer enableNormalPass={false}>
+    <EffectComposer ref={composerRef} enableNormalPass={false} multisampling={sampleCount}>
       {/* Anti-aliasing first? Usually FXAA/SMAA is last, but EffectComposer handles it.
           Actually, SMAA should be one of the last passes, but tone mapping and vignette are also last.
           Usually ToneMapping is very last. Let's put SMAA before Noise/Vignette/ToneMapping.
       */}
-      {isHigh || isMedium ? <SMAA /> : <></>}
+      {isHigh || isMedium || (aaDiagnostic === 'smaa' || aaDiagnostic === 'inspect') ? <SMAA ref={node => { smaaRef.current = node as unknown as SMAAEffect | null }} preset={aaDiagnostic ? SMAAPreset.ULTRA : SMAAPreset.MEDIUM} /> : <></>}
       {isHigh || isMedium ? (
         <N8AO
           aoRadius={isHigh ? 0.4 : 0.28}
