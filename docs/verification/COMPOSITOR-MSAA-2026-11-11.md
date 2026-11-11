@@ -76,3 +76,33 @@ composer on the same paused scene with RenderPass, VignetteEffect pass and
 ToneMappingEffect pass. At all five poses it exactly matches the diagnostic
 composer with SMAA skipped (zero differing pixels). This guards against the
 comparison accidentally assigning skipped-SMAA pipeline changes to AA alone.
+
+## Additional bounded checks,16:38IST
+
+- Hosted same-runtime build72436d9: original1.186/1.186fps versus SMAA Ultra
+  1.854/1.812fps. Final runtime bundle5d441c0e matches the later note-only head.
+- Actual final-head4b68252 cloud390 entry, look-drag, tour through stream and
+  visible alert deer inspected. Normal UI intact, worker readiness observed.
+  One Pointer Lock NotAllowedError followed mobile emulation's mouse-style
+  drag; look changed and tour continued. No shader errors observed.
+- Three fresh local candidate loads and a real WebGL context loss/restore
+  recovered full4994/8800/35126 counts and visible scene. GL error0 after
+  restore; no page/console errors in this bounded lifecycle test.
+- Twelve paired wind/camera state samples were captured through the complete
+  compositor with the same scene state per pair. The clip is assembled at4fps
+  for comparison, not a recording of real-time smoothness. Static and sampled
+  motion pixels do not establish a universal no-loss/temporal-shimmer gate.
+
+A paused context comparison changed wind appearance on first render because
+new shader programs initialize their time uniforms before the frame callback
+updates them. Normal resumed-frame context recovery above is the applicable
+check; the paused result is not reported as a new app bug.
+
+The optional program audit now resolves one pixel from the multisample buffer
+into a matching single-sample framebuffer before readback, avoiding the earlier
+INVALID_OPERATION. All audited calls report GL error0. It serializes draws and
+includes synchronization/resolve overhead, so it is not a native GPU timer or
+normal scheduling measurement. The remaining cost is spread over ground,
+grass, foliage/stalks and rocks, not a single static hash. Do not use the invalid
+earlier direct-readback timings. No further runtime change is justified by
+this audit alone.
