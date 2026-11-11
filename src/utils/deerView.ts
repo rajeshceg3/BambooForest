@@ -17,7 +17,7 @@ export function chooseDeerView(x: number, z: number, heading: number, stalks: St
     }
     const side = Math.abs(Math.sin(angle - heading))
     const front = Math.cos(angle - heading)
-    const score = Math.min(clearance, .6) * 8 + side * .3 + front * .1
+    const score = (clearance >= 0 ? 10 : clearance * 8) + side * 2 + front * .5 + Math.min(clearance,.6) * .05
     if (score > best.score) best = {x: dx, z: dz, clearance, score}
   }
   return best

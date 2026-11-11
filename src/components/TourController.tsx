@@ -66,7 +66,7 @@ export function TourController({ onZoneChange }: TourControllerProps) {
           gl.domElement.dataset.deerViewOffset = `${view.dx.toFixed(3)},${view.dz.toFixed(3)}`
           gl.domElement.dataset.deerViewTarget = `${view.targetX.toFixed(3)},${view.targetZ.toFixed(3)}`
           motion.to.set(deer.position.x + view.dx, deer.position.y + 2, deer.position.z + view.dz)
-          motion.toTarget.set(deer.position.x, deer.position.y - .45, deer.position.z)
+          motion.toTarget.set(deer.position.x, deer.position.y - .9, deer.position.z)
         }
       }
       const p = Math.min(1, (performance.now() - motion.started) / motion.duration)
