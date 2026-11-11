@@ -1,9 +1,18 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useEffect } from 'react'
 import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { useQuality } from './QualityContext'
 import { createStreamBanks, createShoreStones, streamSection } from '../utils/streamBanks'
+
+import { createStoneChunks } from '../utils/stoneChunks'
+import { DIAG } from '../diag'
+
+function StoneBatches({ transforms, geometry, material, focus = false }: { transforms: Float32Array; geometry: THREE.BufferGeometry; material: THREE.Material; focus?: boolean }) {
+  const chunks = useMemo(() => createStoneChunks(transforms, geometry, material, focus), [transforms, geometry, material, focus])
+  useEffect(() => () => chunks.forEach(mesh => mesh.dispose()), [chunks])
+  return <group>{chunks.map((mesh, i) => <primitive key={i} object={mesh} />)}</group>
+}
 
 // Simple seedable random (LCG)
 function mulberry32(a: number) {
@@ -316,7 +325,7 @@ export function Stream() {
 
   const bankGeometry = useMemo(createStreamBanks, [])
   const shoreStones = useMemo(createShoreStones, [])
-  const instancedMeshRef = useRef<THREE.InstancedMesh | null>(null);
+  const shoreGeometry = useMemo(() => new THREE.IcosahedronGeometry(1, 1), [])
 
   return (
     <group position={[-15, 0.05, 0]} rotation={[0, Math.PI / 4, 0]}>
@@ -357,7 +366,7 @@ export function Stream() {
         <meshStandardMaterial vertexColors transparent depthWrite={false} roughness={0.92} side={THREE.DoubleSide} />
       </mesh>
 
-      <instancedMesh
+      {!DIAG.noStoneSpatial ? <StoneBatches transforms={shoreStones} geometry={shoreGeometry} material={rockMaterial} /> : <instancedMesh
         ref={mesh => {
           if (!mesh) return
           mesh.instanceMatrix.array.set(shoreStones)
@@ -367,15 +376,14 @@ export function Stream() {
         args={[undefined, rockMaterial, 800]}
         receiveShadow
       >
-        <icosahedronGeometry args={[1, 1]} />
-      </instancedMesh>
+        <primitive object={shoreGeometry} attach="geometry" />
+      </instancedMesh>}
 
       {/* River Stones Instanced */}
-      <instancedMesh
+      {!DIAG.noStoneSpatial ? <StoneBatches transforms={rockInstances} geometry={baseGeometry} material={rockMaterial} focus /> : <instancedMesh
           ref={(mesh) => {
               if (mesh) {
                   mesh.layers.enable(1); // Enable focus
-                  instancedMeshRef.current = mesh;
                   mesh.instanceMatrix.array.set(rockInstances);
                   mesh.instanceMatrix.needsUpdate = true;
               }
@@ -383,7 +391,7 @@ export function Stream() {
           args={[baseGeometry, rockMaterial, 300]}
           receiveShadow
           castShadow
-      />
+      />}
     </group>
   )
 }
