@@ -1,484 +1,209 @@
+import { sampleDeerFoot, DEER_SPEED } from '../utils/deerMotion'
 import { reducedMotion } from '../utils/motion'
-import { useRef, useMemo, useEffect } from 'react'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { createPortal, useFrame, useThree, type ThreeElements } from '@react-three/fiber'
 import * as THREE from 'three'
+import { MarchingCubes } from 'three/examples/jsm/objects/MarchingCubes.js'
 
-type DeerState = 'IDLE' | 'GRAZE' | 'WALK' | 'ALERT';
+type Behaviour = 'IDLE' | 'GRAZE' | 'WALK' | 'ALERT'
+type GroupProps = ThreeElements['group']
 
-function animateLeg(leg: THREE.Group | null, offset: number, isWalking: boolean, walkTime: number, delta: number) {
-    if (!leg) return
-
-    const legAmp = 0.3
-
-    if (isWalking) {
-        const phase = (walkTime + offset) % 1.0
-
-        if (phase < 0.5) {
-            // Stance Phase (Plant)
-            // Leg rotates backward linearly to counteract body forward motion
-            // Map 0..0.5 to 0.5..-0.5 rotation?
-            // Actually, just rotation.x
-            const p = phase / 0.5 // 0..1
-            leg.rotation.x = THREE.MathUtils.lerp(legAmp, -legAmp, p)
-            leg.position.y = -0.15 // Grounded (relative height)
-
-            // Knee straightens slightly?
-            // Simplified: just rotate hip
-        } else {
-            // Swing Phase (Lift)
-            const p = (phase - 0.5) / 0.5 // 0..1
-            // Parabolic lift
-            const lift = Math.sin(p * Math.PI) * 0.15
-            // Move forward
-            leg.rotation.x = THREE.MathUtils.lerp(-legAmp, legAmp, p)
-            leg.position.y = -0.15 + lift
-        }
-    } else {
-        // Idle stance
-        leg.rotation.x = THREE.MathUtils.lerp(leg.rotation.x, 0, delta * 5)
-        leg.position.y = THREE.MathUtils.lerp(leg.position.y, -0.15, delta * 5)
-    }
+// Smooth union volumes follow roe-deer proportions in the source note.
+// One skinned surface blends shoulder, haunch, chest, neck base and muzzle.
+function anatomyGeometry() {
+  const n = 56, scale = 1.2, helperMaterial = new THREE.MeshBasicMaterial()
+  const mc = new MarchingCubes(n, helperMaterial, false, false, 20000)
+  mc.isolation = 0
+  const smoothMin = (a: number, b: number, k: number) => {
+    const h = Math.max(k - Math.abs(a-b), 0) / k
+    return Math.min(a,b) - h*h*k*.25
+  }
+  const ellipsoid = (x: number,y: number,z: number,cx: number,cy: number,cz: number,rx: number,ry: number,rz: number,angle=0) => {
+    const dx=x-cx, dy=(y-cy)*Math.cos(angle)+(z-cz)*Math.sin(angle), dz=-(y-cy)*Math.sin(angle)+(z-cz)*Math.cos(angle)
+    const k0=Math.sqrt((dx/rx)**2+(dy/ry)**2+(dz/rz)**2)
+    const k1=Math.sqrt((dx/rx/rx)**2+(dy/ry/ry)**2+(dz/rz/rz)**2)
+    return k0*(k0-1)/Math.max(k1,.00001)
+  }
+  for(let iz=0;iz<n;iz++) for(let iy=0;iy<n;iy++) for(let ix=0;ix<n;ix++) {
+    const x=(ix/n*2-1)*scale,y=(iy/n*2-1)*scale+1,z=(iz/n*2-1)*scale
+    let d=ellipsoid(x,y,z,0,1.07,0,.21,.255,.64)
+    d=smoothMin(d,ellipsoid(x,y,z,0,1.08,.39,.205,.28,.26),.12)
+    d=smoothMin(d,ellipsoid(x,y,z,0,1.09,-.39,.215,.265,.26),.12)
+    d=smoothMin(d,ellipsoid(x,y,z,0,1.30,.46,.15,.31,.175,.45),.14)
+    d=smoothMin(d,ellipsoid(x,y,z,0,1.57,.59,.087,.30,.11,.35),.11)
+    d=smoothMin(d,ellipsoid(x,y,z,0,1.76,.69,.095,.13,.145),.065)
+    d=smoothMin(d,ellipsoid(x,y,z,0,1.69,.85,.06,.065,.145),.06)
+    mc.field[iz*n*n+iy*n+ix]=-d
+  }
+  mc.update()
+  const count=mc.geometry.drawRange.count, g=new THREE.BufferGeometry()
+  g.setAttribute('position',new THREE.Float32BufferAttribute(new Float32Array(mc.geometry.attributes.position.array.slice(0,count*3)),3))
+  g.setAttribute('normal',new THREE.Float32BufferAttribute(new Float32Array(mc.geometry.attributes.normal.array.slice(0,count*3)),3))
+  g.scale(scale,scale,scale);g.translate(0,1,0)
+  const pos=g.attributes.position, weights:number[]=[],indices:number[]=[],colors:number[]=[]
+  for(let i=0;i<pos.count;i++) {
+    const y=pos.getY(i),z=pos.getZ(i),x=pos.getX(i)
+    const neck=THREE.MathUtils.smoothstep(y,1.25,1.58)*THREE.MathUtils.smoothstep(z,.16,.38)
+    const head=Math.max(THREE.MathUtils.smoothstep(y,1.61,1.72),THREE.MathUtils.smoothstep(z,.69,.78))*THREE.MathUtils.smoothstep(y,1.53,1.64)
+    indices.push(0,1,2,0);weights.push(1-neck,neck*(1-head),neck*head,0)
+    const noise=(Math.sin(x*179+y*121+z*153)*Math.sin(x*263-y*191+z*89))*.006
+    const belly=THREE.MathUtils.smoothstep(1.05-y,0,.32)*.11
+    const c=new THREE.Color('#8b603c');c.offsetHSL(0,-belly,noise+belly)
+    colors.push(c.r,c.g,c.b)
+  }
+  g.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(indices,4));g.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,3))
+  mc.geometry.dispose();helperMaterial.dispose()
+  return g
 }
 
-export function Deer(props: any) {
-  const groupRef = useRef<THREE.Group>(null)
-  const neckRef = useRef<THREE.Group>(null)
-  const headRef = useRef<THREE.Group>(null)
+function Ellipsoid({ position, scale, material, rotation }: {position: [number, number, number], scale: [number, number, number], material: THREE.Material, rotation?: [number, number, number]}) {
+  return <mesh position={position} scale={scale} rotation={rotation} material={material} castShadow><sphereGeometry args={[1, 24, 16]} /></mesh>
+}
 
-  // Leg refs
-  const legFLRef = useRef<THREE.Group>(null)
-  const legFRRef = useRef<THREE.Group>(null)
-  const legBLRef = useRef<THREE.Group>(null)
-  const legBRRef = useRef<THREE.Group>(null)
+function groundShadow() {
+  const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64
+  const ctx=canvas.getContext('2d')!
+  const gradient=ctx.createRadialGradient(32,32,1,32,32,31)
+  gradient.addColorStop(0,'rgba(0,0,0,.6)');gradient.addColorStop(1,'rgba(0,0,0,0)')
+  ctx.fillStyle=gradient;ctx.fillRect(0,0,64,64)
+  const texture=new THREE.CanvasTexture(canvas)
+  return new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,opacity:.45})
+}
+const UP = new THREE.Vector3(0, 1, 0)
+function segment(mesh: THREE.Mesh | null, a: THREE.Vector3, b: THREE.Vector3, width: number, depth = width) {
+  if (!mesh) return
+  mesh.position.copy(a).add(b).multiplyScalar(.5)
+  mesh.quaternion.setFromUnitVectors(UP, new THREE.Vector3().subVectors(b, a).normalize())
+  mesh.scale.set(width, a.distanceTo(b) * .56, depth)
+}
 
-  const { camera } = useThree()
+function Leg({ x, z, rear, phase, body, material, hoofMaterial }: {x: number, z: number, rear: boolean, phase: number, body: React.MutableRefObject<{time: number, walking: boolean, feet: number[]}>, material: THREE.Material, hoofMaterial: THREE.Material}) {
+  const upper = useRef<THREE.Mesh>(null), middle = useRef<THREE.Mesh>(null), lower = useRef<THREE.Mesh>(null)
+  const knee = useRef<THREE.Mesh>(null), hock = useRef<THREE.Mesh>(null), hoof = useRef<THREE.Group>(null)
+  const contact = useRef<THREE.Mesh>(null)
+  const shadow = useMemo(groundShadow, [])
+  useEffect(()=>()=>{shadow.map?.dispose();shadow.dispose()},[shadow])
+  const vectors = useMemo(() => Array.from({length: 4}, () => new THREE.Vector3()), [])
+  const pose = useCallback(() => {
+    const walking = body.current.walking && !reducedMotion.matches
+    const {step,lift,pivotY,stance,swing} = sampleDeerFoot(body.current.time,phase,walking)
+    const [hip, joint, ankle, foot] = vectors
+    hip.set(x, rear ? 1.02 : 1.06, z)
+    foot.set(x, pivotY, z + step + (rear ? -.07 : .025))
+    body.current.feet[Math.round(phase*4)] = foot.y - .045
+    // Three articulated sections: front elbow/carpus and rear stifle/hock.
+    joint.copy(hip).lerp(foot, .38); joint.z += rear ? .17 : -.075
+    ankle.copy(hip).lerp(foot, .73); ankle.z += rear ? -.10 : .018
+    segment(upper.current, hip, joint, rear ? .075 : .05, rear ? .11 : .065)
+    segment(middle.current, joint, ankle, rear ? .031 : .026)
+    segment(lower.current, ankle, foot, .018, .022)
+    if (knee.current) { knee.current.position.copy(joint); knee.current.scale.setScalar(rear ? .038 : .032) }
+    if (hock.current) { hock.current.position.copy(ankle); hock.current.scale.setScalar(.027) }
+    if(contact.current) {contact.current.position.set(foot.x,-.008,foot.z);shadow.opacity=.45*(1-lift/.15)}
+    if (hoof.current) { hoof.current.position.copy(foot); hoof.current.rotation.x = walking && !stance ? -.15 * Math.sin(swing*Math.PI) : 0 }
+  }, [body,phase,rear,shadow,vectors,x,z])
+  useLayoutEffect(pose, [pose])
+  useFrame(pose)
+  return <group>
+    <mesh ref={contact} material={shadow} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[.15,.20]} /></mesh>
+    <mesh ref={upper} material={material} castShadow><sphereGeometry args={[1, 16, 12]} /></mesh>
+    <mesh ref={middle} material={material} castShadow><sphereGeometry args={[1, 16, 12]} /></mesh>
+    <mesh ref={lower} material={material} castShadow><sphereGeometry args={[1, 16, 12]} /></mesh>
+    <mesh ref={knee} material={material} castShadow><sphereGeometry args={[1, 16, 12]} /></mesh>
+    <mesh ref={hock} material={material} castShadow><sphereGeometry args={[1, 16, 12]} /></mesh>
+    <group ref={hoof}>
+      <Ellipsoid position={[-.014, -.012, .012]} scale={[.014, .033, .047]} material={hoofMaterial} />
+      <Ellipsoid position={[.014, -.012, .012]} scale={[.014, .033, .047]} material={hoofMaterial} />
+    </group>
+  </group>
+}
 
-  // State Management
-  const state = useRef<DeerState>('IDLE')
-  const stateTimer = useRef(0)
-
-  // Movement
-  const speed = 1.0 // m/s
-  const turnSpeed = 2.0
-  const targetDir = useRef(new THREE.Vector3(1, 0, 0))
-
-  // Animation Phase
-  const walkTime = useRef(0)
-
-  const dirVector = useRef(new THREE.Vector3())
-  const bodyDirVector = useRef(new THREE.Vector3())
-
-  const material = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: "#8b5a2b", // Russet Brown
-      roughness: 0.8,
-      metalness: 0.0,
-    })
-
-    mat.onBeforeCompile = (shader) => {
-        shader.vertexShader = `
-            varying vec3 vPos;
-            ${shader.vertexShader}
-        `
-        shader.vertexShader = shader.vertexShader.replace(
-            '#include <begin_vertex>',
-            `
-            #include <begin_vertex>
-            vPos = position;
-            `
-        )
-
-        shader.fragmentShader = `
-            varying vec3 vPos;
-            float hash(vec3 p) {
-                p  = fract( p*0.3183099 + .1 );
-                p *= 17.0;
-                return fract( p.x*p.y*p.z*(p.x+p.y+p.z) );
-            }
-            ${shader.fragmentShader}
-        `
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-            '#include <normal_fragment_maps>',
-            `
-            #include <normal_fragment_maps>
-            // Bump map from fur noise
-            float scale = 120.0;
-            float h = hash(vPos * scale);
-            // Finite differences for bump
-            float hx = hash((vPos + vec3(0.01, 0.0, 0.0)) * scale);
-            float hy = hash((vPos + vec3(0.0, 0.01, 0.0)) * scale);
-            float hz = hash((vPos + vec3(0.0, 0.0, 0.01)) * scale);
-
-            vec3 bump = normalize(vec3(h - hx, h - hy, h - hz));
-            normal = normalize(normal + bump * 0.3); // Perturb normal
-            `
-        )
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-            '#include <color_fragment>',
-            `
-            #include <color_fragment>
-            float furNoise = hash(vPos * 120.0);
-            float mixVal = 0.85 + 0.3 * furNoise;
-            diffuseColor.rgb *= mixVal;
-
-            vec3 viewDir = normalize(vViewPosition);
-            vec3 viewNormal = normalize(vNormal); // Perturbed normal
-            float fresnel = dot(viewDir, viewNormal);
-            fresnel = clamp(1.0 - fresnel, 0.0, 1.0);
-            fresnel = pow(fresnel, 2.5); // Softer falloff
-
-            // Warm Rim Light
-            vec3 rimColor = vec3(1.0, 0.9, 0.7);
-            diffuseColor.rgb += rimColor * fresnel * 0.6;
-            `
-        )
-    }
-    return mat
+export function Deer(props: GroupProps) {
+  const root = useRef<THREE.Group>(null), skin = useRef<THREE.SkinnedMesh>(null)
+  const body = useRef({time: 0, walking: false, feet: [-.01,-.01,-.01,-.01]}), state = useRef<Behaviour>('IDLE'), timer = useRef(0)
+  const direction = useRef(new THREE.Vector3(1, 0, 0)), elapsed = useRef(0), telemetry = useRef(0)
+  const { camera, gl } = useThree()
+  const rig = useMemo(() => {
+    const base=new THREE.Bone(),neck=new THREE.Bone(),head=new THREE.Bone()
+    neck.position.set(0,1.13,.36);head.position.set(0,.59,.30);base.add(neck);neck.add(head)
+    return {base,neck,head,skeleton:new THREE.Skeleton([base,neck,head])}
   }, [])
-
-  const darkMaterial = useMemo(() => {
-    return new THREE.MeshStandardMaterial({
-      color: "#2a1a10",
-      roughness: 0.9,
-    })
-  }, [])
-
-  useEffect(() => {
-    if (groupRef.current) {
-        groupRef.current.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                child.layers.enable(1)
-            }
-        })
-    }
-  }, [])
-
-  useFrame((stateContext, delta) => {
-    if (reducedMotion.matches) return
-    if (!groupRef.current) return
-    // Never extrapolate lerps or physics after a stalled frame.
-    delta = Math.min(delta, 0.05)
-
-    const t = stateContext.clock.getElapsedTime()
-    stateTimer.current -= delta
-
-    const playerPos = camera.position
-    const deerPos = groupRef.current.position
-    const distToPlayer = deerPos.distanceTo(playerPos)
-
-    // State Logic
-    if (stateTimer.current <= 0) {
-        // Decide next state based on current state and environment
-        const r = Math.random()
-
+  const assets = useMemo(() => ({
+    body: anatomyGeometry(),
+    surface: new THREE.MeshStandardMaterial({vertexColors:true,roughness:.97}),
+    coat: new THREE.MeshStandardMaterial({color: '#91623c', roughness: .95}),
+    light: new THREE.MeshStandardMaterial({color: '#b79a76', roughness: .95}),
+    dark: new THREE.MeshStandardMaterial({color: '#30271f', roughness: .85}),
+    eye: new THREE.MeshStandardMaterial({color: '#130e0a', roughness: .22}),
+    innerEar: new THREE.MeshStandardMaterial({color: '#6b5143', roughness: 1})
+  }), [])
+  useLayoutEffect(() => {if(skin.current){skin.current.add(rig.base);skin.current.bind(rig.skeleton)} return()=>{Object.values(assets).forEach(a=>a.dispose());rig.skeleton.dispose()}}, [assets,rig])
+  useFrame((_, rawDelta) => {
+    if (!root.current) return
+    const dt = Math.min(rawDelta, .05)
+    elapsed.current += dt
+    if (!reducedMotion.matches) {
+      const distance = root.current.position.distanceTo(camera.position)
+      timer.current -= dt
+      if (distance < 4.5) { state.current = 'ALERT'; timer.current = 2 }
+      else if (timer.current <= 0) {
+        if (state.current === 'WALK') { state.current = 'GRAZE'; timer.current = 4 }
+        else { state.current = 'WALK'; timer.current = 6; const a = Math.random() * Math.PI * 2; direction.current.set(Math.sin(a), 0, Math.cos(a)) }
+      }
+      body.current.walking = state.current === 'WALK'
+      body.current.time += dt
+      if (body.current.walking) {
+        const wanted = Math.atan2(direction.current.x, direction.current.z)
+        let diff = wanted - root.current.rotation.y
+        while (diff > Math.PI) diff -= Math.PI * 2
+        while (diff < -Math.PI) diff += Math.PI * 2
+        root.current.rotation.y += diff * (1 - Math.exp(-dt * 2))
+        root.current.translateZ(DEER_SPEED * dt)
+      }
+      // Same dry-bank exclusion as the seeded vegetation. No root bob below ground.
+      const bank = (root.current.position.x - root.current.position.z + 15) / Math.SQRT2
+      if (bank < 12) { const d = (12 - bank) / Math.SQRT2; root.current.position.x += d; root.current.position.z -= d; direction.current.set(1, 0, -1).normalize() }
+      root.current.position.y = 0
+      if (rig.neck && rig.head) {
+        const graze = state.current === 'GRAZE'
+        rig.neck.rotation.x = THREE.MathUtils.damp(rig.neck.rotation.x, graze ? 1.35 : state.current === 'ALERT' ? -.12 : .08, 3, dt)
+        let look = 0
         if (state.current === 'ALERT') {
-            // Calm down if player is far
-            if (distToPlayer > 15) {
-                state.current = 'IDLE'
-                stateTimer.current = 2 + Math.random() * 3
-            } else {
-                // Stay alert or run away? For now just stay alert and track
-                stateTimer.current = 1.0
-            }
-        } else if (distToPlayer < 8) {
-            // Get alerted
-            state.current = 'ALERT'
-            stateTimer.current = 3.0 + Math.random() * 2.0
-        } else {
-            // Standard behavior cycle
-            if (state.current === 'WALK') {
-                state.current = r > 0.5 ? 'GRAZE' : 'IDLE'
-                stateTimer.current = 4 + Math.random() * 5
-            } else {
-                state.current = 'WALK'
-                stateTimer.current = 5 + Math.random() * 5
-                // Pick new random direction
-                const angle = Math.random() * Math.PI * 2
-                targetDir.current.set(Math.sin(angle), 0, Math.cos(angle))
-            }
+          look = Math.atan2(camera.position.x-root.current.position.x, camera.position.z-root.current.position.z)-root.current.rotation.y
+          while (look > Math.PI) look -= Math.PI * 2
+          while (look < -Math.PI) look += Math.PI * 2
         }
-    }
-
-    // Force Alert if very close
-    if (distToPlayer < 5 && state.current !== 'ALERT') {
-        state.current = 'ALERT'
-        stateTimer.current = 2.0
-    }
-
-    // --- Behavior Execution ---
-
-    // 1. Body Movement (Walk)
-    const isWalking = state.current === 'WALK'
-
-    if (isWalking) {
-        walkTime.current += delta * speed * 3.0 // Animation speed
-
-        // Rotate body towards targetDir
-        const currentRot = groupRef.current.rotation.y
-        const targetRot = Math.atan2(targetDir.current.x, targetDir.current.z)
-
-        // Smooth turn
-        let rotDiff = targetRot - currentRot
-        while (rotDiff > Math.PI) rotDiff -= Math.PI * 2
-        while (rotDiff < -Math.PI) rotDiff += Math.PI * 2
-
-        groupRef.current.rotation.y += rotDiff * delta * turnSpeed
-
-        // Move forward
-        groupRef.current.translateZ(speed * delta * 0.5) // 0.5 m/s actual speed
-
-        // Bobbing
-        groupRef.current.position.y = Math.sin(walkTime.current * 2.0) * 0.02
-    } else {
-        // Idle bob
-        groupRef.current.position.y = Math.sin(t * 1.0) * 0.005
-    }
-
-    // Keep the deer on its bank instead of walking through the water plane.
-    const bankDistance = (groupRef.current.position.x - groupRef.current.position.z + 15) / Math.SQRT2
-    if (bankDistance < 12) {
-      const correction = (12 - bankDistance) / Math.SQRT2
-      groupRef.current.position.x += correction
-      groupRef.current.position.z -= correction
-      targetDir.current.set(1, 0, -1).normalize()
-    }
-
-    // 2. Leg Animation (Inverse Kinematics-ish)
-    // Walk cycle: 0..1
-    // Stance: 0.0-0.5 (Leg moves back)
-    // Swing: 0.5-1.0 (Leg moves forward and up)
-
-    // Trot gait: Diagonal pairs
-    // FL (0.0), BR (0.0)
-    // FR (0.5), BL (0.5)
-    animateLeg(legFLRef.current, 0.0, isWalking, walkTime.current, delta)
-    animateLeg(legBRRef.current, 0.0, isWalking, walkTime.current, delta)
-    animateLeg(legFRRef.current, 0.5, isWalking, walkTime.current, delta)
-    animateLeg(legBLRef.current, 0.5, isWalking, walkTime.current, delta)
-
-
-    // 3. Head/Neck Animation
-    if (neckRef.current && headRef.current) {
-        let targetHeadRotY = 0
-        let targetHeadRotX = 0
-        let targetNeckRotX = -0.2 // Default upright
-
-        if (state.current === 'ALERT') {
-             // Look at player
-             // We need local rotation.
-             // Vector to player in local space?
-             // Simplification: Look at world position
-
-             // Get direction to player
-             dirVector.current.subVectors(playerPos, groupRef.current.position).normalize()
-
-             // Convert to local angle relative to body forward (Z)
-             // Body forward is (sin(rotY), 0, cos(rotY))
-             // Actually, simplest is to use lookAt on a dummy and grab rotation, but let's approximate
-
-             // Angle difference
-             bodyDirVector.current.set(0, 0, 1).applyQuaternion(groupRef.current.quaternion).normalize()
-             const angleY = Math.atan2(dirVector.current.x, dirVector.current.z) - Math.atan2(bodyDirVector.current.x, bodyDirVector.current.z)
-
-             let ay = angleY
-             while (ay > Math.PI) ay -= Math.PI * 2
-             while (ay < -Math.PI) ay += Math.PI * 2
-
-             // Clamp head turn
-             ay = THREE.MathUtils.clamp(ay, -1.5, 1.5)
-
-             targetHeadRotY = ay
-             targetHeadRotX = 0.0 // Stare straight
-             targetNeckRotX = -0.4 // Head up high
-        } else if (state.current === 'GRAZE') {
-            targetNeckRotX = 0.8 // Head down
-            targetHeadRotX = 0.5 // Snout down
-            targetHeadRotY = Math.sin(t * 0.5) * 0.2 // Scan ground
-        } else {
-            // Walk/Idle - Look ahead with slight bob
-            targetHeadRotY = Math.sin(t * 0.3) * 0.1
-            targetNeckRotX = -0.2 + Math.sin(t * 0.5) * 0.05
-        }
-
-        // Smoothly interpolate
-        neckRef.current.rotation.x = THREE.MathUtils.lerp(neckRef.current.rotation.x, targetNeckRotX, delta * 2)
-
-        headRef.current.rotation.y = THREE.MathUtils.lerp(headRef.current.rotation.y, targetHeadRotY, delta * 5)
-        headRef.current.rotation.x = THREE.MathUtils.lerp(headRef.current.rotation.x, targetHeadRotX, delta * 5)
+        rig.head.rotation.y = THREE.MathUtils.damp(rig.head.rotation.y, THREE.MathUtils.clamp(look, -.8, .8), 3, dt)
+        rig.head.rotation.x = THREE.MathUtils.damp(rig.head.rotation.x, graze ? .4 : -.08, 3, dt)
+      }
+    } else body.current.walking = false
+    telemetry.current += dt
+    if (telemetry.current > .25) {
+      telemetry.current = 0
+      gl.domElement.dataset.deerState = reducedMotion.matches ? 'REDUCED' : state.current
+      gl.domElement.dataset.deerPosition = root.current.position.toArray().map(v=>v.toFixed(3)).join(',')
+      gl.domElement.dataset.deerPhase = body.current.time.toFixed(3)
+      gl.domElement.dataset.deerHoofBottoms = body.current.feet.map(y=>y.toFixed(4)).join(',')
     }
   })
-
-  // Geometry Constants
-  // Using previously defined geometry, but now rigged properly with Refs
-
-  return (
-    <group ref={groupRef} {...props}>
-      {/* Shadow */}
-      {/* ContactShadows is expensive if many deer, but we have 1. Keep it. */}
-
-      {/* Main Body Group - offset up so (0,0,0) is ground */}
-      <group position={[0, 0.85, 0]}>
-
-        {/* Torso/Ribcage */}
-        <mesh name="ribcage" position={[0, 0, 0.15]} castShadow>
-             <capsuleGeometry args={[0.22, 0.5, 8, 16]} />
-             <primitive object={material} attach="material" />
-        </mesh>
-
-        <group rotation={[Math.PI / 2, 0, 0]}>
-            {/* Chest */}
-            <mesh position={[0, 0.2, 0]} castShadow>
-                <capsuleGeometry args={[0.23, 0.4, 8, 16]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            {/* Hips/Rear */}
-            <mesh position={[0, -0.25, 0]} castShadow>
-                 <capsuleGeometry args={[0.21, 0.4, 8, 16]} />
-                 <primitive object={material} attach="material" />
-            </mesh>
-            {/* Belly blend */}
-            <mesh position={[0, 0, -0.05]} castShadow>
-                 <cylinderGeometry args={[0.22, 0.21, 0.6, 16]} />
-                 <primitive object={material} attach="material" />
-            </mesh>
+  return <group ref={root} {...props} name="roe-deer">
+    <skinnedMesh ref={skin} skeleton={rig.skeleton} geometry={assets.body} material={assets.surface} castShadow />
+    <Ellipsoid position={[0,1.09,-.607]} scale={[.13,.16,.038]} material={assets.light} />
+    <Ellipsoid position={[0,1.16,-.65]} scale={[.035,.065,.035]} rotation={[-.45,0,0]} material={assets.coat} />
+    {createPortal(<>
+      <Ellipsoid position={[0,-.06,.29]} scale={[.057,.037,.037]} material={assets.dark} />
+      <Ellipsoid position={[0,-.105,.17]} scale={[.043,.017,.095]} material={assets.light} />
+      {[-1,1].map(side=><group key={side}>
+        <Ellipsoid position={[side*.085,.045,.083]} scale={[.017,.021,.025]} material={assets.eye} />
+        <group position={[side*.075,.13,-.025]} rotation={[.1,0,side*-.75]}>
+          <Ellipsoid position={[0,.10,0]} scale={[.065,.115,.028]} material={assets.coat} />
+          <Ellipsoid position={[0,.105,.022]} scale={[.045,.082,.009]} material={assets.innerEar} />
         </group>
-
-
-        {/* Neck Group */}
-        <group ref={neckRef} position={[0, 0.35, 0.45]} rotation={[-0.2, 0, 0]}>
-            {/* Neck base */}
-            <mesh position={[0, 0.25, 0]} castShadow>
-                <coneGeometry args={[0.12, 0.6, 16]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            {/* Head Group */}
-            <group ref={headRef} position={[0, 0.55, 0.1]} rotation={[0.2, 0, 0]}>
-                {/* Cranium */}
-                <mesh position={[0, 0, 0]} castShadow>
-                    <sphereGeometry args={[0.11, 16, 16]} />
-                    <primitive object={material} attach="material" />
-                </mesh>
-                {/* Snout */}
-                <mesh position={[0, -0.05, 0.12]} rotation={[0.2, 0, 0]} castShadow>
-                    <cylinderGeometry args={[0.07, 0.09, 0.25, 16]} />
-                    <primitive object={material} attach="material" />
-                </mesh>
-                {/* Nose Tip */}
-                <mesh position={[0, -0.02, 0.25]} castShadow>
-                     <sphereGeometry args={[0.04, 8, 8]} />
-                     <primitive object={darkMaterial} attach="material" />
-                </mesh>
-                {/* Ears */}
-                <mesh position={[0.08, 0.12, -0.05]} rotation={[0, 0, 0.5]} castShadow>
-                    <coneGeometry args={[0.04, 0.25, 16]} />
-                    <primitive object={material} attach="material" />
-                </mesh>
-                <mesh position={[-0.08, 0.12, -0.05]} rotation={[0, 0, -0.5]} castShadow>
-                    <coneGeometry args={[0.04, 0.25, 16]} />
-                    <primitive object={material} attach="material" />
-                </mesh>
-            </group>
-        </group>
-
-        {/* Tail */}
-        <mesh position={[0, 0.2, -0.5]} rotation={[-0.5, 0, 0]} castShadow>
-            <coneGeometry args={[0.05, 0.2, 8]} />
-            <primitive object={material} attach="material" />
-        </mesh>
-
-        {/* Legs - Updated Structure for Animation */}
-        {/* Pivot points need to be at the shoulder/hip joint */}
-
-        {/* Front Left */}
-        <group ref={legFLRef} position={[0.15, 0.1, 0.35]}>
-            {/* Thigh/Shoulder */}
-            <mesh position={[0, -0.2, 0]} rotation={[0, 0, 0]} castShadow>
-                <coneGeometry args={[0.08, 0.4, 16]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            {/* Knee Joint */}
-            <mesh position={[0, -0.4, 0]} castShadow>
-                <sphereGeometry args={[0.055, 8, 8]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            {/* Shin */}
-            <mesh position={[0, -0.6, 0]} castShadow>
-                <cylinderGeometry args={[0.05, 0.03, 0.4, 8]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-             {/* Hoof */}
-            <mesh position={[0, -0.8, 0]} castShadow>
-                <cylinderGeometry args={[0.035, 0.045, 0.05, 8]} />
-                <primitive object={darkMaterial} attach="material" />
-            </mesh>
-        </group>
-
-        {/* Front Right */}
-        <group ref={legFRRef} position={[-0.15, 0.1, 0.35]}>
-             <mesh position={[0, -0.2, 0]} castShadow>
-                <coneGeometry args={[0.08, 0.4, 16]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            <mesh position={[0, -0.4, 0]} castShadow>
-                <sphereGeometry args={[0.055, 8, 8]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            <mesh position={[0, -0.6, 0]} castShadow>
-                <cylinderGeometry args={[0.05, 0.03, 0.4, 8]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            <mesh position={[0, -0.8, 0]} castShadow>
-                <cylinderGeometry args={[0.035, 0.045, 0.05, 8]} />
-                <primitive object={darkMaterial} attach="material" />
-            </mesh>
-        </group>
-
-        {/* Back Left */}
-        <group ref={legBLRef} position={[0.15, 0.05, -0.35]}>
-             {/* Thigh (Haunch) */}
-             <mesh position={[0, -0.2, 0]} rotation={[0.2, 0, 0]} castShadow>
-                <coneGeometry args={[0.1, 0.45, 16]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-             {/* Hock Joint */}
-            <mesh position={[0, -0.4, 0.05]} castShadow>
-                <sphereGeometry args={[0.06, 8, 8]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            {/* Shin */}
-            <mesh position={[0, -0.6, 0]} rotation={[-0.1, 0, 0]} castShadow>
-                <cylinderGeometry args={[0.05, 0.035, 0.45, 8]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-             <mesh position={[0, -0.82, -0.02]} castShadow>
-                <cylinderGeometry args={[0.035, 0.045, 0.05, 8]} />
-                <primitive object={darkMaterial} attach="material" />
-            </mesh>
-        </group>
-
-        {/* Back Right */}
-        <group ref={legBRRef} position={[-0.15, 0.05, -0.35]}>
-             <mesh position={[0, -0.2, 0]} rotation={[0.2, 0, 0]} castShadow>
-                <coneGeometry args={[0.1, 0.45, 16]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            <mesh position={[0, -0.4, 0.05]} castShadow>
-                <sphereGeometry args={[0.06, 8, 8]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-            <mesh position={[0, -0.6, 0]} rotation={[-0.1, 0, 0]} castShadow>
-                <cylinderGeometry args={[0.05, 0.035, 0.45, 8]} />
-                <primitive object={material} attach="material" />
-            </mesh>
-             <mesh position={[0, -0.82, -0.02]} castShadow>
-                <cylinderGeometry args={[0.035, 0.045, 0.05, 8]} />
-                <primitive object={darkMaterial} attach="material" />
-            </mesh>
-        </group>
-
-      </group>
-    </group>
-  )
+      </group>)}
+    </>, rig.head)}
+    <Leg x={.145} z={.39} rear={false} phase={0} body={body} material={assets.coat} hoofMaterial={assets.dark} />
+    <Leg x={-.145} z={.39} rear={false} phase={.5} body={body} material={assets.coat} hoofMaterial={assets.dark} />
+    <Leg x={.15} z={-.39} rear phase={.25} body={body} material={assets.coat} hoofMaterial={assets.dark} />
+    <Leg x={-.15} z={-.39} rear phase={.75} body={body} material={assets.coat} hoofMaterial={assets.dark} />
+  </group>
 }

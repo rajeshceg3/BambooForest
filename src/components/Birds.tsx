@@ -33,7 +33,7 @@ export function Birds({ count = 30 }) {
           velocities[i*3+1] = (Math.random() - 0.5) * MAX_SPEED * 0.1
           velocities[i*3+2] = (Math.random() - 0.5) * MAX_SPEED
       }
-  }, [count])
+  }, [count, positions, velocities])
 
   const material = useMemo(() => {
     const mat = new THREE.MeshBasicMaterial({

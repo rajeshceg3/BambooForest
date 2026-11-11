@@ -10,6 +10,7 @@ export interface TourStep {
   duration?: number // Optional duration override for transition
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- The controller and provider share this immutable tour definition.
 export const TOUR_STEPS: TourStep[] = [
   {
     position: [0, 4, 15],
@@ -36,8 +37,9 @@ export const TOUR_STEPS: TourStep[] = [
     duration: 4
   },
   {
-    position: [13, 2, -3],
-    target: [9, 0.9, -8],
+    position: [10, 2, -5],
+    // Frame the animal above the phone tour card, with a clear sightline.
+    target: [9, -0.15, -8],
     zone: 'DEEP_FOREST',
     title: 'Life in the Shadows',
     description: 'The forest breathes through its inhabitants. In the deep shade, life thrives in quiet harmony.',
@@ -131,6 +133,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- This context module intentionally exposes its provider and consumer hook.
 export function useTour() {
   const context = useContext(TourContext)
   if (context === undefined) {
