@@ -1,10 +1,10 @@
 import { reducedMotion } from '../utils/motion'
-import { useRef, useMemo, useEffect, useState } from 'react'
+import { useRef, useMemo, useEffect, useLayoutEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 
 export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }: { count?: number; castShadow?: boolean; spread?: number }) {
-  const meshRef = useRef<THREE.InstancedMesh>(null)
+  const meshRef = useRef<THREE.InstancedMesh | null>(null)
   const { camera } = useThree()
   const [matrices, setMatrices] = useState<{ instanceMatrixArray: Float32Array; actualCount: number } | null>(null)
 
@@ -250,12 +250,17 @@ export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }
       return geo
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!meshRef.current || !matrices) return
     meshRef.current.count = matrices.actualCount;
     // We can directly update the instanceMatrix buffer to avoid iterating and calling setMatrixAt
     meshRef.current.instanceMatrix.array.set(matrices.instanceMatrixArray);
     meshRef.current.instanceMatrix.needsUpdate = true
+    // Three may have cached the initial identity-matrix sphere before the
+    // worker returned. The new transform field must own its own CPU bounds.
+    meshRef.current.computeBoundingSphere()
+    // Wind and near-player bending happen in the vertex shader.
+    if (meshRef.current.boundingSphere) meshRef.current.boundingSphere.radius += 3
   }, [matrices])
 
   useFrame((state) => {
@@ -268,7 +273,11 @@ export function GroundCover({ count = 100000, castShadow = true, spread = 2000 }
 
   return (
     <instancedMesh
-      ref={meshRef}
+      ref={mesh => {
+        meshRef.current = mesh
+        // Allocation is not content. Never draw the uninitialized identity pile.
+        if (mesh && !matrices) mesh.count = 0
+      }}
       args={[undefined, undefined, count]} // Initial buffer size
       castShadow={castShadow}
       receiveShadow
