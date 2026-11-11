@@ -70,3 +70,9 @@ holds remain; still only~2fps on this renderer.
 full-compositor comparisons with ordinary UI overlays. Uses reduced motion
 and exact same stored scene state, not temporal shimmer proof. The deer pose
 uses the existing source sightline selector without moving any scene content.
+
+Reference-pipeline validation: independently constructed the original ULTRA_LOW
+composer on the same paused scene with RenderPass, VignetteEffect pass and
+ToneMappingEffect pass. At all five poses it exactly matches the diagnostic
+composer with SMAA skipped (zero differing pixels). This guards against the
+comparison accidentally assigning skipped-SMAA pipeline changes to AA alone.
