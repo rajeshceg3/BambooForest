@@ -1,5 +1,6 @@
 import { useQuality } from './QualityContext'
 import { bakeBambooSurface } from '../utils/bambooSurface'
+import { createBambooLeafGeometry } from '../utils/bambooLeaf'
 import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo, useEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
@@ -368,72 +369,14 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         `
 
         shader.vertexShader = shader.vertexShader.replace(
-            '#include <beginnormal_vertex>',
-            `
-            #include <beginnormal_vertex>
-            float distY = position.y;
-            float slope = 2.0 * distY * 1.0;
-            objectNormal.y += slope;
-
-            // Midrib normal adjustment
-            if (abs(position.x) < 0.02) {
-                // V-shape normal
-                float signX = sign(position.x);
-                objectNormal.x += signX * 0.5;
-            }
-
-            objectNormal = normalize(objectNormal);
-            `
-        )
-
-        shader.vertexShader = shader.vertexShader.replace(
             '#include <begin_vertex>',
             `
             #include <begin_vertex>
             #ifdef USE_INSTANCING
-             vWorldPos = (instanceMatrix * vec4(position, 1.0)).xyz;
-
-             // Random twist for organic variation
-             float randRot = sin(instanceMatrix[3][0] * 12.0 + instanceMatrix[3][2] * 34.0);
-             float c = cos(randRot * 0.5);
-             float s = sin(randRot * 0.5);
-             mat2 rot = mat2(c, -s, s, c);
-             transformed.xz = rot * transformed.xz;
-             objectNormal.xz = rot * objectNormal.xz;
-             vNormal = normalize(normalMatrix * objectNormal);
-
-             vRandId = fract(sin(dot(instanceMatrix[3].xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
-            #endif
-
-            // Leaf Shaping (Lanceolate)
-            float len = 0.6;
-            float yNorm = position.y / len; // 0 to 1
-            float widthFactor = sin(yNorm * 3.14159);
-            widthFactor = pow(widthFactor, 0.8);
-            transformed.x *= widthFactor;
-
-            float distFromStem = position.y;
-            float droop = distFromStem * distFromStem * 1.0;
-            transformed.z -= droop;
-
-            // Cup the leaf
-            float cup = pow(abs(position.x), 1.5) * 5.0 * (1.0 - yNorm * 0.5);
-            transformed.z += cup;
-
-            // Midrib Crease
-            // Local X is width. Assuming leaf width ~0.2 (from geometry args)
-            // Crease logic: depress center Z
-            float midribWidth = 0.04;
-            float absX = abs(position.x);
-            if (absX < midribWidth) {
-                float depression = (1.0 - absX/midribWidth) * 0.02; // 0.02 deep
-                transformed.z -= depression;
-            }
-
-            #ifdef USE_INSTANCING
+                vWorldPos = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
+                vRandId = fract(sin(dot(instanceMatrix[3].xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
                 float worldX = instanceMatrix[3][0];
                 float worldZ = instanceMatrix[3][2];
-                // Kept local flutter/twist (high frequency)
                 float flutter = sin(uTime * 3.0 + worldX) * 0.05 * position.x;
                 float twist = position.x * sin(uTime * 2.0 + worldZ) * 0.2 * position.y;
                 transformed.y += flutter + twist;
@@ -472,9 +415,9 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
             #include <color_fragment>
             float noise = sin(vWorldPos.x * 0.5) * cos(vWorldPos.z * 0.5);
 
-            vec3 freshColor = vec3(0.48, 0.60, 0.28);
-            vec3 darkColor = vec3(0.25, 0.35, 0.15);
-            vec3 dryColor = vec3(0.70, 0.65, 0.30);
+            vec3 freshColor = vec3(0.18, 0.32, 0.07);
+            vec3 darkColor = vec3(0.045, 0.12, 0.025);
+            vec3 dryColor = vec3(0.40, 0.35, 0.08);
 
             vec3 baseCol = mix(darkColor, freshColor, 0.5 + 0.5 * noise);
 
@@ -495,37 +438,29 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
 
             // Transmission: light passing through back of leaf
             // Using a wrapped cosine approximation for thickness/transmission
-            float dotNormalSun = dot(vNormal, sunDir);
-            float transmission = smoothstep(0.2, -0.5, dotNormalSun); // Allow some wrap-around lighting
+            vec3 sunViewDir = normalize(mat3(viewMatrix) * sunDir);
+            vec3 viewViewDir = normalize(mat3(viewMatrix) * viewDir);
+            float dotNormalSun = dot(normalize(vNormal), sunViewDir);
+            float transmission = 1.0 - smoothstep(-0.5, 0.2, dotNormalSun); // Allow some wrap-around lighting
 
             float sssStrength = backlight * transmission;
 
             // Thin leaf color (bright yellowish green)
             vec3 sssColor = vec3(0.65, 0.85, 0.35);
             // Add SSS glow
-            diffuseColor.rgb += sssColor * sssStrength * 1.2;
+            diffuseColor.rgb += sssColor * sssStrength * 0.25;
 
             // Fresnel Rim Light (Top of leaves)
-            float fresnel = 1.0 - abs(dot(viewDir, vNormal));
+            float fresnel = 1.0 - abs(dot(viewViewDir, normalize(vNormal)));
             fresnel = pow(fresnel, 3.0);
-            diffuseColor.rgb += vec3(0.2, 0.3, 0.1) * fresnel * 0.8;
+            diffuseColor.rgb += vec3(0.2, 0.3, 0.1) * fresnel * 0.12;
             `
         )
     }
     return mat
   }, [])
 
-  const leafGeometry = useMemo(() => {
-    // Keep the original topology budget; taper the rectangle into a blade.
-    const geo = new THREE.PlaneGeometry(0.2, 0.7, 1, 2)
-    const vertices = geo.attributes.position
-    for (let i = 0; i < vertices.count; i++) {
-      const t = (vertices.getY(i) + 0.35) / 0.7
-      vertices.setXYZ(i, vertices.getX(i) * Math.sin(Math.PI * t), t * 0.7, -0.06 * t * t)
-    }
-    geo.computeVertexNormals()
-    return geo
-  }, [])
+  const leafGeometry = useMemo(createBambooLeafGeometry, [])
 
   useEffect(() => {
     if (!matrices) return

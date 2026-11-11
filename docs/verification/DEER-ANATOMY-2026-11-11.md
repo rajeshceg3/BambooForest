@@ -36,10 +36,22 @@ npm run lint; npm run build; test-workers.cjs; test-deer.cjs; animation-bounds.c
 
 Lint follow-up: fixed the new callback dependency/semicolon issue; corrected existing Birds array dependencies and moved UI intention data outside the component. Existing context-module shared hook/data exports have explicit narrow Fast Refresh exceptions. No correctness lint rule was disabled globally.
 
-Awaited: exact hosted candidate SHA/bundle and actual normal entry/tour view at both widths, visible phone animal, plus parent visual review. No merge until that review. Graze is not certified by the walk/alert frames. No physical-device or broad hardware-health claim.
+Awaited: exact hosted candidate SHA/bundle and actual normal entry/tour view at both widths, visible phone animal, plus reviewer visual review. No merge until that review. Graze is not certified by the walk/alert frames. No physical-device or broad hardware-health claim.
 
 ## Hosted normal-tour deviation and follow-up
 
 The first exact-head hosted phone normal-tour run reached step3 via Enter, Guided Tour and three Next actions. It exposed a framing failure: the deer had roamed to9.736,0,-6.083, about a metre from the fixed10,2,-5 camera, cropping the face and hiding the body. This is a failed gate, not an accepted candidate. The next change makes the animal step frame the actual deer root with a safe side offset(-4.6,2,-3), looking below its root to leave room above the phone card. Scene geometry is untouched. Requires renewed hosted pixels. Full suite rerun passed before the follow-up push. Local normal tour navigation suffered software-rendering timeouts and supplies no pass.
 
 The independent hosted1365 entry reached the animal but a foreground stalk occluded the body, so24dfad6 is not accepted. Follow-up chooses a5.5m camera ring angle using actual current stalk-instance positions and radius, leaving a body-width corridor instead of only a centre ray. Selection does not mutate scene instances. The choice follows roaming position, and angular damping maintains radius while changing sides. Negative clearance is exposed rather than claimed clear. New unit test verifies63 headings and the impossible sealed-ring case. Hosted pixels remain the gate.
+
+## Reviewed preview evidence at05:48 IST Nov11
+
+Latest implementation4804af4d78ade9a6389aad11e5df769452f7760d is available as draft stacked PR83 https://github.com/rajeshceg3/BambooForest/pull/83, base fix/cheap-tier-visuals. Exact successful preview https://bamboo-forest-5qspf58tq-rajeshceg3s-projects.vercel.app served assets/index-68f1f8ef.js. PR82 remains OPEN/unmerged. Nothing merged or promoted.
+
+The follow-camera now scores48 sightlines against actual existing stalk matrices. It preserves5.5m distance, settles immediately after zone-instance changes, then damps angle using wall delta. Among unobstructed choices it prefers a side view. The target is below the root by0.9m to leave clear desktop card space. Earlier fixed-camera and rear/occluded passes are rejected. No vegetation instances removed.
+
+Actual hosted390x844 normal Enter/Guided Tour/three Next actions reached step3. Inspected settled capture cloud-browser-20261111-001723.png: full side animal, muzzle/ears, torso/neck continuous, legs and hooves visible above readable card, no foreground stalk occluding body. Same actual tour resized to1365x768 gave cloud-browser-20261111-001754.png, likewise visible; this is resize coverage, not an independent desktop entry. Readback ULTRA_LOW,5993 bambooReady, ALERT root7.776,0,-6.547, all four hoof bottoms-0.0100, view clearance0.269. Console read held only keepalive info. Local actual walk/alert contact sheet and phone three-frame walk sheet inspected and sent for visual review.
+
+Full suite passed before latest push: lint, build, test-workers.cjs, test-deer.cjs, test-deer-view.cjs, animation-bounds.cjs, stream-axis.cjs. Foot40000 samples support grounding. View test63 headings support radius/clearance handling. Neither replaces pixels.
+
+Independent1365 normal entry reached Clearing and Ancient Guardian. Advance toward Flowing Reflection met repeated30s JS/AX deadlines, then daemon wait timed out and page read about:blank. That journey is NOT a pass, and the cause is not established as a renderer crash. Browser session closed after evidence. Candidate and this deviation were reported for review. Graze, final reduced-motion/full journey, physical-device/performance, foliage/bank/quadrants and reviewer visual acceptance remain open.
