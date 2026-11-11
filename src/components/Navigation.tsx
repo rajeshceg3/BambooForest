@@ -428,8 +428,11 @@ export function Navigation({
     // Keep theta wrapped so long sessions never accumulate huge angles.
     if (rotation.current.theta > Math.PI || rotation.current.theta < -Math.PI) {
       const wrapped = ((rotation.current.theta + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI
+      // Shift both values by the same full turns. Resetting the target to the
+      // current yaw here discards pending input, especially after slow frames.
+      const fullTurns = rotation.current.theta - wrapped
       rotation.current.theta = wrapped
-      targetRotation.current.theta = wrapped
+      targetRotation.current.theta -= fullTurns
     }
 
     // Apply rotation to camera
