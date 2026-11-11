@@ -3,6 +3,7 @@ import { MeshTransmissionMaterial } from '@react-three/drei'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
 import { useQuality } from './QualityContext'
+import { createStreamBanks, createShoreStones, streamSection } from '../utils/streamBanks'
 
 // Simple seedable random (LCG)
 function mulberry32(a: number) {
@@ -183,7 +184,7 @@ export function Stream() {
                     transformed.z *= 1.0 + d * 0.2;
                 }
 
-                vWorldPos = (instanceMatrix * vec4(transformed, 1.0)).xyz;
+                vWorldPos = (modelMatrix * instanceMatrix * vec4(transformed, 1.0)).xyz;
             #else
                 vWorldPos = (modelMatrix * vec4(position, 1.0)).xyz;
             #endif
@@ -204,7 +205,7 @@ export function Stream() {
             // Moss is rougher (0.9), wet rock is smoother (0.2)
             float mossFactorR = smoothstep(0.4, 0.6, mossNoiseR);
             // Also adjust for height (wet near water level 0.0)
-            float wetness = smoothstep(0.4, -0.1, vWorldPos.y);
+            float wetness = (1.0 - smoothstep(-0.1, 0.4, vWorldPos.y));
 
             float baseRoughness = mix(0.7, 0.2, wetness); // Wet rocks are very glossy
             roughnessFactor = mix(baseRoughness, 1.0, mossFactorR);
@@ -225,7 +226,7 @@ export function Stream() {
             rockColor += vec3(n * 0.05);
 
             // Wetness Darkening
-            float wetnessColor = smoothstep(0.4, -0.1, vWorldPos.y);
+            float wetnessColor = (1.0 - smoothstep(-0.1, 0.4, vWorldPos.y));
             // Wet rocks are darker and more saturated
             rockColor = mix(rockColor, rockColor * 0.5, wetnessColor * 0.8);
 
@@ -253,7 +254,7 @@ export function Stream() {
             // We want to darken the very bottom of the geometry, regardless of world position if possible.
             // But vWorldPos works if we assume the rock sits on the ground.
             // Darken below y=0.1
-            float groundOcc = smoothstep(0.2, 0.0, vWorldPos.y);
+            float groundOcc = (1.0 - smoothstep(0.0, 0.2, vWorldPos.y));
             rockColor *= mix(1.0, 0.3, groundOcc); // Darken bottom significantly
 
             diffuseColor.rgb = rockColor;
@@ -306,14 +307,15 @@ export function Stream() {
     const p = geometry.attributes.position
     for (let i = 0; i < p.count; i++) {
       const along = p.getY(i)
-      const center = Math.sin(along * 0.045) * 1.0 + Math.sin(along * 0.13) * 0.3
-      const halfWidth = 7.6 + Math.sin(along * 0.085 + 0.7) * 0.65
+      const { center, halfWidth } = streamSection(along)
       p.setX(i, center + p.getX(i) / 10 * halfWidth)
     }
     geometry.computeVertexNormals()
     return geometry
   }, [])
 
+  const bankGeometry = useMemo(createStreamBanks, [])
+  const shoreStones = useMemo(createShoreStones, [])
   const instancedMeshRef = useRef<THREE.InstancedMesh | null>(null);
 
   return (
@@ -350,6 +352,23 @@ export function Stream() {
           />
         )}
       </mesh>
+
+      <mesh geometry={bankGeometry} receiveShadow>
+        <meshStandardMaterial vertexColors transparent depthWrite={false} roughness={0.92} side={THREE.DoubleSide} />
+      </mesh>
+
+      <instancedMesh
+        ref={mesh => {
+          if (!mesh) return
+          mesh.instanceMatrix.array.set(shoreStones)
+          mesh.instanceMatrix.needsUpdate = true
+          mesh.computeBoundingSphere()
+        }}
+        args={[undefined, rockMaterial, 800]}
+        receiveShadow
+      >
+        <icosahedronGeometry args={[1, 1]} />
+      </instancedMesh>
 
       {/* River Stones Instanced */}
       <instancedMesh
