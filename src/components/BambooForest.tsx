@@ -6,6 +6,8 @@ import { useRef, useMemo, useEffect, useLayoutEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Zone } from '../types'
+import { createBambooChunks } from '../utils/bambooChunks'
+import { DIAG } from '../diag'
 
 interface BambooForestProps {
   currentZone?: Zone
@@ -52,6 +54,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
   const branchMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const { camera, gl } = useThree()
+  const chunkGroup = useRef<THREE.Group>(null)
   const { tier } = useQuality()
   const cheapSurface = tier === 'LOW' || tier === 'ULTRA_LOW'
   const bakedSurface = useMemo(() => bakeBambooSurface(), [])
@@ -489,6 +492,18 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
     }
   }, [matrices, gl])
 
+  useLayoutEffect(() => {
+    const group = chunkGroup.current
+    const sources = [meshRef.current, branchMeshRef.current, leafMeshRef.current]
+    if (DIAG.noSpatial || !group || !matrices || sources.some(source => !source)) return
+    const chunks = sources.flatMap(source => createBambooChunks(source!, Math.max(24, spread / 14)))
+    chunks.forEach(mesh => group.add(mesh))
+    gl.domElement.dataset.bambooSpatialBatches = String(chunks.length)
+    return () => {
+      chunks.forEach(mesh => { group.remove(mesh); mesh.dispose() })
+    }
+  }, [matrices, material, branchMaterial, leafMaterial, castShadow, spread, gl])
+
   useFrame((state) => {
       const time = reducedMotion.matches ? 0 : state.clock.getElapsedTime()
       const windSpeed = currentZone === 'DEEP_FOREST' ? 1.5 : 1.0
@@ -515,14 +530,16 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
 
   return (
     <group>
+        <group ref={chunkGroup} />
         <instancedMesh
             name="bamboo-stalks"
             ref={(node) => {
                 if (meshRef) meshRef.current = node;
-                if (node) node.layers.enable(1);
+                if (node && DIAG.noSpatial) node.layers.enable(1);
             }}
             args={[undefined, undefined, count]}
             count={0}
+            visible={DIAG.noSpatial}
             castShadow={castShadow}
             receiveShadow
         >
@@ -534,6 +551,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
             ref={branchMeshRef}
             args={[undefined, undefined, count * 5]}
             count={0}
+            visible={DIAG.noSpatial}
             castShadow={castShadow}
             receiveShadow
             geometry={branchGeometry}
@@ -545,6 +563,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
             ref={leafMeshRef}
             args={[undefined, undefined, count * 5 * 3]}
             count={0}
+            visible={DIAG.noSpatial}
             castShadow={castShadow}
             receiveShadow
             geometry={leafGeometry}

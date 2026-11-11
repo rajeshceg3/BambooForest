@@ -1,0 +1,3 @@
+export const title='Bamboo: explore, guided tour and sound';
+export const state=v=>({Visit:v.screen==='Tour'?'Guided stop '+v.tour:v.screen,Forest:v.worker==='Ready'?'Forest installed':'Forest preparing',Sound:v.audio==='Uncreated'?'Sound not started':v.audio==='Running'?'Sound on':'Muted',Look:v.wrapped?(v.preserved?'Pending turn preserved':'Pending turn discarded'):v.lookPending?'Turn damping':'No pending turn'});
+export const step=a=>({Enter:'you enter',WorkerReady:'forest finishes preparing',StartTour:'you start the tour',NextTour:'you choose Next',ExitTour:'you leave the tour',Unmute:'you unmute',Mute:'you mute',Look:'you drag to look',Wrap:'turn crosses the angle boundary',Idle:null}[a]??null);

@@ -12,6 +12,7 @@ const forced = (params.get('qtier') || '').toUpperCase()
 
 export const DIAG = {
   minimal,
+  noSpatial: flag('nospatial'),
   forceTier: (forced === 'ULTRA_LOW' || forced === 'LOW' || forced === 'MEDIUM' || forced === 'HIGH' ? forced : null) as 'ULTRA_LOW' | 'LOW' | 'MEDIUM' | 'HIGH' | null,
   noShadows: flag('noshadows') || (minimal && !withList.has('shadows')),
   noCover: flag('nocover') || (minimal && !withList.has('cover')),
