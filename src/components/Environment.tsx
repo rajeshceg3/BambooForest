@@ -8,6 +8,13 @@ import { GroundCover } from './GroundCover'
 import { bakeGroundTextures } from '../utils/groundTextures'
 import { useQuality, type QualityTier } from './QualityContext'
 import { DIAG } from '../diag'
+import { partitionGroundGeometry } from '../utils/groundChunks'
+
+function GroundBatches({ geometry, material }: { geometry: THREE.BufferGeometry; material: THREE.Material }) {
+  const chunks = useMemo(() => partitionGroundGeometry(geometry), [geometry])
+  useEffect(() => () => chunks.forEach(chunk => chunk.dispose()), [chunks])
+  return <group>{chunks.map((chunk, i) => <mesh key={i} geometry={chunk} material={material} receiveShadow ref={mesh => { if (mesh) mesh.layers.enable(1) }} />)}</group>
+}
 
 // Ground-cover density per quality tier. A flat 100k instanced blades on every
 // device was the heaviest single draw in the scene and the prime suspect behind
@@ -60,6 +67,8 @@ export function Environment({ currentZone }: EnvironmentProps) {
         metalness: 0.1,
     })
   }, [])
+
+  const groundGeometry = useMemo(() => new THREE.PlaneGeometry(2000, 2000, 256, 256), [])
 
   useEffect(() => {
     if (!scene.fog) {
@@ -168,7 +177,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
       {!DIAG.noEnv && <EnvironmentDrei preset="forest" background={false} />}
 
       {/* Ground - Custom Shader Material */}
-      <mesh
+      {!DIAG.noGroundSpatial && !DIAG.flatGround ? <group rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}><GroundBatches geometry={groundGeometry} material={groundMaterial} /></group> : <mesh
         ref={(mesh) => { if (mesh) mesh.layers.enable(1); }}
         rotation={[-Math.PI / 2, 0, 0]}
         receiveShadow
@@ -176,7 +185,7 @@ export function Environment({ currentZone }: EnvironmentProps) {
       >
         <planeGeometry args={DIAG.flatGround ? [2000, 2000, 1, 1] : [2000, 2000, 256, 256]} />
         <primitive object={groundMaterial} attach="material" />
-      </mesh>
+      </mesh>}
 
       {/* Ground Cover - Grass */}
       <GroundCover count={DIAG.noCover ? 0 : COVER_COUNT_BY_TIER[tier]} spread={COVER_SPREAD_BY_TIER[tier]} castShadow={!DIAG.noShadows && tier === 'HIGH'} />

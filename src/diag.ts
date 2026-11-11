@@ -14,6 +14,7 @@ export const DIAG = {
   minimal,
   noSpatial: flag('nospatial'),
   noStoneSpatial: flag('nostonespatial'),
+  noGroundSpatial: flag('nogroundspatial'),
   forceTier: (forced === 'ULTRA_LOW' || forced === 'LOW' || forced === 'MEDIUM' || forced === 'HIGH' ? forced : null) as 'ULTRA_LOW' | 'LOW' | 'MEDIUM' | 'HIGH' | null,
   noShadows: flag('noshadows') || (minimal && !withList.has('shadows')),
   noCover: flag('nocover') || (minimal && !withList.has('cover')),
