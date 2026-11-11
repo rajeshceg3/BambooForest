@@ -2,7 +2,7 @@ import { useQuality } from './QualityContext'
 import { bakeBambooSurface } from '../utils/bambooSurface'
 import { createBambooLeafGeometry } from '../utils/bambooLeaf'
 import { reducedMotion } from '../utils/motion'
-import { useRef, useMemo, useEffect, useState } from 'react'
+import { useRef, useMemo, useEffect, useLayoutEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Zone } from '../types'
@@ -462,7 +462,9 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
 
   const leafGeometry = useMemo(createBambooLeafGeometry, [])
 
-  useEffect(() => {
+  // Install the worker result before the next draw. InstancedMesh's default
+  // matrices all sit at the origin; those are allocation, not forest content.
+  useLayoutEffect(() => {
     if (!matrices) return
     if (meshRef.current) {
         meshRef.current.count = matrices.stalkInstances.length / 16
@@ -482,6 +484,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         leafMeshRef.current.instanceMatrix.needsUpdate = true
         leafMeshRef.current.computeBoundingSphere()
         gl.domElement.dataset.bambooReady = String(matrices.stalkInstances.length / 16)
+        gl.domElement.dataset.bambooBranchesReady = String(branchMeshRef.current?.count ?? 0)
+        gl.domElement.dataset.bambooLeavesReady = String(leafMeshRef.current.count)
     }
   }, [matrices, gl])
 
@@ -518,6 +522,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
                 if (node) node.layers.enable(1);
             }}
             args={[undefined, undefined, count]}
+            count={0}
             castShadow={castShadow}
             receiveShadow
         >
@@ -528,6 +533,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         <instancedMesh
             ref={branchMeshRef}
             args={[undefined, undefined, count * 5]}
+            count={0}
             castShadow={castShadow}
             receiveShadow
             geometry={branchGeometry}
@@ -538,6 +544,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         <instancedMesh
             ref={leafMeshRef}
             args={[undefined, undefined, count * 5 * 3]}
+            count={0}
             castShadow={castShadow}
             receiveShadow
             geometry={leafGeometry}
