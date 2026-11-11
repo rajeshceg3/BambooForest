@@ -1,3 +1,4 @@
+import { reducedMotion } from '../utils/motion'
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -35,6 +36,7 @@ export function Crane(props: any) {
   }, [])
 
   useFrame((state) => {
+    if (reducedMotion.matches) return
     if (groupRef.current) {
         const t = state.clock.getElapsedTime()
 

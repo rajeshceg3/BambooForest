@@ -401,13 +401,15 @@ export function Navigation({
 
   useFrame((_state, delta) => {
     if (!enabled) return
+    // Bound both physics and look after a stalled frame or background tab.
+    delta = Math.min(delta, 0.05)
 
     // 1. Rotation Smoothing
     // Damp towards target
     // Smooth factor (higher = faster)
     const damp = smoothTime
-    rotation.current.theta += (targetRotation.current.theta - rotation.current.theta) * damp * delta
-    rotation.current.phi += (targetRotation.current.phi - rotation.current.phi) * damp * delta
+    rotation.current.theta += (targetRotation.current.theta - rotation.current.theta) * (1 - Math.exp(-damp * delta))
+    rotation.current.phi += (targetRotation.current.phi - rotation.current.phi) * (1 - Math.exp(-damp * delta))
 
     // Hard bounds on the damped values, not just the targets: any path that
     // writes targetRotation (mouse lock, drag fallback, touch) clamps, but a
@@ -426,8 +428,11 @@ export function Navigation({
     // Keep theta wrapped so long sessions never accumulate huge angles.
     if (rotation.current.theta > Math.PI || rotation.current.theta < -Math.PI) {
       const wrapped = ((rotation.current.theta + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI
+      // Shift both values by the same full turns. Resetting the target to the
+      // current yaw here discards pending input, especially after slow frames.
+      const fullTurns = rotation.current.theta - wrapped
       rotation.current.theta = wrapped
-      targetRotation.current.theta = wrapped
+      targetRotation.current.theta -= fullTurns
     }
 
     // Apply rotation to camera
@@ -535,7 +540,21 @@ export function Navigation({
          targetRotation.current.phi = euler.x
          targetRotation.current.theta = euler.y
      }
-  }, [camera])
+  }, [camera, enabled])
+
+  useEffect(() => {
+    const reset = () => {
+      if (!enabled) return
+      camera.position.set(18, 2, -10)
+      camera.rotation.set(0, 0, 0)
+      rotation.current = { phi: 0, theta: 0 }
+      targetRotation.current = { phi: 0, theta: 0 }
+      velocity.current.set(0, 0, 0)
+      onGround.current = true
+    }
+    window.addEventListener('forest-reset-view', reset)
+    return () => window.removeEventListener('forest-reset-view', reset)
+  }, [camera, enabled])
 
   return (
     <Html fullscreen pointerEvents="none" style={{ pointerEvents: 'none', userSelect: 'none' }}>

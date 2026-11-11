@@ -1,0 +1,71 @@
+---
+title: "Bamboo: explore, guided tour and sound"
+---
+stateDiagram-v2
+  direction LR
+  state "Legend" as legend {
+    lg0: Breaks NoLostInput
+    lg1: Path to the NoLostInput bug
+  }
+  class lg0 breaks
+  class lg1 bugPath
+  state "At the same time" as all {
+    state "Visit" as r0 {
+      s0: Intro
+      s1: Explore
+      s2: Guided stop 1
+      s3: Guided stop 2
+      s4: Guided stop 3
+      s5: Guided stop 4
+      s6: Guided stop 5
+      [*] --> s0
+      s0 --> s1: you enter
+      s1 --> s2: you start the tour
+      s2 --> s1: you leave the tour
+      s2 --> s3: you choose Next
+      s3 --> s1: you leave the tour
+      s3 --> s4: you choose Next
+      s4 --> s1: you leave the tour
+      s4 --> s5: you choose Next
+      s5 --> s1: you leave the tour
+      s5 --> s6: you choose Next
+      s6 --> s1: you leave the tour
+    }
+    --
+    state "Forest" as r1 {
+      s7: Forest preparing
+      s8: Forest installed
+      [*] --> s7
+      s7 --> s8: forest finishes preparing
+      s8 --> s7: you choose Next [when Visit is none of Explore, Guided stop 5, Intro and Sound is not Sound not started]
+    }
+    --
+    state "Sound" as r2 {
+      s9: Sound not started
+      s10: Muted
+      s11: Sound on
+      [*] --> s9
+      s9 --> s10: you enter
+      s10 --> s11: you unmute
+      s11 --> s10: you mute
+    }
+    --
+    state "Look" as r3 {
+      s12: No pending turn
+      s13: Turn damping
+      s14: Pending turn discarded
+      [*] --> s12
+      s12 --> s13: you drag to look [when Visit is Explore and Sound is not Sound not started]
+      s13 --> s14: turn crosses the angle boundary
+    }
+  }
+  classDef breaks fill:#ffecee,stroke:#e72e3b,stroke-width:2.5px,color:#cd2834
+  class s0 bugPath
+  class s1 bugPath
+  class s7 bugPath
+  class s9 bugPath
+  class s10 bugPath
+  class s12 bugPath
+  class s13 bugPath
+  class s14 breaks
+  class s14 bugPath

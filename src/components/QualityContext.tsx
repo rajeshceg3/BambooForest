@@ -165,6 +165,7 @@ export function QualityFrameSampler() {
   return null
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- This context module intentionally exposes its provider and consumer hook.
 export function useQuality() {
   const context = useContext(QualityContext)
   if (!context) {

@@ -1,11 +1,18 @@
-import { useRef, useMemo, useEffect, useState } from 'react'
+import { useQuality } from './QualityContext'
+import { bakeBambooSurface } from '../utils/bambooSurface'
+import { createBambooLeafGeometry } from '../utils/bambooLeaf'
+import { reducedMotion } from '../utils/motion'
+import { useRef, useMemo, useEffect, useLayoutEffect, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Zone } from '../types'
+import { createBambooChunks } from '../utils/bambooChunks'
+import { DIAG } from '../diag'
 
 interface BambooForestProps {
   currentZone?: Zone
   count?: number
+  spread?: number
   castShadow?: boolean
 }
 
@@ -42,11 +49,15 @@ vec3 getWindOffset(vec3 pos, float time, vec3 camPos) {
 }
 `;
 
-export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow = true }: BambooForestProps) {
+export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow = true, spread = 2000 }: BambooForestProps) {
   const meshRef = useRef<THREE.InstancedMesh | null>(null)
   const branchMeshRef = useRef<THREE.InstancedMesh | null>(null)
   const leafMeshRef = useRef<THREE.InstancedMesh | null>(null)
-  const { camera } = useThree()
+  const { camera, gl } = useThree()
+  const chunkGroup = useRef<THREE.Group>(null)
+  const { tier } = useQuality()
+  const cheapSurface = tier === 'LOW' || tier === 'ULTRA_LOW'
+  const bakedSurface = useMemo(() => bakeBambooSurface(), [])
 
   const [matrices, setMatrices] = useState<{ stalkInstances: Float32Array; branchInstances: Float32Array; leafInstances: Float32Array } | null>(null)
 
@@ -58,18 +69,19 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
       setMatrices(e.data)
     }
 
-    worker.postMessage({ count })
+    worker.postMessage({ count, spread })
 
     return () => {
       worker.terminate()
     }
-  }, [count])
+  }, [count, spread])
 
   // Custom material setup for Bamboo Stalks
   const material = useMemo(() => {
     const mat = new THREE.MeshStandardMaterial({
-        color: '#7b904b',
-        roughness: 0.4,
+        color: cheapSurface ? '#ffffff' : '#7b904b',
+        map: cheapSurface ? bakedSurface : null,
+        roughness: cheapSurface ? 0.8 : 0.4,
         flatShading: false,
     })
 
@@ -168,6 +180,10 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
             gl_Position = projectionMatrix * mvPosition;
             `
         )
+
+        // Preserve the vertex shape and wind; only static surface work is
+        // replaced by a baked map in the existing low quality tiers.
+        if (cheapSurface) return
 
         shader.fragmentShader = `
           varying vec3 vLocalPosition;
@@ -288,7 +304,7 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         )
     }
     return mat
-  }, [])
+  }, [cheapSurface, bakedSurface])
 
   // Branch Material
   const branchMaterial = useMemo(() => {
@@ -356,72 +372,14 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         `
 
         shader.vertexShader = shader.vertexShader.replace(
-            '#include <beginnormal_vertex>',
-            `
-            #include <beginnormal_vertex>
-            float distY = position.y;
-            float slope = 2.0 * distY * 1.0;
-            objectNormal.y += slope;
-
-            // Midrib normal adjustment
-            if (abs(position.x) < 0.02) {
-                // V-shape normal
-                float signX = sign(position.x);
-                objectNormal.x += signX * 0.5;
-            }
-
-            objectNormal = normalize(objectNormal);
-            `
-        )
-
-        shader.vertexShader = shader.vertexShader.replace(
             '#include <begin_vertex>',
             `
             #include <begin_vertex>
             #ifdef USE_INSTANCING
-             vWorldPos = (instanceMatrix * vec4(position, 1.0)).xyz;
-
-             // Random twist for organic variation
-             float randRot = sin(instanceMatrix[3][0] * 12.0 + instanceMatrix[3][2] * 34.0);
-             float c = cos(randRot * 0.5);
-             float s = sin(randRot * 0.5);
-             mat2 rot = mat2(c, -s, s, c);
-             transformed.xz = rot * transformed.xz;
-             objectNormal.xz = rot * objectNormal.xz;
-             vNormal = normalize(normalMatrix * objectNormal);
-
-             vRandId = fract(sin(dot(instanceMatrix[3].xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
-            #endif
-
-            // Leaf Shaping (Lanceolate)
-            float len = 0.6;
-            float yNorm = position.y / len; // 0 to 1
-            float widthFactor = sin(yNorm * 3.14159);
-            widthFactor = pow(widthFactor, 0.8);
-            transformed.x *= widthFactor;
-
-            float distFromStem = position.y;
-            float droop = distFromStem * distFromStem * 1.0;
-            transformed.z -= droop;
-
-            // Cup the leaf
-            float cup = pow(abs(position.x), 1.5) * 5.0 * (1.0 - yNorm * 0.5);
-            transformed.z += cup;
-
-            // Midrib Crease
-            // Local X is width. Assuming leaf width ~0.2 (from geometry args)
-            // Crease logic: depress center Z
-            float midribWidth = 0.04;
-            float absX = abs(position.x);
-            if (absX < midribWidth) {
-                float depression = (1.0 - absX/midribWidth) * 0.02; // 0.02 deep
-                transformed.z -= depression;
-            }
-
-            #ifdef USE_INSTANCING
+                vWorldPos = (modelMatrix * instanceMatrix * vec4(position, 1.0)).xyz;
+                vRandId = fract(sin(dot(instanceMatrix[3].xyz, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
                 float worldX = instanceMatrix[3][0];
                 float worldZ = instanceMatrix[3][2];
-                // Kept local flutter/twist (high frequency)
                 float flutter = sin(uTime * 3.0 + worldX) * 0.05 * position.x;
                 float twist = position.x * sin(uTime * 2.0 + worldZ) * 0.2 * position.y;
                 transformed.y += flutter + twist;
@@ -460,9 +418,9 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
             #include <color_fragment>
             float noise = sin(vWorldPos.x * 0.5) * cos(vWorldPos.z * 0.5);
 
-            vec3 freshColor = vec3(0.48, 0.60, 0.28);
-            vec3 darkColor = vec3(0.25, 0.35, 0.15);
-            vec3 dryColor = vec3(0.70, 0.65, 0.30);
+            vec3 freshColor = vec3(0.18, 0.32, 0.07);
+            vec3 darkColor = vec3(0.045, 0.12, 0.025);
+            vec3 dryColor = vec3(0.40, 0.35, 0.08);
 
             vec3 baseCol = mix(darkColor, freshColor, 0.5 + 0.5 * noise);
 
@@ -483,54 +441,71 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
 
             // Transmission: light passing through back of leaf
             // Using a wrapped cosine approximation for thickness/transmission
-            float dotNormalSun = dot(vNormal, sunDir);
-            float transmission = smoothstep(0.2, -0.5, dotNormalSun); // Allow some wrap-around lighting
+            vec3 sunViewDir = normalize(mat3(viewMatrix) * sunDir);
+            vec3 viewViewDir = normalize(mat3(viewMatrix) * viewDir);
+            float dotNormalSun = dot(normalize(vNormal), sunViewDir);
+            float transmission = 1.0 - smoothstep(-0.5, 0.2, dotNormalSun); // Allow some wrap-around lighting
 
             float sssStrength = backlight * transmission;
 
             // Thin leaf color (bright yellowish green)
             vec3 sssColor = vec3(0.65, 0.85, 0.35);
             // Add SSS glow
-            diffuseColor.rgb += sssColor * sssStrength * 1.2;
+            diffuseColor.rgb += sssColor * sssStrength * 0.25;
 
             // Fresnel Rim Light (Top of leaves)
-            float fresnel = 1.0 - abs(dot(viewDir, vNormal));
+            float fresnel = 1.0 - abs(dot(viewViewDir, normalize(vNormal)));
             fresnel = pow(fresnel, 3.0);
-            diffuseColor.rgb += vec3(0.2, 0.3, 0.1) * fresnel * 0.8;
+            diffuseColor.rgb += vec3(0.2, 0.3, 0.1) * fresnel * 0.12;
             `
         )
     }
     return mat
   }, [])
 
-  const leafGeometry = useMemo(() => {
-    // Increased segments for midrib
-    const geo = new THREE.PlaneGeometry(0.2, 0.6, 1, 2)
-    geo.translate(0, 0.3, 0)
-    return geo
-  }, [])
+  const leafGeometry = useMemo(createBambooLeafGeometry, [])
 
-  useEffect(() => {
+  // Install the worker result before the next draw. InstancedMesh's default
+  // matrices all sit at the origin; those are allocation, not forest content.
+  useLayoutEffect(() => {
     if (!matrices) return
     if (meshRef.current) {
         meshRef.current.count = matrices.stalkInstances.length / 16
         meshRef.current.instanceMatrix.array.set(matrices.stalkInstances)
         meshRef.current.instanceMatrix.needsUpdate = true
+        meshRef.current.computeBoundingSphere()
     }
     if (branchMeshRef.current) {
         branchMeshRef.current.count = matrices.branchInstances.length / 16
         branchMeshRef.current.instanceMatrix.array.set(matrices.branchInstances)
         branchMeshRef.current.instanceMatrix.needsUpdate = true
+        branchMeshRef.current.computeBoundingSphere()
     }
     if (leafMeshRef.current) {
         leafMeshRef.current.count = matrices.leafInstances.length / 16
         leafMeshRef.current.instanceMatrix.array.set(matrices.leafInstances)
         leafMeshRef.current.instanceMatrix.needsUpdate = true
+        leafMeshRef.current.computeBoundingSphere()
+        gl.domElement.dataset.bambooReady = String(matrices.stalkInstances.length / 16)
+        gl.domElement.dataset.bambooBranchesReady = String(branchMeshRef.current?.count ?? 0)
+        gl.domElement.dataset.bambooLeavesReady = String(leafMeshRef.current.count)
     }
-  }, [matrices])
+  }, [matrices, gl])
+
+  useLayoutEffect(() => {
+    const group = chunkGroup.current
+    const sources = [meshRef.current, branchMeshRef.current, leafMeshRef.current]
+    if (DIAG.noSpatial || !group || !matrices || sources.some(source => !source)) return
+    const chunks = sources.flatMap(source => createBambooChunks(source!, Math.max(24, spread / 14)))
+    chunks.forEach(mesh => group.add(mesh))
+    gl.domElement.dataset.bambooSpatialBatches = String(chunks.length)
+    return () => {
+      chunks.forEach(mesh => { group.remove(mesh); mesh.dispose() })
+    }
+  }, [matrices, material, branchMaterial, leafMaterial, castShadow, spread, gl])
 
   useFrame((state) => {
-      const time = state.clock.getElapsedTime()
+      const time = reducedMotion.matches ? 0 : state.clock.getElapsedTime()
       const windSpeed = currentZone === 'DEEP_FOREST' ? 1.5 : 1.0
 
       if (material.userData.shader) {
@@ -555,22 +530,28 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
 
   return (
     <group>
+        <group ref={chunkGroup} />
         <instancedMesh
+            name="bamboo-stalks"
             ref={(node) => {
                 if (meshRef) meshRef.current = node;
-                if (node) node.layers.enable(1);
+                if (node && DIAG.noSpatial) node.layers.enable(1);
             }}
             args={[undefined, undefined, count]}
+            count={0}
+            visible={DIAG.noSpatial}
             castShadow={castShadow}
             receiveShadow
         >
-            <cylinderGeometry args={[0.08, 0.15, 8, 1]} />
+            <cylinderGeometry args={[0.08, 0.15, 8, 8]} />
             <primitive object={material} attach="material" />
         </instancedMesh>
 
         <instancedMesh
             ref={branchMeshRef}
             args={[undefined, undefined, count * 5]}
+            count={0}
+            visible={DIAG.noSpatial}
             castShadow={castShadow}
             receiveShadow
             geometry={branchGeometry}
@@ -581,6 +562,8 @@ export function BambooForest({ currentZone = 'GROVE', count = 15000, castShadow 
         <instancedMesh
             ref={leafMeshRef}
             args={[undefined, undefined, count * 5 * 3]}
+            count={0}
+            visible={DIAG.noSpatial}
             castShadow={castShadow}
             receiveShadow
             geometry={leafGeometry}

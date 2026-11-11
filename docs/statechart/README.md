@@ -1,0 +1,7 @@
+# Bamboo behaviour model, Nov11
+
+Source interview: App, TourContext, TourController, Navigation and AudioPlayer. This bounded TLA+ model covers intro/enter, worker installation, five guided stops, leaving the tour, muted/running audio, pending look input and angle-boundary preservation. TLC reached74states/333steps. MutedIsSilent, TourOwnsLook, NoLostInput and NoDeadlock hold in this model. This is NOT proof of renderer performance or the complete app.
+
+Excluded: timing, physical device speed, graphics cost, real worker failure, browser context loss, grass, navigation movement/collision, audio quality, exact camera composition. The model allows a guided stop while workers prepare because the actual UI currently allows it. It does not assert such a stop is visually ready. Read the action/state evidence from actual browser checks separately. Self-loop idle actions are hidden in the chart. The older yaw-reset implementation would set preserved FALSE on Wrap and violate NoLostInput; actual before/after touch tests reproduce that previously fixed defect.
+
+Regenerate outside the repo: copy Bamboo.tla, Bamboo.cfg and view.mjs to a scratch directory, then run the public pstack statechart script against Bamboo.tla with --config Bamboo.cfg --view view.mjs --out a-new-result-directory. Tested with cursor/plugins revision recorded in PERFORMANCE-2026-11-11.md, TLC1.7.4 andJava. Do not call model success actual-app success.
