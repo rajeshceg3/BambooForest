@@ -64,6 +64,8 @@ const MagneticButton = ({ children, onClick, className = '', ariaLabel }: Magnet
 // --- Main UI ---
 
 interface UIProps {
+  started: boolean
+  onStart: () => void
   audioEnabled: boolean
   onToggleAudio: () => void
   isIdle?: boolean
@@ -80,9 +82,8 @@ const INTENTIONS = [
     "Listen to the quiet."
   ]
 
-export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = false, onToggleZenMode }: UIProps) => {
+export const UI = ({ started, onStart, audioEnabled, onToggleAudio, isIdle = false, zenMode = false, onToggleZenMode }: UIProps) => {
   const { isActive: tourActive } = useTour()
-  const [started, setStarted] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'philosophy' | 'lore' | 'meditation'>('philosophy')
   const [meditationMode, setMeditationMode] = useState(false)
@@ -94,7 +95,6 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
 
   const [isTouch, setIsTouch] = useState(false)
   const { progress, active } = useProgress()
-  const titleRef = useRef<HTMLDivElement>(null)
 
   // Zen Mode Transition Effect
   useEffect(() => {
@@ -140,36 +140,6 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
     }
   }, [started])
 
-  // Intro Animation on Mount
-  useEffect(() => {
-    if (progress === 100 && !started && titleRef.current) {
-        // Ensure elements are visible before animating
-        gsap.set(titleRef.current, { opacity: 1 })
-
-        const chars = titleRef.current.querySelectorAll('.char')
-        gsap.fromTo(chars,
-            { y: 60, opacity: 0, rotateX: -90 },
-            {
-              y: 0,
-              opacity: 1,
-              rotateX: 0,
-              stagger: 0.1,
-              duration: 1.2,
-              ease: "power3.inOut",
-              delay: 0.5
-            }
-        )
-    }
-  }, [progress, started])
-
-  // Helper to split text for animation
-  const splitText = (text: string) => {
-    return text.split('').map((char, i) => (
-      <span key={i} className="char inline-block" style={{ opacity: 0 }}>
-        {char === ' ' ? '\u00A0' : char}
-      </span>
-    ))
-  }
 
   return (
     <div className="absolute inset-0 pointer-events-none z-50 flex flex-col justify-between text-white font-sans select-none overflow-hidden">
@@ -191,29 +161,15 @@ export const UI = ({ audioEnabled, onToggleAudio, isIdle = false, zenMode = fals
         </div>
       </div>
 
-      {/* Intro Screen */}
-      <div
-        className={`absolute inset-0 z-[40] flex items-center justify-center bg-black/20 backdrop-blur-sm transition-opacity duration-[3000ms] ease-in-out ${started ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`}
-      >
-        <div className="text-center p-8 max-w-4xl flex flex-col items-center">
-          <div ref={titleRef} className="opacity-0 mb-8 overflow-hidden perspective-[1000px] transition-all duration-[3000ms] ease-out">
-             <h1 className={`font-serif text-6xl md:text-9xl text-white/90 leading-none drop-shadow-2xl transition-all duration-[4000ms] ease-out ${progress === 100 ? 'tracking-[0.2em] blur-0' : 'tracking-normal blur-sm'}`}>
-               {splitText("BAMBOO FOREST")}
-             </h1>
-          </div>
-
-          <p className={`font-serif italic text-white/60 text-lg md:text-2xl mb-12 font-light transition-all duration-[2000ms] delay-1000 ease-out ${progress === 100 ? 'opacity-100 translate-y-0 tracking-[0.3em]' : 'opacity-0 translate-y-4 tracking-normal'}`}>
-            A digital sanctuary.
-          </p>
-
-          <button
-            onClick={() => setStarted(true)}
-            className={`group relative px-12 py-4 overflow-hidden transition-all duration-[2000ms] delay-[1500ms] rounded-full border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-3xl animate-breathe focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black ${progress === 100 ? 'opacity-100' : 'opacity-0'}`}
-          >
-            <span className="relative z-10 font-sans text-[10px] md:text-xs tracking-[0.8em] uppercase text-white/50 group-hover:text-white/90 transition-colors duration-700">
-              Enter
-            </span>
-            <span className="absolute bottom-0 left-0 w-full h-[1px] bg-white/20 transform scale-x-50 group-hover:scale-x-100 transition-transform duration-700 ease-out"></span>
+      {/* One calm cover, no competing navigation until entry. */}
+      <div aria-hidden={started} className={`absolute inset-0 z-[40] flex items-end md:items-center justify-center transition-opacity duration-700 ${started ? 'opacity-0 pointer-events-none' : 'opacity-100 pointer-events-auto'}`} style={{background:'linear-gradient(180deg,rgba(5,20,14,.08),rgba(5,20,14,.35) 40%,rgba(5,20,14,.88))'}}>
+        <div className="text-center px-6 pb-16 md:pb-0 w-full max-w-3xl">
+          <h1 className="font-serif text-white leading-none mb-6" style={{fontSize:'clamp(48px,9vw,112px)',letterSpacing:'.04em'}}>
+            <span className="block">Bamboo</span><span className="block">Forest</span>
+          </h1>
+          <p className="font-serif italic text-white/90 text-lg md:text-2xl mb-8">A quiet path through the grove.</p>
+          <button onClick={onStart} disabled={active && progress < 100} className="rounded-full border border-white/60 bg-black/30 px-10 py-4 text-white text-base focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:opacity-50">
+            {active && progress < 100 ? 'Opening the forest…' : 'Enter the forest'}
           </button>
         </div>
       </div>
