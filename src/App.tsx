@@ -41,6 +41,7 @@ function TierBodySync() {
 }
 
 function AppScene() {
+  const [started, setStarted] = useState(false)
   const [currentZone, setCurrentZone] = useState<Zone>('GROVE')
   const [audioEnabled, setAudioEnabled] = useState(false)
   const [zenMode, setZenMode] = useState(false)
@@ -61,9 +62,9 @@ function AppScene() {
           {/* We pass onZoneChange to Experience so the TourController can update the environment */}
           <Experience currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} />
         </Canvas>
-        <UI audioEnabled={audioEnabled} onToggleAudio={() => setAudioEnabled(!audioEnabled)} isIdle={isIdle} zenMode={zenMode} onToggleZenMode={() => setZenMode(!zenMode)} />
-        <Overlay currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} zenMode={zenMode} />
-        <TourOverlay isIdle={isIdle} zenMode={zenMode} />
+        <UI started={started} onStart={() => setStarted(true)} audioEnabled={audioEnabled} onToggleAudio={() => setAudioEnabled(!audioEnabled)} isIdle={isIdle} zenMode={zenMode} onToggleZenMode={() => setZenMode(!zenMode)} />
+        {started && <Overlay currentZone={currentZone} onZoneChange={setCurrentZone} isIdle={isIdle} zenMode={zenMode} />}
+        {started && <TourOverlay isIdle={isIdle} zenMode={zenMode} />}
         <AudioPlayer enabled={audioEnabled} currentZone={currentZone} isIdle={isIdle} />
         <Cursor isIdle={isIdle} />
       </div>
